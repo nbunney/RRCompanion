@@ -116,7 +116,13 @@ try {
   console.log(`🔐 API endpoints: http://${host}:${port}/api`);
   console.log(`🌙 Cron service started - nightly Rising Stars collection at 12:23am PST`);
 
-  await app.listen({ port, hostname: host });
+  // Ensure we're binding to the correct host
+  const listenOptions = {
+    port,
+    hostname: host === '0.0.0.0' ? '0.0.0.0' : host,
+  };
+
+  await app.listen(listenOptions);
 } catch (error) {
   console.error('❌ Failed to start server:', error);
   Deno.exit(1);
