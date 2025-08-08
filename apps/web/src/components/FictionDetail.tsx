@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { royalroadAPI, userFictionAPI, fictionAPI } from '@/services/api';
-import type { RoyalRoadFiction, UserFiction } from '@/types';
+import type { RoyalRoadFiction, UserFiction, Fiction } from '@/types';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import Footer from '@/components/Footer';
@@ -10,53 +10,68 @@ const FictionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [fiction, setFiction] = useState<RoyalRoadFiction | null>(null);
+  const [fictionWithHistory, setFictionWithHistory] = useState<Fiction | null>(null);
   const [userFiction, setUserFiction] = useState<UserFiction | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isAddingToFavorites, setIsAddingToFavorites] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
-  const [refreshMessage, setRefreshMessage] = useState('');
+  const [canRefresh, setCanRefresh] = useState(true);
+  const [remainingHours, setRemainingHours] = useState<number | null>(null);
+  const [showCurrentStats, setShowCurrentStats] = useState(false);
+  const [showCurrentCharts, setShowCurrentCharts] = useState(false);
+
+  // Check refresh status every minute
+  const checkRefreshStatus = useCallback(() => {
+    if (!lastRefreshTime) {
+      setCanRefresh(true);
+      setRemainingHours(null);
+      return;
+    }
+
+    const now = new Date();
+    const timeDiff = now.getTime() - lastRefreshTime.getTime();
+    const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+    if (hoursDiff >= 24) {
+      setCanRefresh(true);
+      setRemainingHours(0);
+    } else {
+      setCanRefresh(false);
+      // Calculate remaining time more precisely
+      const remainingTime = 24 - hoursDiff;
+      setRemainingHours(remainingTime);
+    }
+  }, [lastRefreshTime]);
+
+  // Initialize lastRefreshTime from the most recent fictionHistory entry
+  useEffect(() => {
+    if (fictionWithHistory?.history && fictionWithHistory.history.length > 0) {
+      const mostRecentEntry = fictionWithHistory.history[0]; // History is ordered by captured_at DESC
+      if (mostRecentEntry.captured_at) {
+        setLastRefreshTime(new Date(mostRecentEntry.captured_at));
+      }
+    }
+  }, [fictionWithHistory?.history]);
+
+  // Set up interval to check refresh status every minute
+  useEffect(() => {
+    const interval = setInterval(checkRefreshStatus, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [checkRefreshStatus]);
+
+  // Initial check when component mounts
+  useEffect(() => {
+    checkRefreshStatus();
+  }, [checkRefreshStatus]);
 
   useEffect(() => {
     if (id) {
       loadFiction();
       loadUserFiction();
-      checkRefreshStatus();
     }
   }, [id]);
-
-  const checkRefreshStatus = () => {
-    const lastRefresh = localStorage.getItem(`fiction_refresh_${id}`);
-    if (lastRefresh) {
-      const lastRefreshDate = new Date(lastRefresh);
-      const now = new Date();
-      const timeDiff = now.getTime() - lastRefreshDate.getTime();
-      const hoursDiff = timeDiff / (1000 * 60 * 60);
-
-      if (hoursDiff < 24) {
-        setLastRefreshTime(lastRefreshDate);
-        const remainingHours = Math.floor(24 - hoursDiff);
-        const hoursAgo = Math.floor(hoursDiff);
-
-        if (hoursAgo === 0) {
-          setRefreshMessage(`Refreshed recently. Can refresh again in ${remainingHours} hours.`);
-        } else if (hoursAgo === 1) {
-          setRefreshMessage(`Refreshed 1 hour ago. Can refresh again in ${remainingHours} hours.`);
-        } else {
-          setRefreshMessage(`Refreshed ${hoursAgo} hours ago. Can refresh again in ${remainingHours} hours.`);
-        }
-      }
-    }
-  };
-
-  const canRefresh = () => {
-    if (!lastRefreshTime) return true;
-    const now = new Date();
-    const timeDiff = now.getTime() - lastRefreshTime.getTime();
-    const hoursDiff = timeDiff / (1000 * 60 * 60);
-    return hoursDiff >= 24;
-  };
 
   const loadFiction = async () => {
     try {
@@ -66,6 +81,9 @@ const FictionDetail: React.FC = () => {
       let fictionResponse = await fictionAPI.getFictionByRoyalRoadId(id!);
 
       if (fictionResponse.success && fictionResponse.data) {
+        // Store the original response with history data
+        setFictionWithHistory(fictionResponse.data);
+
         // Convert our Fiction type to RoyalRoadFiction type for display
         const fiction: RoyalRoadFiction = {
           id: fictionResponse.data.royalroad_id,
@@ -233,18 +251,12 @@ const FictionDetail: React.FC = () => {
           },
           chapters: [],
         };
+        // Store the original response with history data
+        setFictionWithHistory(response.data);
         setFiction(updatedFiction);
 
         // Update refresh status
-        const now = new Date();
-        localStorage.setItem(`fiction_refresh_${id}`, now.toISOString());
-        setLastRefreshTime(now);
-        setRefreshMessage('✅ Fiction refreshed successfully!');
-
-        // Clear the message after 3 seconds
-        setTimeout(() => {
-          setRefreshMessage('');
-        }, 3000);
+        setLastRefreshTime(new Date());
       } else {
         setError(response.message || 'Failed to refresh fiction');
       }
@@ -328,41 +340,102 @@ const FictionDetail: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">{fiction.title}</h1>
                     <p className="text-lg text-gray-600 mb-4">by {fiction.author.name}</p>
                   </div>
-                  <div className="flex space-x-2">
-                    {userFiction ? (
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex space-x-2">
+                      {userFiction ? (
+                        <Button
+                          onClick={handleToggleFavorite}
+                          disabled={isAddingToFavorites}
+                          variant={userFiction.is_favorite ? "primary" : "outline"}
+                        >
+                          {isAddingToFavorites ? '...' : (userFiction.is_favorite ? '❤️ Favorited' : '🤍 Add to Favorites')}
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={handleAddToFavorites}
+                          disabled={isAddingToFavorites}
+                          variant="outline"
+                        >
+                          {isAddingToFavorites ? 'Adding...' : '🤍 Add to Favorites'}
+                        </Button>
+                      )}
                       <Button
-                        onClick={handleToggleFavorite}
-                        disabled={isAddingToFavorites}
-                        variant={userFiction.is_favorite ? "primary" : "outline"}
-                      >
-                        {isAddingToFavorites ? '...' : (userFiction.is_favorite ? '❤️ Favorited' : '🤍 Add to Favorites')}
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={handleAddToFavorites}
-                        disabled={isAddingToFavorites}
+                        onClick={handleRefresh}
+                        disabled={isRefreshing || !canRefresh}
                         variant="outline"
                       >
-                        {isAddingToFavorites ? 'Adding...' : '🤍 Add to Favorites'}
+                        {isRefreshing ? 'Refreshing...' : '🔄 Refresh'}
+                      </Button>
+                    </div>
+
+                    {/* Current Charts Toggle Button */}
+                    {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
+                      <Button
+                        onClick={() => setShowCurrentCharts(!showCurrentCharts)}
+                        variant="outline"
+                        size="sm"
+                        className="w-fit"
+                      >
+                        {showCurrentCharts ? '📈 Hide Current Charts' : '📈 Show Current Charts'}
                       </Button>
                     )}
-                    <Button
-                      onClick={handleRefresh}
-                      disabled={isRefreshing || !canRefresh()}
-                      variant="outline"
-                    >
-                      {isRefreshing ? 'Refreshing...' : '🔄 Refresh'}
-                    </Button>
                   </div>
                 </div>
 
-                {/* Refresh Message */}
-                {refreshMessage && !canRefresh() && (
+                {/* Last refresh time and countdown */}
+                {lastRefreshTime && (
                   <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                    <p className="text-gray-600 text-sm flex items-center">
-                      <span className="mr-2">⏰</span>
-                      {refreshMessage}
-                    </p>
+                    <div className="text-sm text-gray-600">
+                      Last refreshed: {lastRefreshTime.toLocaleDateString()} at {lastRefreshTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    {!canRefresh && remainingHours !== null && (
+                      <div className="text-sm text-gray-500 mt-1">
+                        {remainingHours <= 0 ? (
+                          <span>Can refresh now!</span>
+                        ) : remainingHours < 1 ? (
+                          <span>Can refresh in {Math.ceil(remainingHours * 60)} minutes</span>
+                        ) : (
+                          <span>Can refresh in {Math.floor(remainingHours)} hours {Math.ceil((remainingHours % 1) * 60)} minutes</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Current Charts Section */}
+                {showCurrentCharts && fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
+                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      📈 Current Charts
+                      <span className="ml-2 text-sm font-normal text-gray-600">
+                        (as of {fictionWithHistory.history[0].captured_at ? new Date(fictionWithHistory.history[0].captured_at).toLocaleDateString() : 'Unknown Date'})
+                      </span>
+                    </h3>
+
+                    {/* Chart 1 - Full Width */}
+                    <div className="mb-6">
+                      <h4 className="text-md font-medium text-gray-700 mb-3">Engagement Metrics Over Time</h4>
+                      <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <div className="text-2xl mb-2">📊</div>
+                          <div>Sample Chart 1</div>
+                          <div className="text-sm">Engagement metrics visualization</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Chart 2 - Full Width */}
+                    <div>
+                      <h4 className="text-md font-medium text-gray-700 mb-3">Performance Trends (Pages, Followers, Total Views, Average Views vs Date)</h4>
+                      <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <div className="text-2xl mb-2">📈</div>
+                          <div>Sample Chart 2</div>
+                          <div className="text-sm">Performance trends visualization</div>
+                          <div className="text-xs mt-2">Will show: Pages, Followers, Total Views, Average Views vs Date</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -374,33 +447,130 @@ const FictionDetail: React.FC = () => {
                   </div>
                 )}
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary-600">
-                      {typeof fiction.stats.followers === 'number' ? fiction.stats.followers.toLocaleString() : '0'}
+                {/* Current Stats Section - Always Visible */}
+                {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                      📊 Current Stats
+                      <span className="ml-2 text-sm font-normal text-gray-600">
+                        (as of {fictionWithHistory.history[0].captured_at ? new Date(fictionWithHistory.history[0].captured_at).toLocaleDateString() : 'Unknown Date'})
+                      </span>
+                    </h3>
+
+                    {/* Primary Stats - Large Display */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {typeof fictionWithHistory.history[0].pages === 'number' ? fictionWithHistory.history[0].pages.toLocaleString() : 'N/A'}
+                        </div>
+                        <div className="text-sm text-gray-500">Pages</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {typeof fictionWithHistory.history[0].score === 'number' ? fictionWithHistory.history[0].score.toFixed(1) : 'N/A'}
+                        </div>
+                        <div className="text-sm text-gray-500">Score</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {typeof fictionWithHistory.history[0].followers === 'number' ? fictionWithHistory.history[0].followers.toLocaleString() : 'N/A'}
+                        </div>
+                        <div className="text-sm text-gray-500">Followers</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {typeof fictionWithHistory.history[0].views === 'number' ? fictionWithHistory.history[0].views.toLocaleString() : 'N/A'}
+                        </div>
+                        <div className="text-sm text-gray-500">Views</div>
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500">Followers</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary-600">
-                      {typeof fiction.stats.score === 'number' ? fiction.stats.score.toFixed(1) : 'N/A'}
+
+                    {/* All Stats Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Ratings:</span>
+                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].ratings === 'number' ? fictionWithHistory.history[0].ratings.toLocaleString() : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Favorites:</span>
+                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].favorites === 'number' ? fictionWithHistory.history[0].favorites.toLocaleString() : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Overall Score:</span>
+                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].overall_score === 'number' ? fictionWithHistory.history[0].overall_score.toFixed(1) : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Style Score:</span>
+                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].style_score === 'number' ? fictionWithHistory.history[0].style_score.toFixed(1) : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Story Score:</span>
+                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].story_score === 'number' ? fictionWithHistory.history[0].story_score.toFixed(1) : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Grammar Score:</span>
+                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].grammar_score === 'number' ? fictionWithHistory.history[0].grammar_score.toFixed(1) : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Character Score:</span>
+                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].character_score === 'number' ? fictionWithHistory.history[0].character_score.toFixed(1) : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Total Views:</span>
+                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].total_views === 'number' ? fictionWithHistory.history[0].total_views.toLocaleString() : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Average Views:</span>
+                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].average_views === 'number' ? fictionWithHistory.history[0].average_views.toLocaleString() : 'N/A'}</span>
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500">Score</div>
+
+                    {/* Metadata */}
+                    {(fictionWithHistory.history[0].status || fictionWithHistory.history[0].type || fictionWithHistory.history[0].tags || fictionWithHistory.history[0].warnings) && (
+                      <div className="mt-4 pt-4 border-t border-blue-200">
+                        <h4 className="font-medium text-gray-700 mb-2">Additional Details</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          {fictionWithHistory.history[0].status && (
+                            <div className="flex justify-between">
+                              <span className="font-medium text-gray-600">Status:</span>
+                              <span className="text-gray-900">{fictionWithHistory.history[0].status}</span>
+                            </div>
+                          )}
+                          {fictionWithHistory.history[0].type && (
+                            <div className="flex justify-between">
+                              <span className="font-medium text-gray-600">Type:</span>
+                              <span className="text-gray-900">{fictionWithHistory.history[0].type}</span>
+                            </div>
+                          )}
+                          {fictionWithHistory.history[0].tags && Array.isArray(fictionWithHistory.history[0].tags) && fictionWithHistory.history[0].tags.length > 0 && (
+                            <div className="md:col-span-2">
+                              <span className="font-medium text-gray-600">Tags:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {fictionWithHistory.history[0].tags.map((tag, index) => (
+                                  <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {fictionWithHistory.history[0].warnings && Array.isArray(fictionWithHistory.history[0].warnings) && fictionWithHistory.history[0].warnings.length > 0 && (
+                            <div className="md:col-span-2">
+                              <span className="font-medium text-gray-600">Warnings:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {fictionWithHistory.history[0].warnings.map((warning, index) => (
+                                  <span key={index} className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                                    {warning}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary-600">
-                      {typeof fiction.stats.views === 'number' ? fiction.stats.views.toLocaleString() : '0'}
-                    </div>
-                    <div className="text-sm text-gray-500">Views</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary-600">
-                      {typeof fiction.stats.pages === 'number' ? fiction.stats.pages.toLocaleString() : '0'}
-                    </div>
-                    <div className="text-sm text-gray-500">Pages</div>
-                  </div>
-                </div>
+                )}
 
                 {/* Tags */}
                 {fiction.tags && fiction.tags.length > 0 && (
@@ -438,11 +608,17 @@ const FictionDetail: React.FC = () => {
                   </div>
                 )}
 
-                {/* Status and Type */}
-                <div className="flex space-x-4 text-sm text-gray-600">
-                  <span>Status: <span className="font-semibold">{fiction.status}</span></span>
-                  <span>Type: <span className="font-semibold">{fiction.type}</span></span>
-                </div>
+                {/* Status and Type - only show if they have values */}
+                {(fiction.status || fiction.type) && (
+                  <div className="flex space-x-4 text-sm text-gray-600">
+                    {fiction.status && (
+                      <span>Status: <span className="font-semibold">{fiction.status}</span></span>
+                    )}
+                    {fiction.type && (
+                      <span>Type: <span className="font-semibold">{fiction.type}</span></span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </Card>

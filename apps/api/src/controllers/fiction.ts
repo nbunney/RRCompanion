@@ -1,6 +1,7 @@
 import { Context } from 'oak';
 import { FictionService } from '../services/fiction.ts';
 import { RoyalRoadService } from '../services/royalroad.ts';
+import { FictionHistoryService } from '../services/fictionHistory.ts';
 import type { ApiResponse, CreateFictionRequest, UpdateFictionRequest, Fiction } from '../types/index.ts';
 
 // Get all fictions with pagination
@@ -58,10 +59,17 @@ export async function getFictionByRoyalRoadId(ctx: Context): Promise<void> {
       return;
     }
 
+    // Get fiction history data
+    const fictionHistoryService = new FictionHistoryService();
+    const historyEntries = await fictionHistoryService.getFictionHistoryByFictionId(fiction.id);
+
     ctx.response.status = 200;
     ctx.response.body = {
       success: true,
-      data: fiction,
+      data: {
+        ...fiction,
+        history: historyEntries,
+      },
     } as ApiResponse;
   } catch (error) {
     console.error('Get fiction error:', error);
@@ -340,6 +348,27 @@ export async function refreshFiction(ctx: Context): Promise<void> {
       return;
     }
 
+    // Check if we can refresh based on the last fictionHistory entry
+    const lastHistoryEntry = await FictionHistoryService.getLastFictionHistoryEntry(existingFiction.id);
+    if (lastHistoryEntry) {
+      const now = new Date();
+      const lastRefresh = new Date(lastHistoryEntry.captured_at!);
+      const timeDiff = now.getTime() - lastRefresh.getTime();
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+      if (hoursDiff < 24) {
+        const remainingHours = Math.floor(24 - hoursDiff);
+        ctx.response.status = 429; // Too Many Requests
+        ctx.response.body = {
+          success: false,
+          error: `Can only refresh once every 24 hours. Try again in ${remainingHours} hours.`,
+          lastRefresh: lastHistoryEntry.captured_at,
+          nextRefreshAvailable: new Date(lastRefresh.getTime() + (24 * 60 * 60 * 1000)),
+        } as ApiResponse;
+        return;
+      }
+    }
+
     // Fetch fresh data from Royal Road
     const royalroadService = new RoyalRoadService();
     const response = await royalroadService.getFiction(royalroadId);
@@ -384,6 +413,33 @@ export async function refreshFiction(ctx: Context): Promise<void> {
       } as ApiResponse;
       return;
     }
+
+    // Create a new fictionHistory entry
+    const fictionHistoryService = new FictionHistoryService();
+    await fictionHistoryService.saveFictionToHistory(
+      existingFiction.id,
+      royalroadId,
+      {
+        description: response.data.description,
+        status: response.data.status,
+        type: response.data.type,
+        tags: response.data.tags,
+        warnings: response.data.warnings,
+        pages: response.data.stats.pages,
+        ratings: response.data.stats.ratings,
+        followers: response.data.stats.followers,
+        favorites: response.data.stats.favorites,
+        views: response.data.stats.views,
+        score: response.data.stats.score,
+        overall_score: response.data.stats.score || 0,
+        style_score: 0, // These would need to come from Royal Road if available
+        story_score: 0,
+        grammar_score: 0,
+        character_score: 0,
+        total_views: response.data.stats.views || 0,
+        average_views: response.data.stats.views || 0,
+      }
+    );
 
     ctx.response.status = 200;
     ctx.response.body = {

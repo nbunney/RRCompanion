@@ -495,6 +495,43 @@ export class FictionHistoryService {
     }
   }
 
+    // Get the last fiction history entry for a specific fiction
+  async getLastFictionHistoryEntry(fictionId: number): Promise<FictionHistoryEntry | null> {
+    try {
+      const client = await this.getConnection();
+      const query = `
+        SELECT * FROM fictionHistory 
+        WHERE fiction_id = ? 
+        ORDER BY captured_at DESC 
+        LIMIT 1
+      `;
+      
+      const result = await client.query(query, [fictionId]);
+      return result.length > 0 ? result[0] as FictionHistoryEntry : null;
+    } catch (error) {
+      console.error('❌ Error getting last fiction history entry:', error);
+      return null;
+    }
+  }
+
+  // Get all fiction history entries for a specific fiction
+  async getFictionHistoryByFictionId(fictionId: number): Promise<FictionHistoryEntry[]> {
+    try {
+      const client = await this.getConnection();
+      const query = `
+        SELECT * FROM fictionHistory 
+        WHERE fiction_id = ? 
+        ORDER BY captured_at DESC
+      `;
+      
+      const result = await client.query(query, [fictionId]);
+      return result as FictionHistoryEntry[];
+    } catch (error) {
+      console.error('❌ Error getting fiction history by fiction ID:', error);
+      return [];
+    }
+  }
+
   // Get fiction history data
   async getFictionHistoryData(startDate?: Date, endDate?: Date): Promise<FictionHistoryEntry[]> {
     try {

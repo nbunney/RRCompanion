@@ -58,6 +58,33 @@ export interface Fiction {
   score: number;
   created_at: string;
   updated_at: string;
+  history?: FictionHistoryEntry[];
+}
+
+// Fiction History types
+export interface FictionHistoryEntry {
+  id?: number;
+  fiction_id: number;
+  royalroad_id: string;
+  description?: string;
+  status?: string;
+  type?: string;
+  tags?: any;
+  warnings?: any;
+  pages: number;
+  ratings: number;
+  followers: number;
+  favorites: number;
+  views: number;
+  score: number;
+  overall_score: number;
+  style_score: number;
+  story_score: number;
+  grammar_score: number;
+  character_score: number;
+  total_views: number;
+  average_views: number;
+  captured_at?: string;
 }
 
 // UserFiction types
