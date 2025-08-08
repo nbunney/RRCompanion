@@ -417,13 +417,15 @@ const FictionDetail: React.FC = () => {
                       <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4">
                         {fictionWithHistory.history && fictionWithHistory.history.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={fictionWithHistory.history.map(entry => ({
-                              date: new Date(entry.captured_at!).toLocaleDateString(),
-                              pages: entry.pages,
-                              followers: entry.followers,
-                              totalViews: entry.total_views,
-                              averageViews: entry.average_views,
-                            }))}>
+                            <LineChart data={fictionWithHistory.history
+                              .sort((a, b) => new Date(a.captured_at!).getTime() - new Date(b.captured_at!).getTime())
+                              .map(entry => ({
+                                date: new Date(entry.captured_at!).toLocaleDateString(),
+                                pages: entry.pages,
+                                followers: entry.followers,
+                                totalViews: entry.total_views,
+                                averageViews: entry.average_views,
+                              }))}>
                               <CartesianGrid strokeDasharray="3 3" />
                               <XAxis dataKey="date" />
                               <YAxis yAxisId="left" />
@@ -453,16 +455,18 @@ const FictionDetail: React.FC = () => {
                       <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4">
                         {fictionWithHistory.history && fictionWithHistory.history.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={fictionWithHistory.history.map(entry => ({
-                              date: new Date(entry.captured_at!).toLocaleDateString(),
-                              overallScore: entry.overall_score,
-                              styleScore: entry.style_score,
-                              storyScore: entry.story_score,
-                              grammarScore: entry.grammar_score,
-                              characterScore: entry.character_score,
-                              score: entry.score,
-                              ratings: entry.ratings,
-                            }))}>
+                            <LineChart data={fictionWithHistory.history
+                              .sort((a, b) => new Date(a.captured_at!).getTime() - new Date(b.captured_at!).getTime())
+                              .map(entry => ({
+                                date: new Date(entry.captured_at!).toLocaleDateString(),
+                                overallScore: entry.overall_score,
+                                styleScore: entry.style_score,
+                                storyScore: entry.story_score,
+                                grammarScore: entry.grammar_score,
+                                characterScore: entry.character_score,
+                                score: entry.score,
+                                ratings: entry.ratings,
+                              }))}>
                               <CartesianGrid strokeDasharray="3 3" />
                               <XAxis dataKey="date" />
                               <YAxis yAxisId="left" domain={[0, 5]} />
