@@ -105,6 +105,42 @@ export class RoyalRoadService {
     this.api = new RoyalRoadAPI();
   }
 
+  // Helper function to decode HTML entities
+  private decodeHtmlEntities(text: string): string {
+    if (!text) return text;
+
+    // Common HTML entities mapping
+    const htmlEntities: { [key: string]: string } = {
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&quot;': '"',
+      '&#x27;': "'",
+      '&#x2F;': '/',
+      '&#x60;': '`',
+      '&#x3D;': '=',
+      '&apos;': "'",
+      '&nbsp;': ' ',
+      '&copy;': '©',
+      '&reg;': '®',
+      '&trade;': '™',
+      '&hellip;': '…',
+      '&mdash;': '—',
+      '&ndash;': '–',
+      '&lsquo;': "'",
+      '&rsquo;': "'",
+      '&ldquo;': '"',
+      '&rdquo;': '"',
+    };
+
+    let decodedText = text;
+    for (const [entity, replacement] of Object.entries(htmlEntities)) {
+      decodedText = decodedText.replace(new RegExp(entity, 'g'), replacement);
+    }
+
+    return decodedText;
+  }
+
   // Get popular fictions
   async getPopularFictions(): Promise<RoyalRoadResponse<RoyalRoadFiction[]>> {
     try {
@@ -216,11 +252,11 @@ export class RoyalRoadService {
       // Extract title - multiple patterns
       const titleMatch1 = html.match(/<h1[^>]*>([^<]+)<\/h1>/);
       if (titleMatch1) {
-        fiction.title = titleMatch1[1].trim();
+        fiction.title = this.decodeHtmlEntities(titleMatch1[1].trim());
       } else {
         const titleMatch2 = html.match(/<title[^>]*>([^<]+)<\/title>/);
         if (titleMatch2) {
-          fiction.title = titleMatch2[1].replace(' - Royal Road', '').trim();
+          fiction.title = this.decodeHtmlEntities(titleMatch2[1].replace(' - Royal Road', '').trim());
         }
       }
 
@@ -230,7 +266,7 @@ export class RoyalRoadService {
       // Pattern 1: Look for "by" followed by author link (case insensitive)
       const authorMatch1 = html.match(/by\s*<a[^>]*href="[^"]*profile[^"]*"[^>]*>([^<]+)<\/a>/i);
       if (authorMatch1) {
-        fiction.author.name = authorMatch1[1].trim();
+        fiction.author.name = this.decodeHtmlEntities(authorMatch1[1].trim());
         authorFound = true;
       }
 
@@ -238,7 +274,7 @@ export class RoyalRoadService {
       if (!authorFound) {
         const authorMatch2 = html.match(/<a[^>]*href="[^"]*\/profile\/[^"]*"[^>]*>([^<]+)<\/a>/);
         if (authorMatch2) {
-          fiction.author.name = authorMatch2[1].trim();
+          fiction.author.name = this.decodeHtmlEntities(authorMatch2[1].trim());
           authorFound = true;
         }
       }
@@ -247,7 +283,7 @@ export class RoyalRoadService {
       if (!authorFound) {
         const authorMatch3 = html.match(/<meta[^>]*name="author"[^>]*content="([^"]+)"/);
         if (authorMatch3) {
-          fiction.author.name = authorMatch3[1].trim();
+          fiction.author.name = this.decodeHtmlEntities(authorMatch3[1].trim());
           authorFound = true;
         }
       }
@@ -256,7 +292,7 @@ export class RoyalRoadService {
       if (!authorFound) {
         const authorMatch4 = html.match(/<span[^>]*class="[^"]*author[^"]*"[^>]*>([^<]+)<\/span>/);
         if (authorMatch4) {
-          fiction.author.name = authorMatch4[1].trim();
+          fiction.author.name = this.decodeHtmlEntities(authorMatch4[1].trim());
           authorFound = true;
         }
       }
@@ -303,7 +339,7 @@ export class RoyalRoadService {
       // Extract description
       const descMatch = html.match(/<div[^>]*class="[^"]*description[^"]*"[^>]*>([\s\S]*?)<\/div>/);
       if (descMatch) {
-        fiction.description = descMatch[1].replace(/<[^>]*>/g, '').trim();
+        fiction.description = this.decodeHtmlEntities(descMatch[1].replace(/<[^>]*>/g, '').trim());
       }
 
       // Extract image/cover art - multiple patterns
@@ -334,33 +370,141 @@ export class RoyalRoadService {
         }
       }
 
-      // Extract status
-      const statusMatch = html.match(/<span[^>]*class="[^"]*status[^"]*"[^>]*>([^<]+)<\/span>/);
-      if (statusMatch) {
-        fiction.status = statusMatch[1].trim();
+      // Extract status and type from the colored area next to tags
+      // Look for the container that holds status and type information
+      const statusTypeContainer = html.match(/<div[^>]*class="[^"]*fiction-stats[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+      if (statusTypeContainer) {
+        const containerHtml = statusTypeContainer[1];
+
+        // Extract status - look for ONGOING, COMPLETED, HIATUS, etc.
+        const statusMatch = containerHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (statusMatch) {
+          for (const match of statusMatch) {
+            const statusText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+            // Common status values
+            if (['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(statusText.toUpperCase())) {
+              fiction.status = statusText;
+              break;
+            }
+          }
+        }
+
+        // Extract type - look for Original, Translation, etc.
+        const typeMatch = containerHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (typeMatch) {
+          for (const match of typeMatch) {
+            const typeText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+            // Common type values
+            if (['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(typeText.toUpperCase())) {
+              fiction.type = typeText;
+              break;
+            }
+          }
+        }
       }
 
-      // Extract tags
-      const tagsMatch = html.match(/<span[^>]*class="[^"]*tags[^"]*"[^>]*>([\s\S]*?)<\/span>/g);
-      if (tagsMatch) {
-        fiction.tags = tagsMatch.map(tag => tag.replace(/<[^>]*>/g, '').trim()).filter(tag => tag);
+      // Alternative: Look for status and type in the fiction-info section
+      const fictionInfoSection = html.match(/<div[^>]*class="[^"]*fiction-info[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+      if (fictionInfoSection) {
+        const infoHtml = fictionInfoSection[1];
+
+        // Extract status - look for ONGOING, COMPLETED, HIATUS, etc.
+        const statusMatch = infoHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (statusMatch) {
+          for (const match of statusMatch) {
+            const statusText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+            // Common status values
+            if (['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(statusText.toUpperCase())) {
+              fiction.status = statusText;
+              break;
+            }
+          }
+        }
+
+        // Extract type - look for Original, Translation, etc.
+        const typeMatch = infoHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (typeMatch) {
+          for (const match of typeMatch) {
+            const typeText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+            // Common type values
+            if (['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(typeText.toUpperCase())) {
+              fiction.type = typeText;
+              break;
+            }
+          }
+        }
       }
 
-      // Extract warnings
-      const warningsMatch = html.match(/<span[^>]*class="[^"]*warnings[^"]*"[^>]*>([\s\S]*?)<\/span>/g);
-      if (warningsMatch) {
-        fiction.warnings = warningsMatch.map(warning => warning.replace(/<[^>]*>/g, '').trim()).filter(warning => warning);
+      // Look for status and type in the entire HTML if not found yet
+      if (!fiction.status || !fiction.type) {
+        const allLabelMatches = html.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (allLabelMatches) {
+          for (const match of allLabelMatches) {
+            const text = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+
+            // Check for status
+            if (!fiction.status && ['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(text.toUpperCase())) {
+              fiction.status = text;
+            }
+
+            // Check for type
+            if (!fiction.type && ['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(text.toUpperCase())) {
+              fiction.type = text;
+            }
+
+            // If we found both, we can stop
+            if (fiction.status && fiction.type) {
+              break;
+            }
+          }
+        }
       }
 
-      // Extract type
-      const typeMatch = html.match(/<span[^>]*class="[^"]*type[^"]*"[^>]*>([^<]+)<\/span>/);
-      if (typeMatch) {
-        fiction.type = typeMatch[1].trim();
+      // Fallback: Try alternative patterns for status and type
+      if (!fiction.status) {
+        const statusMatch = html.match(/<span[^>]*class="[^"]*status[^"]*"[^>]*>([^<]+)<\/span>/);
+        if (statusMatch) {
+          fiction.status = this.decodeHtmlEntities(statusMatch[1].trim());
+        }
+      }
+
+      if (!fiction.type) {
+        const typeMatch = html.match(/<span[^>]*class="[^"]*type[^"]*"[^>]*>([^<]+)<\/span>/);
+        if (typeMatch) {
+          fiction.type = this.decodeHtmlEntities(typeMatch[1].trim());
+        }
+      }
+
+      // Extract tags - look for individual fiction-tag links
+      const tagLinks = html.match(/<a[^>]*class="[^"]*fiction-tag[^"]*"[^>]*>([^<]+)<\/a>/g);
+      if (tagLinks) {
+        fiction.tags = tagLinks.map(tag => this.decodeHtmlEntities(tag.replace(/<[^>]*>/g, '').trim())).filter(tag => tag);
+      }
+
+      // Extract warnings - look for individual warning items
+      const warningItems = html.match(/<li[^>]*>([^<]+)<\/li>/g);
+      if (warningItems) {
+        // Filter for warning items (they're usually in a warnings section)
+        const warningsSection = html.match(/<div[^>]*class="[^"]*text-center[^"]*"[^>]*>[\s\S]*?<strong>Warning<\/strong>[\s\S]*?<\/div>/);
+        if (warningsSection) {
+          const warningMatches = warningsSection[0].match(/<li[^>]*>([^<]+)<\/li>/g);
+          if (warningMatches) {
+            fiction.warnings = warningMatches.map(warning => this.decodeHtmlEntities(warning.replace(/<[^>]*>/g, '').trim())).filter(warning => warning);
+          }
+        }
       }
 
       // Extract detailed statistics from HTML
       const stats = await this.scrapeFictionStats(id);
       fiction.stats = stats;
+
+      // Extract status and type from stats (they were extracted in scrapeFictionStats)
+      if (stats.status) {
+        fiction.status = stats.status;
+      }
+      if (stats.type) {
+        fiction.type = stats.type;
+      }
 
       return {
         success: true,
@@ -544,7 +688,7 @@ export class RoyalRoadService {
       // Extract fiction IDs and titles
       while ((match = titleRegex.exec(html)) !== null) {
         const fictionId = match[1];
-        const title = match[2].trim();
+        const title = this.decodeHtmlEntities(match[2].trim());
 
         // Create a basic Rising Star entry - we'll enrich it with full data later
         const risingStar: RisingStarFiction = {
@@ -557,6 +701,8 @@ export class RoyalRoadService {
           },
           position: position,
           genre: genre,
+          status: '', // Will be filled in when we fetch full data
+          type: '', // Will be filled in when we fetch full data
           stats: {
             followers: 0, // Will be filled in when we fetch full data
             favorites: 0,
@@ -634,6 +780,114 @@ export class RoyalRoadService {
 
       const html = await response.text();
 
+      // Extract status and type from the colored area next to tags
+      let status = '';
+      let type = '';
+
+      // Look for the container that holds status and type information
+      const statusTypeContainer = html.match(/<div[^>]*class="[^"]*fiction-stats[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+      if (statusTypeContainer) {
+        const containerHtml = statusTypeContainer[1];
+
+        // Extract status - look for ONGOING, COMPLETED, HIATUS, etc.
+        const statusMatch = containerHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (statusMatch) {
+          for (const match of statusMatch) {
+            const statusText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+            // Common status values
+            if (['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(statusText.toUpperCase())) {
+              status = statusText;
+              break;
+            }
+          }
+        }
+
+        // Extract type - look for Original, Translation, etc.
+        const typeMatch = containerHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (typeMatch) {
+          for (const match of typeMatch) {
+            const typeText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+            // Common type values
+            if (['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(typeText.toUpperCase())) {
+              type = typeText;
+              break;
+            }
+          }
+        }
+      }
+
+      // Alternative: Look for status and type in the fiction-info section
+      const fictionInfoSection = html.match(/<div[^>]*class="[^"]*fiction-info[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+      if (fictionInfoSection) {
+        const infoHtml = fictionInfoSection[1];
+
+        // Extract status - look for ONGOING, COMPLETED, HIATUS, etc.
+        const statusMatch = infoHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (statusMatch) {
+          for (const match of statusMatch) {
+            const statusText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+            // Common status values
+            if (['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(statusText.toUpperCase())) {
+              status = statusText;
+              break;
+            }
+          }
+        }
+
+        // Extract type - look for Original, Translation, etc.
+        const typeMatch = infoHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (typeMatch) {
+          for (const match of typeMatch) {
+            const typeText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+            // Common type values
+            if (['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(typeText.toUpperCase())) {
+              type = typeText;
+              break;
+            }
+          }
+        }
+      }
+
+      // Look for status and type in the entire HTML if not found yet
+      if (!status || !type) {
+        const allLabelMatches = html.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+        if (allLabelMatches) {
+          for (const match of allLabelMatches) {
+            const text = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+
+            // Check for status
+            if (!status && ['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(text.toUpperCase())) {
+              status = text;
+            }
+
+            // Check for type
+            if (!type && ['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(text.toUpperCase())) {
+              type = text;
+            }
+
+            // If we found both, we can stop
+            if (status && type) {
+              break;
+            }
+          }
+        }
+      }
+
+      // Fallback: Try alternative patterns for status and type
+      if (!status) {
+        const statusMatch = html.match(/<span[^>]*class="[^"]*status[^"]*"[^>]*>([^<]+)<\/span>/);
+        if (statusMatch) {
+          status = this.decodeHtmlEntities(statusMatch[1].trim());
+        }
+      }
+
+      if (!type) {
+        const typeMatch = html.match(/<span[^>]*class="[^"]*type[^"]*"[^>]*>([^<]+)<\/span>/);
+        if (typeMatch) {
+          type = this.decodeHtmlEntities(typeMatch[1].trim());
+        }
+      }
+
       // Extract detailed statistics from HTML
       const stats: any = {
         overall_score: 0,
@@ -646,7 +900,9 @@ export class RoyalRoadService {
         followers: 0,
         favorites: 0,
         ratings: 0,
-        pages: 0
+        pages: 0,
+        status: status,
+        type: type
       };
 
       // Extract scores from star elements - fixed based on actual HTML structure
@@ -729,7 +985,9 @@ export class RoyalRoadService {
         followers: 0,
         favorites: 0,
         ratings: 0,
-        pages: 0
+        pages: 0,
+        status: '',
+        type: ''
       };
     }
   }

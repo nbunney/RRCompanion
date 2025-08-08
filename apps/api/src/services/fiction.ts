@@ -275,6 +275,16 @@ export class FictionService {
     return result.map((row: any) => this.mapDatabaseRowToFiction(row));
   }
 
+  // Get sponsored fictions
+  static async getSponsoredFictions(): Promise<Fiction[]> {
+    const result = await client.query(
+      'SELECT * FROM fiction WHERE sponsored = 1 ORDER BY created_at DESC',
+      []
+    );
+
+    return result.map((row: any) => this.mapDatabaseRowToFiction(row));
+  }
+
   // Helper method to map database row to Fiction object
   private static mapDatabaseRowToFiction(row: any): Fiction {
     return {
@@ -296,6 +306,7 @@ export class FictionService {
       favorites: row.favorites,
       views: row.views,
       score: row.score,
+      sponsored: row.sponsored,
       created_at: row.created_at,
       updated_at: row.updated_at,
     };

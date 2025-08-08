@@ -20,7 +20,6 @@ const FictionDetail: React.FC = () => {
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [canRefresh, setCanRefresh] = useState(true);
   const [remainingHours, setRemainingHours] = useState<number | null>(null);
-  const [showCurrentStats, setShowCurrentStats] = useState(false);
   const [showCurrentCharts, setShowCurrentCharts] = useState(false);
 
   // Check refresh status every minute
