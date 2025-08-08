@@ -18,11 +18,8 @@ litrpg.inventaweb.net {
 
 # RRCompanion.com - with automatic HTTPS
 RRCompanion.com {
-	# Handle API requests - this must come BEFORE any other directives
-	@api {
-		path /api/*
-	}
-	handle @api {
+	# Handle API requests - use handle directive with path matching
+	handle /api/* {
 		reverse_proxy localhost:8000
 	}
 
