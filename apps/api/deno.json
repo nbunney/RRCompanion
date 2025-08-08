@@ -1,0 +1,52 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env --allow-read --allow-write --watch src/main.ts",
+    "start": "deno run --allow-net --allow-env --allow-read --allow-write src/main.ts",
+    "test": "deno test --allow-net --allow-env --allow-read --allow-write",
+    "fmt": "deno fmt",
+    "lint": "deno lint"
+  },
+  "imports": {
+    "oak": "https://deno.land/x/oak@v14.0.0/mod.ts",
+    "mysql": "https://deno.land/x/mysql@v2.12.0/mod.ts",
+    "dotenv": "https://deno.land/x/dotenv@v3.2.2/mod.ts",
+    "cors": "https://deno.land/x/cors@v1.2.2/mod.ts",
+    "bcrypt": "https://deno.land/x/bcrypt@v0.4.1/mod.ts",
+    "jwt": "https://deno.land/x/djwt@v2.9.1/mod.ts",
+    "oauth2": "https://deno.land/x/oauth2_client@v1.0.2/mod.ts",
+    "discord": "https://deno.land/x/discord_oauth2@v1.0.0/mod.ts",
+    "cheerio": "https://esm.sh/cheerio@1.0.0-rc.12",
+    "got": "https://esm.sh/got@14.4.3",
+    "tough-cookie": "https://esm.sh/tough-cookie@5.0.0",
+    "royalroad-api": "https://esm.sh/@fsoc/royalroadl-api"
+  },
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": true
+  },
+  "fmt": {
+    "include": [
+      "src/"
+    ],
+    "useTabs": false,
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": true,
+    "proseWrap": "preserve"
+  },
+  "lint": {
+    "files": {
+      "include": [
+        "src/"
+      ]
+    },
+    "rules": {
+      "tags": [
+        "recommended"
+      ]
+    }
+  }
+}
