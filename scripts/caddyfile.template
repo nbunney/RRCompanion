@@ -18,8 +18,11 @@ litrpg.inventaweb.net {
 
 # RRCompanion.com - with automatic HTTPS
 RRCompanion.com {
-	# Proxy API requests to the Deno backend FIRST
-	handle /api/* {
+	# Handle API requests - this must come BEFORE any other directives
+	@api {
+		path /api/*
+	}
+	handle @api {
 		reverse_proxy localhost:8000
 	}
 
