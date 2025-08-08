@@ -5,6 +5,7 @@ import type { RoyalRoadFiction, UserFiction, Fiction } from '@/types';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import Footer from '@/components/Footer';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const FictionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -338,7 +339,20 @@ const FictionDetail: React.FC = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">{fiction.title}</h1>
-                    <p className="text-lg text-gray-600 mb-4">by {fiction.author.name}</p>
+                    <div className="flex items-center space-x-4">
+                      <p className="text-lg text-gray-600">by {fiction.author.name}</p>
+                      {/* Current Charts Toggle Button */}
+                      {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
+                        <Button
+                          onClick={() => setShowCurrentCharts(!showCurrentCharts)}
+                          variant="outline"
+                          size="sm"
+                          className="w-fit"
+                        >
+                          {showCurrentCharts ? '📈 Hide Current Charts' : '📈 Show Current Charts'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col space-y-2">
                     <div className="flex space-x-2">
@@ -368,39 +382,25 @@ const FictionDetail: React.FC = () => {
                       </Button>
                     </div>
 
-                    {/* Current Charts Toggle Button */}
-                    {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
-                      <Button
-                        onClick={() => setShowCurrentCharts(!showCurrentCharts)}
-                        variant="outline"
-                        size="sm"
-                        className="w-fit"
-                      >
-                        {showCurrentCharts ? '📈 Hide Current Charts' : '📈 Show Current Charts'}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Last refresh time and countdown */}
-                {lastRefreshTime && (
-                  <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                    <div className="text-sm text-gray-600">
-                      Last refreshed: {lastRefreshTime.toLocaleDateString()} at {lastRefreshTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    {!canRefresh && remainingHours !== null && (
-                      <div className="text-sm text-gray-500 mt-1">
-                        {remainingHours <= 0 ? (
-                          <span>Can refresh now!</span>
-                        ) : remainingHours < 1 ? (
-                          <span>Can refresh in {Math.ceil(remainingHours * 60)} minutes</span>
-                        ) : (
-                          <span>Can refresh in {Math.floor(remainingHours)} hours {Math.ceil((remainingHours % 1) * 60)} minutes</span>
+                    {/* Last refresh time and countdown - inline with buttons */}
+                    {lastRefreshTime && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        <span>Last refreshed: {lastRefreshTime.toLocaleDateString()} at {lastRefreshTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        {!canRefresh && remainingHours !== null && (
+                          <span className="ml-2">
+                            {remainingHours <= 0 ? (
+                              <span className="text-green-600 font-medium">• Can refresh now!</span>
+                            ) : remainingHours < 1 ? (
+                              <span>• Can refresh in {Math.ceil(remainingHours * 60)} minutes</span>
+                            ) : (
+                              <span>• Can refresh in {Math.floor(remainingHours)} hours {Math.ceil((remainingHours % 1) * 60)} minutes</span>
+                            )}
+                          </span>
                         )}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
 
                 {/* Current Charts Section */}
                 {showCurrentCharts && fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
@@ -412,28 +412,81 @@ const FictionDetail: React.FC = () => {
                       </span>
                     </h3>
 
-                    {/* Chart 1 - Full Width */}
+                    {/* Chart 1: Engagement & Growth Metrics */}
                     <div className="mb-6">
-                      <h4 className="text-md font-medium text-gray-700 mb-3">Engagement Metrics Over Time</h4>
-                      <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <div className="text-2xl mb-2">📊</div>
-                          <div>Sample Chart 1</div>
-                          <div className="text-sm">Engagement metrics visualization</div>
-                        </div>
+                      <h4 className="text-md font-medium text-gray-700 mb-3">Engagement & Growth Metrics</h4>
+                      <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4">
+                        {fictionWithHistory.history && fictionWithHistory.history.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={fictionWithHistory.history.map(entry => ({
+                              date: new Date(entry.captured_at!).toLocaleDateString(),
+                              pages: entry.pages,
+                              followers: entry.followers,
+                              totalViews: entry.total_views,
+                              averageViews: entry.average_views,
+                            }))}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="date" />
+                              <YAxis yAxisId="left" />
+                              <YAxis yAxisId="right" orientation="right" />
+                              <Tooltip />
+                              <Legend />
+                              <Line yAxisId="left" type="monotone" dataKey="pages" stroke="#8884d8" name="Pages" />
+                              <Line yAxisId="left" type="monotone" dataKey="followers" stroke="#82ca9d" name="Followers" />
+                              <Line yAxisId="right" type="monotone" dataKey="totalViews" stroke="#ffc658" name="Total Views" />
+                              <Line yAxisId="right" type="monotone" dataKey="averageViews" stroke="#ff7300" name="Average Views" />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-500">
+                            <div className="text-center">
+                              <div className="text-2xl mb-2">📈</div>
+                              <div>No data available</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Chart 2 - Full Width */}
+                    {/* Chart 2: Rating & Quality Metrics */}
                     <div>
-                      <h4 className="text-md font-medium text-gray-700 mb-3">Performance Trends (Pages, Followers, Total Views, Average Views vs Date)</h4>
-                      <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <div className="text-2xl mb-2">📈</div>
-                          <div>Sample Chart 2</div>
-                          <div className="text-sm">Performance trends visualization</div>
-                          <div className="text-xs mt-2">Will show: Pages, Followers, Total Views, Average Views vs Date</div>
-                        </div>
+                      <h4 className="text-md font-medium text-gray-700 mb-3">Rating & Quality Metrics</h4>
+                      <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4">
+                        {fictionWithHistory.history && fictionWithHistory.history.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={fictionWithHistory.history.map(entry => ({
+                              date: new Date(entry.captured_at!).toLocaleDateString(),
+                              overallScore: entry.overall_score,
+                              styleScore: entry.style_score,
+                              storyScore: entry.story_score,
+                              grammarScore: entry.grammar_score,
+                              characterScore: entry.character_score,
+                              score: entry.score,
+                              ratings: entry.ratings,
+                            }))}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="date" />
+                              <YAxis yAxisId="left" domain={[0, 5]} />
+                              <YAxis yAxisId="right" orientation="right" domain={[0, 'dataMax > 10 ? dataMax : 10']} />
+                              <Tooltip />
+                              <Legend />
+                              <Line yAxisId="left" type="monotone" dataKey="overallScore" stroke="#8884d8" name="Overall Score" />
+                              <Line yAxisId="left" type="monotone" dataKey="styleScore" stroke="#82ca9d" name="Style Score" />
+                              <Line yAxisId="left" type="monotone" dataKey="storyScore" stroke="#ffc658" name="Story Score" />
+                              <Line yAxisId="left" type="monotone" dataKey="grammarScore" stroke="#ff7300" name="Grammar Score" />
+                              <Line yAxisId="left" type="monotone" dataKey="characterScore" stroke="#ff0000" name="Character Score" />
+                              <Line yAxisId="left" type="monotone" dataKey="score" stroke="#8B4513" name="Score" />
+                              <Line yAxisId="right" type="monotone" dataKey="ratings" stroke="#000000" name="Ratings" />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-500">
+                            <div className="text-center">
+                              <div className="text-2xl mb-2">⭐</div>
+                              <div>No data available</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

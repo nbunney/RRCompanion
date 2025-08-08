@@ -151,8 +151,9 @@ export class FictionHistoryService {
               position: star.position,
               captured_at: new Date()
             };
-            risingStarEntries.push(risingStarEntry);
-            console.log(`✅ Added rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
+            // Save immediately instead of batching
+            await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
+            console.log(`✅ Saved rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
           }
 
           console.log(`✅ Fiction ${star.id} ready for history entry (ID: ${fictionId})`);
@@ -169,11 +170,7 @@ export class FictionHistoryService {
         }
       }
 
-      // Save all rising star entries
-      if (risingStarEntries.length > 0) {
-        console.log(`\n💾 Saving ${risingStarEntries.length} rising star entries...`);
-        await this.risingStarsService.saveRisingStarsData(risingStarEntries);
-      }
+      // Rising star entries are now saved immediately during processing
 
       console.log(`✅ Successfully processed ${risingStars.length} fiction history entries`);
     } catch (error) {
