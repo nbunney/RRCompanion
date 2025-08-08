@@ -18,15 +18,15 @@ litrpg.inventaweb.net {
 
 # RRCompanion.com - with automatic HTTPS
 RRCompanion.com {
-	# Serve the React frontend
-	root * /var/www/rrcompanion/apps/web/dist
-	try_files {path} /index.html
-	file_server
-
-	# Proxy API requests to the Deno backend
+	# Proxy API requests to the Deno backend FIRST
 	handle /api/* {
 		reverse_proxy localhost:8000
 	}
+
+	# Serve the React frontend for all other requests
+	root * /var/www/rrcompanion/apps/web/dist
+	try_files {path} /index.html
+	file_server
 
 	# Enable compression
 	encode gzip
