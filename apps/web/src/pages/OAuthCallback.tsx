@@ -11,7 +11,6 @@ const OAuthCallback: React.FC = () => {
 
   useEffect(() => {
     const token = searchParams.get('token');
-    const provider = searchParams.get('provider');
     const errorParam = searchParams.get('error');
 
     if (errorParam) {
@@ -22,11 +21,11 @@ const OAuthCallback: React.FC = () => {
     if (token) {
       // Store the token
       localStorage.setItem('token', token);
-      
+
       // Check authentication status
       checkAuth().then(() => {
         navigate('/dashboard');
-      }).catch((err) => {
+      }).catch(() => {
         setError('Authentication failed. Please try again.');
       });
     } else {
