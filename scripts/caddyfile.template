@@ -1,54 +1,59 @@
-# RRCompanion Caddy Configuration Template
-# Replace 'your-domain.com' with your actual domain name
+# Complete Caddyfile for all domains
+# This file should be placed at /etc/caddy/Caddyfile
 
-your-domain.com {
-    # Serve the React frontend
-    root * /var/www/rrcompanion/apps/web/dist
-    try_files {path} /index.html
-    file_server
-
-    # Proxy API requests to the Deno backend
-    handle /api/* {
-        reverse_proxy localhost:8000
-    }
-
-    # Enable compression
-    encode gzip
-
-    # Security headers
-    header {
-        # Enable HSTS
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        # Prevent clickjacking
-        X-Frame-Options "DENY"
-        # Prevent MIME type sniffing
-        X-Content-Type-Options "nosniff"
-        # XSS protection
-        X-XSS-Protection "1; mode=block"
-        # Referrer policy
-        Referrer-Policy "strict-origin-when-cross-origin"
-        # Content Security Policy
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';"
-    }
-
-    # Logging
-    log {
-        output file /var/log/caddy/rrcompanion.log
-        format json
-    }
-
-    # Error pages
-    handle_errors {
-        respond "{err.status_code} {err.status_text}" {err.status_code}
-    }
+# PastorAcc.com - with automatic HTTPS
+pastoracc.com {
+	root * /var/www/pastoracc.com
+	file_server
+	encode gzip
+	php_fastcgi unix//var/run/php/php5.6-fpm.sock
 }
 
-# Redirect www to non-www (optional)
-www.your-domain.com {
-    redir https://your-domain.com{uri} permanent
+# LitRPG Scraper - with automatic HTTPS
+litrpg.inventaweb.net {
+	root * /var/www/litRPGScraper/public
+	file_server
+	encode gzip
 }
 
-# Health check endpoint (optional)
-health.your-domain.com {
-    respond "OK" 200
+# RRCompanion.com - with automatic HTTPS
+RRCompanion.com {
+	# Serve the React frontend
+	root * /var/www/rrcompanion/apps/web/dist
+	try_files {path} /index.html
+	file_server
+
+	# Proxy API requests to the Deno backend
+	handle /api/* {
+		reverse_proxy localhost:8000
+	}
+
+	# Enable compression
+	encode gzip
+
+	# Security headers
+	header {
+		# Enable HSTS
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		# Prevent clickjacking
+		X-Frame-Options "DENY"
+		# Prevent MIME type sniffing
+		X-Content-Type-Options "nosniff"
+		# XSS protection
+		X-XSS-Protection "1; mode=block"
+		# Referrer policy
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Content Security Policy
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';"
+	}
+
+	# Error pages
+	handle_errors {
+		respond "{err.status_code} {err.status_text}" {err.status_code}
+	}
+}
+
+# Redirect www to non-www for RRCompanion
+www.RRCompanion.com {
+	redir https://RRCompanion.com{uri} permanent
 } 

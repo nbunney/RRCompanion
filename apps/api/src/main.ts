@@ -22,9 +22,18 @@ const app = new Application();
 const router = new Router();
 
 // CORS middleware
+const corsOrigin = Deno.env.get('CORS_ORIGIN') || 'https://localhost';
+const allowedOrigins = corsOrigin.split(',').map(origin => origin.trim());
+
 app.use(oakCors({
-  origin: Deno.env.get('CORS_ORIGIN') || 'http://localhost:3000',
+  origin: (origin) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return true;
+    return allowedOrigins.includes(origin);
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Logger middleware
@@ -52,7 +61,7 @@ app.use(async (ctx, next) => {
 });
 
 // Health check route
-router.get('/health', (ctx) => {
+router.get('/api/health', (ctx) => {
   ctx.response.body = {
     success: true,
     message: 'API is running',
@@ -60,7 +69,7 @@ router.get('/health', (ctx) => {
   };
 });
 
-// API routes
+// API routes - mount under /api prefix
 router.use('/api/auth', authRoutes.routes(), authRoutes.allowedMethods());
 router.use('/api/oauth', oauthRoutes.routes(), oauthRoutes.allowedMethods());
 router.use(
@@ -116,13 +125,9 @@ try {
   console.log(`🔐 API endpoints: http://${host}:${port}/api`);
   console.log(`🌙 Cron service started - nightly Rising Stars collection at 12:23am PST`);
 
-  // Ensure we're binding to the correct host
-  const listenOptions = {
-    port,
-    hostname: host === '0.0.0.0' ? '0.0.0.0' : host,
-  };
-
-  await app.listen(listenOptions);
+  // Always bind to 0.0.0.0 for production deployment
+  // This allows the server to accept connections from any IP address
+  await app.listen({ port, hostname: '0.0.0.0' });
 } catch (error) {
   console.error('❌ Failed to start server:', error);
   Deno.exit(1);
