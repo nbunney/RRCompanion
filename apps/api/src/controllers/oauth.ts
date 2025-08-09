@@ -1,4 +1,6 @@
 import { Context } from 'oak';
+import { client } from '../config/database.ts';
+import { generateToken } from '../utils/auth.ts';
 import type { ApiResponse } from '../types/index.ts';
 
 // Discord OAuth configuration - read at runtime
@@ -203,16 +205,61 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
 
       const userData = await userResponse.json();
 
-      // TODO: Create or update user in database
-      // For now, just return the user data
-      ctx.response.status = 200;
-      ctx.response.body = {
-        success: true,
-        data: {
-          user: userData,
-          accessToken: accessToken,
-        },
-      } as ApiResponse;
+      // Create or update user in database
+      try {
+        // Check if user already exists with this Discord OAuth ID
+        const existingUser = await client.query(
+          'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE oauth_id = ? AND oauth_provider = ?',
+          [userData.id, 'discord']
+        );
+
+        let user;
+        if (existingUser.length > 0) {
+          // User exists, update their information
+          user = existingUser[0];
+          await client.execute(
+            'UPDATE users SET name = ?, avatar_url = ?, updated_at = NOW() WHERE id = ?',
+            [userData.global_name || userData.username, `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`, user.id]
+          );
+        } else {
+          // Create new user
+          const insertResult = await client.execute(
+            'INSERT INTO users (email, name, oauth_provider, oauth_id, avatar_url) VALUES (?, ?, ?, ?, ?)',
+            [
+              userData.email,
+              userData.global_name || userData.username,
+              'discord',
+              userData.id,
+              `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
+            ]
+          );
+
+          const newUser = await client.query(
+            'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
+            [insertResult.lastInsertId]
+          );
+          user = newUser[0];
+        }
+
+        // Generate JWT token
+        const token = await generateToken(user);
+
+        // Redirect to frontend with token
+        const frontendUrl = new URL('https://rrcompanion.com/oauth/callback');
+        frontendUrl.searchParams.set('token', token);
+        frontendUrl.searchParams.set('provider', 'discord');
+
+        ctx.response.status = 302;
+        ctx.response.headers.set('Location', frontendUrl.toString());
+      } catch (error) {
+        console.error('Database error during OAuth login:', error);
+        ctx.response.status = 500;
+        ctx.response.body = {
+          success: false,
+          error: 'Failed to create or update user',
+        } as ApiResponse;
+        return;
+      }
     } else {
       ctx.response.status = 400;
       ctx.response.body = {
