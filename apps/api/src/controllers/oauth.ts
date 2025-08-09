@@ -71,8 +71,12 @@ export async function initiateOAuth(ctx: Context): Promise<void> {
   try {
     const provider = (ctx as any).params?.provider;
 
+    console.log(`🔧 initiateOAuth called for provider: ${provider}`);
+    console.log(`🔧 DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID ? 'SET' : 'NOT SET'}`);
+
     if (provider === 'discord') {
       if (!DISCORD_CLIENT_ID) {
+        console.log('❌ Discord OAuth not configured - DISCORD_CLIENT_ID is missing');
         ctx.response.status = 400;
         ctx.response.body = {
           success: false,
@@ -87,6 +91,8 @@ export async function initiateOAuth(ctx: Context): Promise<void> {
       discordAuthUrl.searchParams.set('redirect_uri', DISCORD_REDIRECT_URI);
       discordAuthUrl.searchParams.set('response_type', 'code');
       discordAuthUrl.searchParams.set('scope', 'identify email');
+
+      console.log(`🔧 Generated Discord OAuth URL: ${discordAuthUrl.toString()}`);
 
       ctx.response.status = 200;
       ctx.response.body = {
