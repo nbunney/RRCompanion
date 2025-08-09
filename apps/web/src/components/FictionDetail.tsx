@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { createFictionUrl } from '@/utils';
 import { royalroadAPI, userFictionAPI, fictionAPI } from '@/services/api';
 import type { RoyalRoadFiction, UserFiction, Fiction } from '@/types';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import Footer from '@/components/Footer';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const FictionDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, slug } = useParams<{ id: string; slug?: string }>();
   const navigate = useNavigate();
   const [fiction, setFiction] = useState<RoyalRoadFiction | null>(null);
   const [fictionWithHistory, setFictionWithHistory] = useState<Fiction | null>(null);
@@ -21,6 +23,7 @@ const FictionDetail: React.FC = () => {
   const [canRefresh, setCanRefresh] = useState(true);
   const [remainingHours, setRemainingHours] = useState<number | null>(null);
   const [showCurrentCharts, setShowCurrentCharts] = useState(false);
+  const [showUnfavoriteConfirm, setShowUnfavoriteConfirm] = useState(false);
 
   // Check refresh status every minute
   const checkRefreshStatus = useCallback(() => {
@@ -110,11 +113,25 @@ const FictionDetail: React.FC = () => {
           chapters: [],
         };
         setFiction(fiction);
+
+        // Redirect to the proper URL with slug if not already there
+        const expectedSlug = createFictionUrl(fiction.title, fiction.id).split('/').pop();
+        if (slug !== expectedSlug) {
+          const properUrl = createFictionUrl(fiction.title, fiction.id);
+          navigate(properUrl, { replace: true });
+        }
       } else {
         // If not in our database, try to load from Royal Road API
         const royalroadResponse = await royalroadAPI.getFiction(id!);
         if (royalroadResponse.success && royalroadResponse.data) {
           setFiction(royalroadResponse.data);
+
+          // Redirect to the proper URL with slug if not already there
+          const expectedSlug = createFictionUrl(royalroadResponse.data.title, royalroadResponse.data.id).split('/').pop();
+          if (slug !== expectedSlug) {
+            const properUrl = createFictionUrl(royalroadResponse.data.title, royalroadResponse.data.id);
+            navigate(properUrl, { replace: true });
+          }
         } else {
           setError(royalroadResponse.message || 'Failed to load fiction');
         }
@@ -207,6 +224,19 @@ const FictionDetail: React.FC = () => {
   const handleToggleFavorite = async () => {
     if (!userFiction) return;
 
+    // If currently favorited, show confirmation dialog
+    if (userFiction.is_favorite) {
+      setShowUnfavoriteConfirm(true);
+      return;
+    }
+
+    // If not favorited, add to favorites directly
+    await performToggleFavorite();
+  };
+
+  const performToggleFavorite = async () => {
+    if (!userFiction) return;
+
     try {
       setIsAddingToFavorites(true);
       const response = await userFictionAPI.toggleFavorite(userFiction.fiction_id);
@@ -217,6 +247,7 @@ const FictionDetail: React.FC = () => {
       setError(err.message || 'Failed to toggle favorite');
     } finally {
       setIsAddingToFavorites(false);
+      setShowUnfavoriteConfirm(false);
     }
   };
 
@@ -335,13 +366,13 @@ const FictionDetail: React.FC = () => {
 
               {/* Fiction Details */}
               <div className="flex-1">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-4">
+                  <div className="flex-1">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">{fiction.title}</h1>
-                    <div className="flex items-center space-x-4">
-                      <p className="text-lg text-gray-600">by {fiction.author.name}</p>
-                      {/* Current Charts Toggle Button */}
-                      {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
+                    <p className="text-lg text-gray-600 mb-3">by {fiction.author.name}</p>
+                    {/* Current Charts Toggle Button - positioned under author name on mobile, to the right on desktop */}
+                    {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
+                      <div className="lg:hidden mb-4">
                         <Button
                           onClick={() => setShowCurrentCharts(!showCurrentCharts)}
                           variant="outline"
@@ -350,10 +381,23 @@ const FictionDetail: React.FC = () => {
                         >
                           {showCurrentCharts ? '📈 Hide Current Charts' : '📈 Show Current Charts'}
                         </Button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col space-y-2">
+                    {/* Current Charts Toggle Button - desktop version */}
+                    {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
+                      <div className="hidden lg:block mb-2">
+                        <Button
+                          onClick={() => setShowCurrentCharts(!showCurrentCharts)}
+                          variant="outline"
+                          size="sm"
+                          className="w-fit"
+                        >
+                          {showCurrentCharts ? '📈 Hide Current Charts' : '📈 Show Current Charts'}
+                        </Button>
+                      </div>
+                    )}
                     <div className="flex space-x-2">
                       {userFiction ? (
                         <Button
@@ -379,6 +423,21 @@ const FictionDetail: React.FC = () => {
                       >
                         {isRefreshing ? 'Refreshing...' : '🔄 Refresh'}
                       </Button>
+                    </div>
+
+                    {/* Sponsored Indicator */}
+                    <div className="flex items-center space-x-2 mt-2">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${fictionWithHistory?.sponsored ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                          }`}>
+                          {fictionWithHistory?.sponsored && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="text-sm text-gray-600">Sponsored</span>
+                      </div>
                     </div>
 
                     {/* Last refresh time and countdown - inline with buttons */}
@@ -680,6 +739,19 @@ const FictionDetail: React.FC = () => {
           </Card>
         </div>
       </main>
+
+      {/* Unfavorite Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showUnfavoriteConfirm}
+        title="Remove from Favorites?"
+        message={`Are you sure you want to remove "${fiction?.title}" from your favorites? This action cannot be undone.`}
+        confirmText="Remove"
+        onConfirm={performToggleFavorite}
+        onCancel={() => setShowUnfavoriteConfirm(false)}
+        isLoading={isAddingToFavorites}
+        loadingText="Removing..."
+        variant="danger"
+      />
 
       <Footer />
     </div>

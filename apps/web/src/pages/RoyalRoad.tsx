@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createFictionUrl } from '@/utils';
 import { royalroadAPI } from '@/services/api';
 import type { RoyalRoadFiction } from '@/types';
 import Card from '@/components/Card';
 import Footer from '@/components/Footer';
 
 const RoyalRoad: React.FC = () => {
+  const navigate = useNavigate();
   const [popularFictions, setPopularFictions] = useState<RoyalRoadFiction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,7 +33,10 @@ const RoyalRoad: React.FC = () => {
   };
 
   const FictionCard: React.FC<{ fiction: RoyalRoadFiction }> = ({ fiction }) => (
-    <Card className="p-6 hover:shadow-lg transition-shadow">
+    <Card
+      className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={() => navigate(createFictionUrl(fiction.title, fiction.id))}
+    >
       <div className="flex space-x-4">
         {fiction.image && (
           <img

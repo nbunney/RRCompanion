@@ -30,7 +30,7 @@ const Terms: React.FC = () => {
         <Card className="p-8">
           <div className="prose prose-lg max-w-none">
             <h1 className="text-3xl font-bold text-gray-900 mb-8">Terms of Service</h1>
-            
+
             <p className="text-gray-600 mb-6">
               <strong>Last updated:</strong> {new Date().toLocaleDateString()}
             </p>
@@ -52,7 +52,7 @@ const Terms: React.FC = () => {
               </p>
               <ul className="list-disc pl-6 text-gray-700 mb-4">
                 <li>Add and manage RoyalRoad fiction favorites</li>
-                <li>Track reading progress and preferences</li>
+
                 <li>Access fiction statistics and information</li>
                 <li>Create and manage personal reading lists</li>
                 <li>View fiction details and descriptions</li>

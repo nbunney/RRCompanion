@@ -57,7 +57,7 @@ const App: React.FC = () => {
         }
       />
       <Route
-        path="/fiction/:id"
+        path="/fiction/:id/:slug?"
         element={
           <ProtectedRoute>
             <FictionDetail />

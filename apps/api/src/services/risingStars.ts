@@ -141,6 +141,33 @@ export class RisingStarsService {
     }
   }
 
+  // Get rising stars data for a specific fiction
+  async getRisingStarsDataForFiction(fictionId: number): Promise<RisingStarEntry[]> {
+    const client = await this.getConnection();
+    try {
+      const query = `
+        SELECT rs.*
+        FROM risingStars rs
+        WHERE rs.fiction_id = ?
+        ORDER BY rs.captured_at DESC
+      `;
+
+      const result = await client.query(query, [fictionId]);
+      return result.map((row: any) => ({
+        id: row.id,
+        fiction_id: row.fiction_id,
+        genre: row.genre,
+        position: row.position,
+        captured_at: row.captured_at,
+      }));
+    } catch (error) {
+      console.error('❌ Error getting rising stars data for fiction:', error);
+      throw error;
+    } finally {
+      await this.closeConnection();
+    }
+  }
+
   // Get fiction ID by Royal Road ID
   private async getFictionIdByRoyalRoadId(royalroadId: string): Promise<number | null> {
     const client = await this.getConnection();

@@ -14,6 +14,6 @@ router.get('/providers', getOAuthProviders);
 router.get('/:provider/initiate', initiateOAuth);
 
 // Handle OAuth callback
-router.post('/:provider/callback', handleOAuthCallback);
+router.get('/:provider/callback', handleOAuthCallback);
 
 export default router;

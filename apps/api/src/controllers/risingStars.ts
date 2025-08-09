@@ -57,4 +57,34 @@ export async function getLatestRisingStars(ctx: Context) {
       message: 'Failed to get latest rising stars data',
     };
   }
+}
+
+// Get rising stars data for a specific fiction
+export async function getRisingStarsForFiction(ctx: Context) {
+  try {
+    const fictionId = parseInt((ctx as any).params?.fictionId);
+    if (!fictionId) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: 'Fiction ID is required',
+      };
+      return;
+    }
+
+    const data = await risingStarsService.getRisingStarsDataForFiction(fictionId);
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: data,
+    };
+  } catch (error) {
+    console.error('❌ Error getting rising stars for fiction:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      message: 'Failed to get rising stars data for fiction',
+    };
+  }
 } 

@@ -56,6 +56,7 @@ export interface Fiction {
   favorites: number;
   views: number;
   score: number;
+  sponsored: number;
   created_at: string;
   updated_at: string;
   history?: FictionHistoryEntry[];
@@ -208,6 +209,7 @@ export interface InputProps {
 export interface CardProps {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }
 
 // Navigation

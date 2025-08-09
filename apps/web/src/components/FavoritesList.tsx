@@ -1,19 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { userFictionAPI } from '@/services/api';
+import { createFictionUrl } from '@/utils';
+import { analyzeRisingStarsData, getTrendIcon, getTrendColor } from '@/utils/risingStars';
+import { userFictionAPI, risingStarsAPI } from '@/services/api';
 import type { UserFiction } from '@/types';
+import type { RisingStarEntry } from '@/utils/risingStars';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 
 const FavoritesList: React.FC = () => {
   const [favorites, setFavorites] = useState<UserFiction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [fictionToRemove, setFictionToRemove] = useState<UserFiction | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [risingStarsData, setRisingStarsData] = useState<RisingStarEntry[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadFavorites();
   }, []);
+
+  useEffect(() => {
+    if (favorites.length > 0) {
+      loadRisingStarsData();
+    }
+  }, [favorites]);
 
   const loadFavorites = async () => {
     try {
@@ -31,21 +45,61 @@ const FavoritesList: React.FC = () => {
     }
   };
 
-  const handleFictionClick = (fiction: UserFiction) => {
-    if (fiction.fiction?.royalroad_id) {
-      navigate(`/fiction/${fiction.fiction.royalroad_id}`);
+  const loadRisingStarsData = async () => {
+    try {
+      // Get all unique fiction IDs from favorites
+      const fictionIds = favorites
+        .map(fav => fav.fiction?.id)
+        .filter(id => id !== undefined) as number[];
+
+      // Fetch Rising Stars data for each fiction
+      const allRisingStarsData: RisingStarEntry[] = [];
+
+      for (const fictionId of fictionIds) {
+        try {
+          const response = await risingStarsAPI.getRisingStarsForFiction(fictionId);
+          if (response.success && response.data) {
+            allRisingStarsData.push(...response.data);
+          }
+        } catch (err) {
+          // Silently fail for individual fictions
+          console.warn(`Failed to load Rising Stars data for fiction ${fictionId}:`, err);
+        }
+      }
+
+      setRisingStarsData(allRisingStarsData);
+    } catch (err: any) {
+      console.error('Failed to load Rising Stars data:', err);
     }
   };
 
-  const handleRemoveFavorite = async (fictionId: number) => {
+  const handleFictionClick = (fiction: UserFiction) => {
+    if (fiction.fiction?.royalroad_id && fiction.fiction.title) {
+      navigate(createFictionUrl(fiction.fiction.title, fiction.fiction.royalroad_id));
+    }
+  };
+
+  const handleRemoveFavorite = (userFiction: UserFiction) => {
+    setFictionToRemove(userFiction);
+    setShowRemoveConfirm(true);
+  };
+
+  const performRemoveFavorite = async () => {
+    if (!fictionToRemove) return;
+
     try {
-      const response = await userFictionAPI.toggleFavorite(fictionId);
+      setIsRemoving(true);
+      const response = await userFictionAPI.toggleFavorite(fictionToRemove.fiction_id);
       if (response.success) {
         // Remove from local state
-        setFavorites(prev => prev.filter(fav => fav.fiction_id !== fictionId));
+        setFavorites(prev => prev.filter(fav => fav.fiction_id !== fictionToRemove.fiction_id));
       }
     } catch (err: any) {
       setError(err.message || 'Failed to remove from favorites');
+    } finally {
+      setIsRemoving(false);
+      setShowRemoveConfirm(false);
+      setFictionToRemove(null);
     }
   };
 
@@ -122,16 +176,26 @@ const FavoritesList: React.FC = () => {
                         {userFiction.fiction?.description || 'No description available'}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        handleRemoveFavorite(userFiction.fiction_id);
-                      }}
-                      className="ml-2"
-                    >
-                      ❌
-                    </Button>
+                    <div className="flex items-center space-x-2 ml-2">
+                      {/* Sponsored Indicator */}
+                      <div className={`w-6 h-6 border-2 border-gray-300 rounded flex items-center justify-center ${userFiction.fiction?.sponsored ? 'border-green-500 bg-green-500' : 'bg-white'
+                        }`}>
+                        {userFiction.fiction?.sponsored && (
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleRemoveFavorite(userFiction);
+                        }}
+                      >
+                        ❌
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="flex items-center space-x-4 text-xs text-gray-500">
@@ -143,6 +207,44 @@ const FavoritesList: React.FC = () => {
                       </>
                     )}
                   </div>
+
+
+
+                  {/* Rising Stars Indicator */}
+                  {userFiction.fiction?.id && (() => {
+                    const risingStarsInfo = analyzeRisingStarsData(userFiction.fiction.id, risingStarsData);
+                    if (risingStarsInfo.genreTrends.length > 0) {
+                      return (
+                        <div className="mt-2">
+                          <div className="text-xs text-gray-500 mb-1">Rising Stars:</div>
+                          <div className="flex flex-wrap gap-1">
+                            {risingStarsInfo.genreTrends.map((genreTrend) => (
+                              <span
+                                key={genreTrend.genre}
+                                className={`px-2 py-1 text-xs rounded border ${genreTrend.genre === 'main'
+                                    ? 'bg-purple-100 text-purple-800 border-purple-200'
+                                    : 'bg-gray-100 text-gray-800 border-gray-200'
+                                  }`}
+                              >
+                                <span className="font-medium">
+                                  {genreTrend.genre === 'main' ? 'MAIN' : genreTrend.genre.toUpperCase()}
+                                </span>
+                                <span className={`ml-1 ${getTrendColor(genreTrend.trend)}`}>
+                                  {getTrendIcon(genreTrend.trend)}
+                                </span>
+                                {genreTrend.position && (
+                                  <span className="ml-1 text-gray-600">
+                                    #{genreTrend.position}
+                                  </span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   {userFiction.fiction?.tags && userFiction.fiction.tags.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
@@ -162,6 +264,22 @@ const FavoritesList: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Remove from Favorites Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showRemoveConfirm}
+        title="Remove from Favorites?"
+        message={`Are you sure you want to remove "${fictionToRemove?.fiction?.title}" from your favorites? This action cannot be undone.`}
+        confirmText="Remove"
+        onConfirm={performRemoveFavorite}
+        onCancel={() => {
+          setShowRemoveConfirm(false);
+          setFictionToRemove(null);
+        }}
+        isLoading={isRemoving}
+        loadingText="Removing..."
+        variant="danger"
+      />
     </div>
   );
 };

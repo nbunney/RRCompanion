@@ -119,7 +119,7 @@ const Dashboard: React.FC = () => {
                 Welcome to RRCompanion
               </h2>
               <p className="text-gray-600 mb-4">
-                This is your dashboard. You can add fictions from RoyalRoad by URL, manage your favorites, and track your reading progress.
+                This is your dashboard. You can add fictions from RoyalRoad by URL and manage your favorites.
               </p>
               <div className="space-y-2">
                 <p className="text-sm text-gray-500">
@@ -131,9 +131,7 @@ const Dashboard: React.FC = () => {
                 <p className="text-sm text-gray-500">
                   • Add fictions to your favorites for easy access
                 </p>
-                <p className="text-sm text-gray-500">
-                  • Track your reading progress and manage your library
-                </p>
+
               </div>
             </Card>
           </div>

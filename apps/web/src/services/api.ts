@@ -185,6 +185,28 @@ export const royalroadAPI = {
   },
 };
 
+// Rising Stars API
+export const risingStarsAPI = {
+  getRisingStars: async (genre?: string, startDate?: string, endDate?: string): Promise<ApiResponse<any[]>> => {
+    const params = new URLSearchParams();
+    if (genre) params.append('genre', genre);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await api.get(`/rising-stars?${params.toString()}`);
+    return response.data;
+  },
+
+  getLatestRisingStars: async (): Promise<ApiResponse<any[]>> => {
+    const response = await api.get('/rising-stars/latest');
+    return response.data;
+  },
+
+  getRisingStarsForFiction: async (fictionId: number): Promise<ApiResponse<any[]>> => {
+    const response = await api.get(`/rising-stars/fiction/${fictionId}`);
+    return response.data;
+  },
+};
+
 // Health check
 export const healthAPI = {
   check: async (): Promise<ApiResponse> => {
