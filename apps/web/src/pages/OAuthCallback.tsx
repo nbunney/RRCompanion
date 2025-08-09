@@ -20,7 +20,7 @@ const OAuthCallback: React.FC = () => {
 
     if (token) {
       console.log('🔐 OAuth Callback - Token received:', token.substring(0, 20) + '...');
-      
+
       // Store the token
       localStorage.setItem('token', token);
       console.log('🔐 OAuth Callback - Token stored in localStorage');
