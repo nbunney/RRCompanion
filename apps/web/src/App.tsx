@@ -9,6 +9,7 @@ import OAuthError from '@/pages/OAuthError';
 import RoyalRoad from '@/pages/RoyalRoad';
 import Privacy from '@/pages/Privacy';
 import Terms from '@/pages/Terms';
+import Sponsor from '@/pages/Sponsor';
 import FictionDetail from '@/components/FictionDetail';
 
 // Protected Route component
@@ -40,6 +41,11 @@ const App: React.FC = () => {
     checkAuth();
   }, [checkAuth]);
 
+  // Debug current location
+  useEffect(() => {
+    console.log('🔗 Current location:', window.location.pathname);
+  }, []);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -49,10 +55,10 @@ const App: React.FC = () => {
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
       <Route
-        path="/dashboard"
+        path="/sponsor/:id"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <Sponsor />
           </ProtectedRoute>
         }
       />
@@ -61,6 +67,14 @@ const App: React.FC = () => {
         element={
           <ProtectedRoute>
             <FictionDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
           </ProtectedRoute>
         }
       />

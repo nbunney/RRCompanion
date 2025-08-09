@@ -429,17 +429,31 @@ const FictionDetail: React.FC = () => {
                     <div className="flex items-center space-x-2 mt-2">
                       <div className="flex items-center space-x-2">
                         {fictionWithHistory?.sponsored ? (
-                          <div className="w-4 h-4 border-2 border-green-500 bg-green-500 rounded flex items-center justify-center">
+                          <div
+                            className="w-4 h-4 border-2 border-green-500 bg-green-500 rounded flex items-center justify-center cursor-help"
+                            title="This fiction has been sponsored."
+                          >
                             <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           </div>
                         ) : (
-                          <button className="w-4 h-4 bg-red-500 hover:bg-red-600 rounded text-white text-xs font-medium transition-colors">
+                          <button
+                            className="w-4 h-4 bg-red-500 hover:bg-red-600 rounded text-white text-xs font-medium transition-colors cursor-pointer"
+                            title="If you would like to sponsor this fiction please click here to find out more."
+                            onClick={() => {
+                              console.log('🔗 Navigating to sponsor page for fiction:', fictionWithHistory?.royalroad_id);
+                              console.log('🔗 Current URL before navigation:', window.location.pathname);
+                              navigate(`/sponsor/${fictionWithHistory?.royalroad_id}`);
+                              console.log('🔗 Navigation called, new URL should be:', `/sponsor/${fictionWithHistory?.royalroad_id}`);
+                            }}
+                          >
                             S
                           </button>
                         )}
-                        <span className="text-sm text-gray-600">Sponsored</span>
+                        <span className="text-sm text-gray-600">
+                          {fictionWithHistory?.sponsored ? 'Sponsored' : 'Not Sponsored'}
+                        </span>
                       </div>
                     </div>
 

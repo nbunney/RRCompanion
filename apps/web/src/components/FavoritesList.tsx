@@ -179,13 +179,28 @@ const FavoritesList: React.FC = () => {
                     <div className="flex items-center space-x-2 ml-2">
                       {/* Sponsored Indicator */}
                       {userFiction.fiction?.sponsored ? (
-                        <div className="w-6 h-6 border-2 border-green-500 bg-green-500 rounded flex items-center justify-center">
+                        <div
+                          className="w-6 h-6 border-2 border-green-500 bg-green-500 rounded flex items-center justify-center cursor-help"
+                          title="This fiction has been sponsored."
+                        >
                           <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         </div>
                       ) : (
-                        <button className="w-6 h-6 bg-red-500 hover:bg-red-600 rounded text-white text-xs font-medium transition-colors">
+                        <button
+                          className="w-6 h-6 bg-red-500 hover:bg-red-600 rounded text-white text-xs font-medium transition-colors cursor-pointer"
+                          title="If you would like to sponsor this fiction please click here to find out more."
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('🔗 Navigating to sponsor page for fiction:', userFiction.fiction?.royalroad_id);
+                            console.log('🔗 Current URL before navigation:', window.location.pathname);
+                            const newUrl = `/sponsor/${userFiction.fiction?.royalroad_id}`;
+                            console.log('🔗 Navigation called, new URL should be:', newUrl);
+                            // Try direct navigation as fallback
+                            window.location.href = newUrl;
+                          }}
+                        >
                           S
                         </button>
                       )}
@@ -225,8 +240,8 @@ const FavoritesList: React.FC = () => {
                               <span
                                 key={genreTrend.genre}
                                 className={`px-2 py-1 text-xs rounded border ${genreTrend.genre === 'main'
-                                    ? 'bg-purple-100 text-purple-800 border-purple-200'
-                                    : 'bg-gray-100 text-gray-800 border-gray-200'
+                                  ? 'bg-purple-100 text-purple-800 border-purple-200'
+                                  : 'bg-gray-100 text-gray-800 border-gray-200'
                                   }`}
                               >
                                 <span className="font-medium">
