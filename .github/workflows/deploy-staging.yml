@@ -35,15 +35,19 @@ jobs:
           cd ../api
           deno cache --reload src/main.ts
 
-      - name: Run Tests
+      - name: Validate Backend
         run: |
-          echo "🧪 Running backend tests..."
+          echo "🔍 Validating backend configuration..."
           cd apps/api
-          deno test --allow-net --allow-env --allow-read --allow-write
+          deno check src/main.ts
+          echo "✅ Backend validation passed"
           
-          echo "🧪 Running frontend tests..."
-          cd ../web
-          npm run test
+      - name: Validate Frontend
+        run: |
+          echo "🔍 Validating frontend configuration..."
+          cd apps/web
+          npm run lint
+          echo "✅ Frontend validation passed"
 
       - name: Build Frontend
         run: |

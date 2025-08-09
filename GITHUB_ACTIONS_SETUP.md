@@ -95,9 +95,22 @@ echo "your-public-key-content" >> ~/.ssh/authorized_keys
 
 1. Push code to `main` branch
 2. GitHub Actions automatically triggers
-3. Backend deploys first (pulls code, restarts service)
-4. Frontend deploys second (builds and copies to web root)
-5. Health checks verify both services are running
+3. **Validation Phase**: Backend and frontend are validated locally
+4. **Backend Deployment**: Service is stopped, code is pulled, Deno cache is
+   updated, service is restarted
+5. **Frontend Deployment**: Dependencies are installed, frontend is built, files
+   are copied to web root
+6. **Health Checks**: Multiple retry attempts verify both services are running
+7. **Caddy Reload**: Web server is reloaded to serve the new frontend
+
+### **Error Handling**
+
+- **Retry Logic**: Health checks retry up to 5 times for backend, 3 times for
+  frontend
+- **Graceful Failures**: Service stop/start operations handle cases where
+  services aren't running
+- **Validation**: Both backend (Deno check) and frontend (npm lint) are
+  validated before deployment
 
 ### **Manual Deployment**
 
@@ -159,6 +172,26 @@ sudo chmod -R 755 /var/www/html/
 ```
 
 ## 🧪 **Testing the Setup**
+
+### **Local Testing**
+
+Before pushing to GitHub, test your setup locally:
+
+```bash
+# From the RRCompanion root directory
+./scripts/test-github-actions-locally.sh
+```
+
+This script will:
+
+- ✅ Validate backend configuration (Deno check)
+- ✅ Validate frontend configuration (npm lint)
+- ✅ Test frontend build process
+- ✅ Verify GitHub Actions workflow files
+- ✅ Check workflow syntax
+- ✅ Provide setup checklist
+
+### **GitHub Actions Testing**
 
 1. **Make a small change** to your code
 2. **Push to main branch**

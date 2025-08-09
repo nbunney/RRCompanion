@@ -26,10 +26,24 @@ jobs:
         with:
           deno-version: '2.4.3'
 
+      - name: Validate Backend
+        run: |
+          echo "🔍 Validating backend configuration..."
+          cd apps/api
+          deno check src/main.ts
+          echo "✅ Backend validation passed"
+
       - name: Install Frontend Dependencies
         run: |
           cd apps/web
           npm ci
+
+      - name: Validate Frontend
+        run: |
+          echo "🔍 Validating frontend configuration..."
+          cd apps/web
+          npm run lint
+          echo "✅ Frontend validation passed"
 
       - name: Build Frontend
         run: |
@@ -46,6 +60,8 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           script: |
+            set -e  # Exit on any error
+            
             echo "🚀 Starting RRCompanion deployment..."
             
             # Check if we're in the right directory
@@ -56,7 +72,7 @@ jobs:
             
             # Stop the API service
             echo "🛑 Stopping API service..."
-            sudo systemctl stop rrcompanion-api
+            sudo systemctl stop rrcompanion-api || echo "⚠️ Service was not running"
             
             # Pull latest changes
             echo "📥 Pulling latest changes..."
@@ -87,7 +103,7 @@ jobs:
             sudo systemctl start rrcompanion-api
             
             # Wait a moment for the service to start
-            sleep 5
+            sleep 10
             
             # Check if the service is running
             if sudo systemctl is-active --quiet rrcompanion-api; then
@@ -131,22 +147,45 @@ jobs:
     
     steps:
       - name: Wait for services to start
-        run: sleep 30
+        run: sleep 45
 
       - name: Check Backend Health
         run: |
           echo "🔍 Checking backend health..."
-          curl -f ${{ secrets.BACKEND_URL }}/api/health || exit 1
-          echo "✅ Backend is healthy!"
+          for i in {1..5}; do
+            if curl -f ${{ secrets.BACKEND_URL }}/api/health; then
+              echo "✅ Backend is healthy!"
+              break
+            else
+              echo "⏳ Backend not ready yet, attempt $i/5..."
+              if [ $i -eq 5 ]; then
+                echo "❌ Backend health check failed after 5 attempts"
+                exit 1
+              fi
+              sleep 10
+            fi
+          done
 
       - name: Check Frontend
         run: |
           echo "🔍 Checking frontend..."
-          curl -f ${{ secrets.FRONTEND_URL }} || exit 1
-          echo "✅ Frontend is accessible!"
+          for i in {1..3}; do
+            if curl -f ${{ secrets.FRONTEND_URL }}; then
+              echo "✅ Frontend is accessible!"
+              break
+            else
+              echo "⏳ Frontend not ready yet, attempt $i/3..."
+              if [ $i -eq 3 ]; then
+                echo "❌ Frontend check failed after 3 attempts"
+                exit 1
+              fi
+              sleep 5
+            fi
+          done
 
       - name: Deployment Summary
         run: |
           echo "🎉 Deployment completed successfully!"
           echo "Backend: ${{ secrets.BACKEND_URL }}"
-          echo "Frontend: ${{ secrets.FRONTEND_URL }}" 
+          echo "Frontend: ${{ secrets.FRONTEND_URL }}"
+          echo "Health Check: ${{ secrets.BACKEND_URL }}/api/health" 
