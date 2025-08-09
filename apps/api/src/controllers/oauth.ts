@@ -13,11 +13,11 @@ function getDiscordConfig() {
 // OAuth providers configuration
 export async function getOAuthProviders(ctx: Context): Promise<void> {
   try {
-        // Debug: Check environment variables at runtime
+    // Debug: Check environment variables at runtime
     const discordConfig = getDiscordConfig();
     console.log(`🔧 getOAuthProviders - DISCORD_CLIENT_ID: ${discordConfig.clientId ? 'SET' : 'NOT SET'}`);
     console.log(`🔧 getOAuthProviders - Discord enabled: ${!!discordConfig.clientId}`);
-    
+
     const providers = [
       {
         name: 'discord',
