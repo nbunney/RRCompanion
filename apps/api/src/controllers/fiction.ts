@@ -349,7 +349,8 @@ export async function refreshFiction(ctx: Context): Promise<void> {
     }
 
     // Check if we can refresh based on the last fictionHistory entry
-    const lastHistoryEntry = await FictionHistoryService.getLastFictionHistoryEntry(existingFiction.id);
+    const fictionHistoryService = new FictionHistoryService();
+    const lastHistoryEntry = await fictionHistoryService.getLastFictionHistoryEntry(existingFiction.id);
     if (lastHistoryEntry) {
       const now = new Date();
       const lastRefresh = new Date(lastHistoryEntry.captured_at!);
@@ -415,7 +416,6 @@ export async function refreshFiction(ctx: Context): Promise<void> {
     }
 
     // Create a new fictionHistory entry
-    const fictionHistoryService = new FictionHistoryService();
     await fictionHistoryService.saveFictionToHistory(
       existingFiction.id,
       royalroadId,
