@@ -178,14 +178,17 @@ const FavoritesList: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2 ml-2">
                       {/* Sponsored Indicator */}
-                      <div className={`w-6 h-6 border-2 border-gray-300 rounded flex items-center justify-center ${userFiction.fiction?.sponsored ? 'border-green-500 bg-green-500' : 'bg-white'
-                        }`}>
-                        {userFiction.fiction?.sponsored && (
+                      {userFiction.fiction?.sponsored ? (
+                        <div className="w-6 h-6 border-2 border-green-500 bg-green-500 rounded flex items-center justify-center">
                           <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <button className="w-6 h-6 bg-red-500 hover:bg-red-600 rounded text-white text-xs font-medium transition-colors">
+                          S
+                        </button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
