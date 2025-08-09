@@ -1,0 +1,152 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy RRCompanion
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: '2.4.3'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd apps/web
+          npm ci
+
+      - name: Build Frontend
+        run: |
+          cd apps/web
+          npm run build
+        env:
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          script: |
+            echo "🚀 Starting RRCompanion deployment..."
+            
+            # Check if we're in the right directory
+            if [ ! -f "/var/www/rrcompanion/apps/api/src/main.ts" ]; then
+                echo "❌ Error: Please run from /var/www/rrcompanion directory"
+                exit 1
+            fi
+            
+            # Stop the API service
+            echo "🛑 Stopping API service..."
+            sudo systemctl stop rrcompanion-api
+            
+            # Pull latest changes
+            echo "📥 Pulling latest changes..."
+            cd /var/www/rrcompanion
+            git pull origin main
+            
+            # Install frontend dependencies and build
+            echo "🔨 Building frontend..."
+            cd apps/web
+            npm ci
+            npm run build
+            
+            # Check if build was successful
+            if [ ! -d "dist" ]; then
+                echo "❌ Frontend build failed"
+                exit 1
+            fi
+            
+            echo "✅ Frontend built successfully"
+            
+            # Install/update Deno dependencies
+            echo "🔧 Updating Deno dependencies..."
+            cd ../api
+            deno cache --reload src/main.ts
+            
+            # Start the API service
+            echo "🚀 Starting API service..."
+            sudo systemctl start rrcompanion-api
+            
+            # Wait a moment for the service to start
+            sleep 5
+            
+            # Check if the service is running
+            if sudo systemctl is-active --quiet rrcompanion-api; then
+                echo "✅ API service started successfully"
+            else
+                echo "❌ API service failed to start"
+                sudo systemctl status rrcompanion-api
+                exit 1
+            fi
+            
+            # Copy built files to web root
+            echo "📁 Copying frontend files..."
+            cd ../web
+            sudo cp -r dist/* /var/www/html/
+            sudo chown -R www-data:www-data /var/www/html/
+            sudo chmod -R 755 /var/www/html/
+            
+            # Reload Caddy
+            echo "🔄 Reloading Caddy..."
+            sudo systemctl reload caddy
+            
+            # Check if Caddy is running
+            if sudo systemctl is-active --quiet caddy; then
+                echo "✅ Caddy reloaded successfully"
+            else
+                echo "❌ Caddy failed to reload"
+                sudo systemctl status caddy
+                exit 1
+            fi
+            
+            echo "🎉 Deployment completed successfully!"
+            
+            # Show service status
+            echo "📊 Service Status:"
+            sudo systemctl status rrcompanion-api --no-pager
+
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: deploy
+    
+    steps:
+      - name: Wait for services to start
+        run: sleep 30
+
+      - name: Check Backend Health
+        run: |
+          echo "🔍 Checking backend health..."
+          curl -f ${{ secrets.BACKEND_URL }}/api/health || exit 1
+          echo "✅ Backend is healthy!"
+
+      - name: Check Frontend
+        run: |
+          echo "🔍 Checking frontend..."
+          curl -f ${{ secrets.FRONTEND_URL }} || exit 1
+          echo "✅ Frontend is accessible!"
+
+      - name: Deployment Summary
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "Backend: ${{ secrets.BACKEND_URL }}"
+          echo "Frontend: ${{ secrets.FRONTEND_URL }}" 

@@ -30,7 +30,7 @@ You need to add these secrets in your GitHub repository:
 ### **Server Connection Secrets**
 
 ```
-SERVER_HOST=your-server-ip-or-domain
+SERVER_HOST=35.83.131.166
 SERVER_USERNAME=ubuntu
 SERVER_SSH_KEY=your-private-ssh-key-content
 SERVER_SSH_PORT=22

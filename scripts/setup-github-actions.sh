@@ -39,7 +39,7 @@ echo "   Go to: Settings → Secrets and variables → Actions"
 echo "   Click 'New repository secret' and add:"
 echo ""
 
-echo "   SERVER_HOST=your-server-ip-or-domain"
+echo "   SERVER_HOST=35.83.131.166"
 echo "   SERVER_USERNAME=ubuntu"
 echo "   SERVER_SSH_KEY=<content of ~/.ssh/id_rsa>"
 echo "   SERVER_SSH_PORT=22"

@@ -24,7 +24,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: '1.x'
+          deno-version: '2.4.3'
 
       - name: Run Database Migration
         uses: appleboy/ssh-action@v1.0.3

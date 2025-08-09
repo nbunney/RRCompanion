@@ -17,7 +17,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: '1.x'
+          deno-version: '2.4.3'
 
       - name: Test Backend
         run: |
@@ -99,7 +99,7 @@ jobs:
             # Build the frontend
             npm run build
             
-            # Copy built files to web root
+            # Copy built files to web root (adjust path based on your Caddy config)
             sudo cp -r dist/* /var/www/html/
             
             # Set proper permissions
