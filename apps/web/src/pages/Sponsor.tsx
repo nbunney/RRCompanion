@@ -100,7 +100,7 @@ const Sponsor: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Author</h3>
-                    <p className="text-gray-600">{fiction.author}</p>
+                    <p className="text-gray-600">{fiction.author_name}</p>
                   </div>
 
                   <div>
@@ -159,8 +159,7 @@ const Sponsor: React.FC = () => {
                       Why Sponsor?
                     </h3>
                     <p className="text-blue-800 text-sm leading-relaxed">
-                      Sponsoring a fiction helps support the author and increases visibility for their work.
-                      Sponsored fictions receive special placement and promotion across our platform.
+                      Sponsoring a fiction makes sure you have data on the fiction daily. Sponsored fictions are treated like fictions that are on Rising Stars which are pulled every night.
                     </p>
                   </div>
 
@@ -169,10 +168,9 @@ const Sponsor: React.FC = () => {
                       Benefits
                     </h3>
                     <ul className="text-green-800 text-sm space-y-1">
-                      <li>• Featured placement in fiction listings</li>
-                      <li>• Special "Sponsored" badge</li>
-                      <li>• Increased visibility to readers</li>
-                      <li>• Support for the author</li>
+                      <li>• Consistent timing for data pulled makes for better graphs and data</li>
+                      <li>• No need to remember to log in every day to refresh the data</li>
+                      <li>• Fiction is marked as 'Sponsored'</li>
                     </ul>
                   </div>
 
@@ -181,8 +179,7 @@ const Sponsor: React.FC = () => {
                       How It Works
                     </h3>
                     <p className="text-yellow-800 text-sm leading-relaxed">
-                      Sponsorship is currently in development. Please check back soon for more information
-                      about how to sponsor this fiction and support its author.
+                      A one time payment of $5 will sponsor your fiction forever. Simple as that. We use Stripe for secure and trusted payments.
                     </p>
                   </div>
 
