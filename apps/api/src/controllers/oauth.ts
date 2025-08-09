@@ -97,7 +97,7 @@ export async function initiateOAuth(ctx: Context): Promise<void> {
       ctx.response.body = {
         success: true,
         data: {
-          authUrl: discordAuthUrl.toString(),
+          authorizationUrl: discordAuthUrl.toString(),
         },
       } as ApiResponse;
     } else {
@@ -233,7 +233,7 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
 // Handle Discord interactions (for bot commands)
 export async function handleDiscordInteractions(ctx: Context): Promise<void> {
   try {
-    const body = await ctx.request.body().value;
+    const body = await ctx.request.body.json();
 
     // Discord sends a verification request first
     if (body.type === 1) {
