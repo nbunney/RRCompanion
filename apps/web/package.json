@@ -12,6 +12,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^7.8.0",
     "@tanstack/react-query": "^5.8.4",
     "axios": "^1.6.2",
     "clsx": "^2.0.0",

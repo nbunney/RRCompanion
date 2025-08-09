@@ -82,3 +82,27 @@ export function isValidPassword(password: string): boolean {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
   return passwordRegex.test(password);
 }
+
+// Get user from context (used in middleware)
+export async function getUserFromContext(ctx: any): Promise<any> {
+  const authHeader = ctx.request.headers.get('authorization');
+  const token = extractToken(authHeader);
+
+  if (!token) {
+    return null;
+  }
+
+  const payload = await verifyToken(token);
+  if (!payload) {
+    return null;
+  }
+
+  // Get user from database
+  const client = await import('../config/database.ts').then(m => m.client);
+  const userResult = await client.query(
+    'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
+    [payload.userId]
+  );
+
+  return userResult.length > 0 ? userResult[0] : null;
+}

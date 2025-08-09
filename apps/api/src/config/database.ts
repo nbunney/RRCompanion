@@ -550,6 +550,28 @@ async function runMigrations(client: Client): Promise<void> {
     {
       name: '008_add_fiction_score_columns',
       conditional: true
+    },
+    {
+      name: '009_create_sponsorship_logs_table',
+      sql: `
+        CREATE TABLE IF NOT EXISTS sponsorship_logs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          fiction_id INT NOT NULL,
+          user_id INT NOT NULL,
+          stripe_payment_intent_id VARCHAR(255) NOT NULL,
+          amount INT NOT NULL,
+          status ENUM('pending', 'completed', 'failed', 'refunded') DEFAULT 'pending',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (fiction_id) REFERENCES fiction(id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          INDEX idx_fiction_id (fiction_id),
+          INDEX idx_user_id (user_id),
+          INDEX idx_payment_intent_id (stripe_payment_intent_id),
+          INDEX idx_status (status),
+          INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
     }
   ];
 

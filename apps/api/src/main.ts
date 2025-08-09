@@ -14,6 +14,7 @@ import fictionRoutes from './routes/fiction.ts';
 import userFictionRoutes from './routes/userFiction.ts';
 import fictionHistoryRoutes from './routes/fictionHistory.ts';
 import { risingStarsRoutes } from './routes/risingStars.ts';
+import stripeRoutes from './routes/stripe.ts';
 
 // Load environment variables
 config({ export: true });
@@ -81,6 +82,7 @@ router.use('/api', fictionRoutes.routes(), fictionRoutes.allowedMethods());
 router.use('/api', userFictionRoutes.routes(), userFictionRoutes.allowedMethods());
 router.use('/api', fictionHistoryRoutes.routes(), fictionHistoryRoutes.allowedMethods());
 router.use('/api', risingStarsRoutes.routes(), risingStarsRoutes.allowedMethods());
+router.use('/api/stripe', stripeRoutes.routes(), stripeRoutes.allowedMethods());
 
 // Register router routes
 app.use(router.routes());

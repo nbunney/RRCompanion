@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fictionAPI } from '../services/api';
+import { loadStripe } from '@stripe/stripe-js';
+import { fictionAPI, stripeAPI } from '../services/api';
 import { Fiction } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -13,6 +14,8 @@ const Sponsor: React.FC = () => {
   const [fiction, setFiction] = useState<Fiction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
 
   useEffect(() => {
     const loadFiction = async () => {
@@ -42,6 +45,59 @@ const Sponsor: React.FC = () => {
 
     loadFiction();
   }, [id]);
+
+  const handleSponsorshipPayment = async () => {
+    if (!fiction) return;
+
+    setIsProcessingPayment(true);
+    setPaymentStatus('processing');
+
+    try {
+      // Initialize Stripe
+      const stripe = await loadStripe('pk_test_your_stripe_publishable_key_here');
+      if (!stripe) {
+        throw new Error('Failed to load Stripe');
+      }
+
+      // Create payment intent
+      const paymentResponse = await stripeAPI.createSponsorshipPayment(fiction.id);
+      if (!paymentResponse.success || !paymentResponse.data) {
+        throw new Error('Failed to create payment intent');
+      }
+
+      const { clientSecret } = paymentResponse.data;
+
+      // Confirm payment
+      const { error } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: {
+            // For testing, you can use Stripe's test card numbers
+            // 4242 4242 4242 4242 for success
+            // 4000 0000 0000 0002 for decline
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Payment failed:', error);
+        setPaymentStatus('failed');
+        setError(`Payment failed: ${error.message}`);
+      } else {
+        setPaymentStatus('success');
+        // Refresh the fiction data to show it's now sponsored
+        const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fiction.royalroad_id);
+        if (fictionResponse.success && fictionResponse.data) {
+          setFiction(fictionResponse.data);
+        }
+      }
+    } catch (err) {
+      console.error('Payment error:', err);
+      setPaymentStatus('failed');
+      setError(err instanceof Error ? err.message : 'Payment failed');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -98,6 +154,22 @@ const Sponsor: React.FC = () => {
                 </h2>
 
                 <div className="space-y-4">
+                  {/* Fiction Cover Image */}
+                  {fiction.image_url && (
+                    <div className="flex justify-center mb-4">
+                      <img
+                        src={fiction.image_url}
+                        alt={`Cover for ${fiction.title}`}
+                        className="w-48 h-64 object-cover rounded-lg shadow-md"
+                        onError={(e) => {
+                          // Hide image if it fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Author</h3>
                     <p className="text-gray-600">{fiction.author_name}</p>
@@ -185,13 +257,29 @@ const Sponsor: React.FC = () => {
 
                   <Button
                     className="w-full"
-                    onClick={() => {
-                      // TODO: Implement sponsorship functionality
-                      alert('Sponsorship functionality coming soon!');
-                    }}
+                    onClick={handleSponsorshipPayment}
+                    disabled={isProcessingPayment || fiction?.sponsored === 1}
                   >
-                    Learn More About Sponsorship
+                    {isProcessingPayment ? 'Processing Payment...' :
+                      fiction?.sponsored === 1 ? 'Already Sponsored' :
+                        'Sponsor This Fiction - $5'}
                   </Button>
+
+                  {paymentStatus === 'success' && (
+                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-green-800 text-sm font-medium">
+                        ✅ Payment successful! This fiction is now sponsored.
+                      </p>
+                    </div>
+                  )}
+
+                  {paymentStatus === 'failed' && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-red-800 text-sm font-medium">
+                        ❌ Payment failed. Please try again.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>

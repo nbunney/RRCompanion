@@ -1,0 +1,81 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [ develop, staging ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: '1.x'
+
+      - name: Install Dependencies
+        run: |
+          cd apps/web
+          npm ci
+          cd ../api
+          deno cache --reload src/main.ts
+
+      - name: Run Tests
+        run: |
+          echo "🧪 Running backend tests..."
+          cd apps/api
+          deno test --allow-net --allow-env --allow-read --allow-write
+          
+          echo "🧪 Running frontend tests..."
+          cd ../web
+          npm run test
+
+      - name: Build Frontend
+        run: |
+          cd apps/web
+          npm run build
+        env:
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+
+      - name: Deploy to Staging Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          script: |
+            echo "🚀 Starting staging deployment..."
+            cd /var/www/rrcompanion-staging
+            
+            # Pull latest changes
+            git pull origin ${{ github.ref_name }}
+            
+            # Deploy backend
+            cd apps/api
+            deno cache --reload src/main.ts
+            sudo systemctl restart rrcompanion-api-staging
+            
+            # Deploy frontend
+            cd ../web
+            npm ci
+            npm run build
+            sudo cp -r dist/* /var/www/staging/
+            sudo chown -R www-data:www-data /var/www/staging/
+            
+            echo "✅ Staging deployment completed!" 

@@ -207,6 +207,19 @@ export const risingStarsAPI = {
   },
 };
 
+// Stripe API
+export const stripeAPI = {
+  createSponsorshipPayment: async (fictionId: number): Promise<ApiResponse<{ clientSecret: string; paymentIntentId: string }>> => {
+    const response = await api.post('/stripe/create-payment', { fictionId });
+    return response.data;
+  },
+
+  getPaymentStatus: async (paymentIntentId: string): Promise<ApiResponse<any>> => {
+    const response = await api.get(`/stripe/payment-status?paymentIntentId=${paymentIntentId}`);
+    return response.data;
+  },
+};
+
 // Health check
 export const healthAPI = {
   check: async (): Promise<ApiResponse> => {
