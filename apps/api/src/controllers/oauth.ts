@@ -1,32 +1,30 @@
 import { Context } from 'oak';
 import type { ApiResponse } from '../types/index.ts';
 
-// Discord OAuth configuration
-const DISCORD_CLIENT_ID = Deno.env.get('DISCORD_CLIENT_ID');
-const DISCORD_CLIENT_SECRET = Deno.env.get('DISCORD_CLIENT_SECRET');
-const DISCORD_REDIRECT_URI = Deno.env.get('DISCORD_REDIRECT_URI') || 'https://rrcompanion.com/api/oauth/discord/callback';
-
-// Debug logging
-console.log('🔧 OAuth Configuration Debug:');
-console.log(`- DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID ? 'SET' : 'NOT SET'}`);
-console.log(`- DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET ? 'SET' : 'NOT SET'}`);
-console.log(`- DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI}`);
+// Discord OAuth configuration - read at runtime
+function getDiscordConfig() {
+  return {
+    clientId: Deno.env.get('DISCORD_CLIENT_ID'),
+    clientSecret: Deno.env.get('DISCORD_CLIENT_SECRET'),
+    redirectUri: Deno.env.get('DISCORD_REDIRECT_URI') || 'https://rrcompanion.com/api/oauth/discord/callback'
+  };
+}
 
 // OAuth providers configuration
 export async function getOAuthProviders(ctx: Context): Promise<void> {
   try {
-    // Debug: Check environment variables at runtime
-    const discordClientId = Deno.env.get('DISCORD_CLIENT_ID');
-    console.log(`🔧 getOAuthProviders - DISCORD_CLIENT_ID: ${discordClientId ? 'SET' : 'NOT SET'}`);
-    console.log(`🔧 getOAuthProviders - Discord enabled: ${!!discordClientId}`);
-
+        // Debug: Check environment variables at runtime
+    const discordConfig = getDiscordConfig();
+    console.log(`🔧 getOAuthProviders - DISCORD_CLIENT_ID: ${discordConfig.clientId ? 'SET' : 'NOT SET'}`);
+    console.log(`🔧 getOAuthProviders - Discord enabled: ${!!discordConfig.clientId}`);
+    
     const providers = [
       {
         name: 'discord',
         displayName: 'Discord',
         color: '#5865F2',
         icon: '🎮',
-        enabled: !!discordClientId, // Enable if Discord is configured
+        enabled: !!discordConfig.clientId, // Enable if Discord is configured
       },
       {
         name: 'google',
@@ -72,10 +70,11 @@ export async function initiateOAuth(ctx: Context): Promise<void> {
     const provider = (ctx as any).params?.provider;
 
     console.log(`🔧 initiateOAuth called for provider: ${provider}`);
-    console.log(`🔧 DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID ? 'SET' : 'NOT SET'}`);
+    const discordConfig = getDiscordConfig();
+    console.log(`🔧 DISCORD_CLIENT_ID: ${discordConfig.clientId ? 'SET' : 'NOT SET'}`);
 
     if (provider === 'discord') {
-      if (!DISCORD_CLIENT_ID) {
+      if (!discordConfig.clientId) {
         console.log('❌ Discord OAuth not configured - DISCORD_CLIENT_ID is missing');
         ctx.response.status = 400;
         ctx.response.body = {
@@ -87,8 +86,8 @@ export async function initiateOAuth(ctx: Context): Promise<void> {
 
       // Build Discord OAuth URL
       const discordAuthUrl = new URL('https://discord.com/api/oauth2/authorize');
-      discordAuthUrl.searchParams.set('client_id', DISCORD_CLIENT_ID);
-      discordAuthUrl.searchParams.set('redirect_uri', DISCORD_REDIRECT_URI);
+      discordAuthUrl.searchParams.set('client_id', discordConfig.clientId);
+      discordAuthUrl.searchParams.set('redirect_uri', discordConfig.redirectUri);
       discordAuthUrl.searchParams.set('response_type', 'code');
       discordAuthUrl.searchParams.set('scope', 'identify email');
 
@@ -124,7 +123,8 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
     const provider = (ctx as any).params?.provider;
 
     if (provider === 'discord') {
-      if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
+      const discordConfig = getDiscordConfig();
+      if (!discordConfig.clientId || !discordConfig.clientSecret) {
         ctx.response.status = 400;
         ctx.response.body = {
           success: false,
@@ -163,11 +163,11 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          client_id: DISCORD_CLIENT_ID,
-          client_secret: DISCORD_CLIENT_SECRET,
+          client_id: discordConfig.clientId,
+          client_secret: discordConfig.clientSecret,
           grant_type: 'authorization_code',
           code: code,
-          redirect_uri: DISCORD_REDIRECT_URI,
+          redirect_uri: discordConfig.redirectUri,
         }),
       });
 
