@@ -208,37 +208,52 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
       // Create or update user in database
       try {
         // Check if user already exists with this Discord OAuth ID
-        const existingUser = await client.query(
+        const existingOAuthUser = await client.query(
           'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE oauth_id = ? AND oauth_provider = ?',
           [userData.id, 'discord']
         );
 
         let user;
-        if (existingUser.length > 0) {
-          // User exists, update their information
-          user = existingUser[0];
+        if (existingOAuthUser.length > 0) {
+          // User exists with this OAuth ID, update their information
+          user = existingOAuthUser[0];
           await client.execute(
             'UPDATE users SET name = ?, avatar_url = ?, updated_at = NOW() WHERE id = ?',
             [userData.global_name || userData.username, `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`, user.id]
           );
         } else {
-          // Create new user
-          const insertResult = await client.execute(
-            'INSERT INTO users (email, name, oauth_provider, oauth_id, avatar_url) VALUES (?, ?, ?, ?, ?)',
-            [
-              userData.email,
-              userData.global_name || userData.username,
-              'discord',
-              userData.id,
-              `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
-            ]
+          // Check if user exists with this email
+          const existingEmailUser = await client.query(
+            'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE email = ?',
+            [userData.email]
           );
 
-          const newUser = await client.query(
-            'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
-            [insertResult.lastInsertId]
-          );
-          user = newUser[0];
+          if (existingEmailUser.length > 0) {
+            // User exists with this email, update with OAuth info
+            user = existingEmailUser[0];
+            await client.execute(
+              'UPDATE users SET oauth_provider = ?, oauth_id = ?, name = ?, avatar_url = ?, updated_at = NOW() WHERE id = ?',
+              ['discord', userData.id, userData.global_name || userData.username, `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`, user.id]
+            );
+          } else {
+            // Create completely new user
+            const insertResult = await client.execute(
+              'INSERT INTO users (email, name, oauth_provider, oauth_id, avatar_url) VALUES (?, ?, ?, ?, ?)',
+              [
+                userData.email,
+                userData.global_name || userData.username,
+                'discord',
+                userData.id,
+                `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
+              ]
+            );
+
+            const newUser = await client.query(
+              'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
+              [insertResult.lastInsertId]
+            );
+            user = newUser[0];
+          }
         }
 
         // Generate JWT token
