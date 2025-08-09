@@ -11,6 +11,7 @@ const OAuthCallback: React.FC = () => {
 
   useEffect(() => {
     const token = searchParams.get('token');
+    const userParam = searchParams.get('user');
     const errorParam = searchParams.get('error');
 
     if (errorParam) {
@@ -24,6 +25,17 @@ const OAuthCallback: React.FC = () => {
       // Store the token
       localStorage.setItem('token', token);
       console.log('🔐 OAuth Callback - Token stored in localStorage');
+
+      // Store user data if provided
+      if (userParam) {
+        try {
+          const userData = JSON.parse(userParam);
+          localStorage.setItem('user', JSON.stringify(userData));
+          console.log('🔐 OAuth Callback - User data stored in localStorage:', userData);
+        } catch (error) {
+          console.error('🔐 OAuth Callback - Failed to parse user data:', error);
+        }
+      }
 
       // Check authentication status
       console.log('🔐 OAuth Callback - Calling checkAuth()...');

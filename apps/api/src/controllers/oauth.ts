@@ -260,10 +260,19 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
         const token = await generateToken(user);
         console.log('🔧 Generated JWT token for user:', user.id);
 
-        // Redirect to frontend with token
+        // Redirect to frontend with token and user data
         const frontendUrl = new URL('https://rrcompanion.com/oauth/callback');
         frontendUrl.searchParams.set('token', token);
         frontendUrl.searchParams.set('provider', 'discord');
+        frontendUrl.searchParams.set('user', JSON.stringify({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          oauth_provider: user.oauth_provider,
+          avatar_url: user.avatar_url,
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        }));
 
         console.log('🔧 Redirecting to:', frontendUrl.toString());
         ctx.response.status = 302;
