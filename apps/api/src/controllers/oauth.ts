@@ -6,16 +6,27 @@ const DISCORD_CLIENT_ID = Deno.env.get('DISCORD_CLIENT_ID');
 const DISCORD_CLIENT_SECRET = Deno.env.get('DISCORD_CLIENT_SECRET');
 const DISCORD_REDIRECT_URI = Deno.env.get('DISCORD_REDIRECT_URI') || 'https://rrcompanion.com/api/oauth/discord/callback';
 
+// Debug logging
+console.log('🔧 OAuth Configuration Debug:');
+console.log(`- DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID ? 'SET' : 'NOT SET'}`);
+console.log(`- DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET ? 'SET' : 'NOT SET'}`);
+console.log(`- DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI}`);
+
 // OAuth providers configuration
 export async function getOAuthProviders(ctx: Context): Promise<void> {
   try {
+    // Debug: Check environment variables at runtime
+    const discordClientId = Deno.env.get('DISCORD_CLIENT_ID');
+    console.log(`🔧 getOAuthProviders - DISCORD_CLIENT_ID: ${discordClientId ? 'SET' : 'NOT SET'}`);
+    console.log(`🔧 getOAuthProviders - Discord enabled: ${!!discordClientId}`);
+
     const providers = [
       {
         name: 'discord',
         displayName: 'Discord',
         color: '#5865F2',
         icon: '🎮',
-        enabled: !!DISCORD_CLIENT_ID, // Enable if Discord is configured
+        enabled: !!discordClientId, // Enable if Discord is configured
       },
       {
         name: 'google',
