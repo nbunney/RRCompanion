@@ -19,16 +19,23 @@ const OAuthCallback: React.FC = () => {
     }
 
     if (token) {
+      console.log('🔐 OAuth Callback - Token received:', token.substring(0, 20) + '...');
+      
       // Store the token
       localStorage.setItem('token', token);
+      console.log('🔐 OAuth Callback - Token stored in localStorage');
 
       // Check authentication status
+      console.log('🔐 OAuth Callback - Calling checkAuth()...');
       checkAuth().then(() => {
+        console.log('🔐 OAuth Callback - checkAuth() succeeded, navigating to dashboard');
         navigate('/dashboard');
-      }).catch(() => {
+      }).catch((error) => {
+        console.error('🔐 OAuth Callback - checkAuth() failed:', error);
         setError('Authentication failed. Please try again.');
       });
     } else {
+      console.error('🔐 OAuth Callback - No token received');
       setError('No authentication token received.');
     }
   }, [searchParams, navigate, checkAuth]);
