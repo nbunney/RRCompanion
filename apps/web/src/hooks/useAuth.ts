@@ -97,10 +97,15 @@ export const useAuth = create<AuthStore>()(
       },
 
       checkAuth: async () => {
+        console.log('🔐 checkAuth - Starting authentication check...');
         const token = localStorage.getItem('token');
         const userStr = localStorage.getItem('user');
 
+        console.log('🔐 checkAuth - Token exists:', !!token);
+        console.log('🔐 checkAuth - User string exists:', !!userStr);
+
         if (!token || !userStr) {
+          console.log('🔐 checkAuth - Missing token or user, clearing auth state');
           set({
             user: null,
             token: null,
@@ -112,16 +117,23 @@ export const useAuth = create<AuthStore>()(
 
         try {
           const user: User = JSON.parse(userStr);
+          console.log('🔐 checkAuth - Parsed user:', user);
+          
+          console.log('🔐 checkAuth - Setting authentication state...');
           set({
             user,
             token,
             isAuthenticated: true,
             isLoading: false,
           });
+          console.log('🔐 checkAuth - Authentication state set successfully');
 
           // Verify token is still valid
+          console.log('🔐 checkAuth - Verifying token with getProfile()...');
           await authAPI.getProfile();
+          console.log('🔐 checkAuth - Token verification successful');
         } catch (error) {
+          console.error('🔐 checkAuth - Token verification failed:', error);
           // Token is invalid, clear auth state
           localStorage.removeItem('token');
           localStorage.removeItem('user');
@@ -131,6 +143,7 @@ export const useAuth = create<AuthStore>()(
             isAuthenticated: false,
             isLoading: false,
           });
+          throw error;
         }
       },
     }),
