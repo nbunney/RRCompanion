@@ -43,23 +43,34 @@ export async function createSponsorshipPayment(ctx: Context) {
 
 export async function handleStripeWebhook(ctx: Context) {
   try {
+    console.log('🔔 Stripe webhook endpoint hit');
+
     const signature = ctx.request.headers.get('stripe-signature');
     if (!signature) {
+      console.log('❌ Missing stripe signature header');
       ctx.response.status = 400;
       ctx.response.body = { success: false, error: 'Missing stripe signature' };
       return;
     }
 
+    console.log('🔔 Stripe signature found, processing webhook...');
     const body = await ctx.request.body.text();
-    const event = stripeService.verifyWebhookSignature(body, signature);
+    console.log('🔔 Webhook body length:', body.length);
 
-    console.log('🔔 Stripe webhook received:', event.type);
+    const event = stripeService.verifyWebhookSignature(body, signature);
+    console.log('🔔 Stripe webhook verified successfully, event type:', event.type);
+    console.log('🔔 Event data:', JSON.stringify(event.data, null, 2));
 
     // Handle different event types
     switch (event.type) {
       case 'payment_intent.succeeded':
+        console.log('🎉 Payment succeeded, processing sponsorship...');
         const paymentIntent = event.data.object as any;
+        console.log('🔔 Payment intent ID:', paymentIntent.id);
+        console.log('🔔 Payment intent metadata:', paymentIntent.metadata);
+
         await stripeService.handleSuccessfulPayment(paymentIntent);
+        console.log('✅ Sponsorship processed successfully');
         break;
 
       case 'payment_intent.payment_failed':
@@ -72,8 +83,13 @@ export async function handleStripeWebhook(ctx: Context) {
 
     ctx.response.status = 200;
     ctx.response.body = { success: true };
+    console.log('🔔 Webhook response sent successfully');
   } catch (error) {
     console.error('❌ Error handling webhook:', error);
+    if (error instanceof Error) {
+      console.error('❌ Error details:', error.message);
+      console.error('❌ Error stack:', error.stack);
+    }
     ctx.response.status = 400;
     ctx.response.body = { success: false, error: 'Webhook error' };
   }

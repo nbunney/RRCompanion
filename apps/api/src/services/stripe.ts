@@ -56,20 +56,26 @@ export class StripeService {
   // Handle successful payment
   async handleSuccessfulPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
     try {
+      console.log('🔔 Starting to handle successful payment...');
+      console.log('🔔 Payment intent metadata:', paymentIntent.metadata);
+      
       const { fiction_id, user_id } = paymentIntent.metadata;
 
       if (!fiction_id || !user_id) {
         throw new Error('Missing metadata in payment intent');
       }
 
+      console.log(`🔔 Updating fiction ${fiction_id} to sponsored for user ${user_id}`);
+
       // Update fiction to sponsored
-      await client.execute(
+      const updateResult = await client.execute(
         'UPDATE fiction SET sponsored = 1 WHERE id = ?',
         [parseInt(fiction_id)]
       );
+      console.log('🔔 Fiction update result:', updateResult);
 
       // Log the sponsorship
-      await client.execute(
+      const logResult = await client.execute(
         'INSERT INTO sponsorship_logs (fiction_id, user_id, stripe_payment_intent_id, amount, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
         [
           parseInt(fiction_id),
@@ -79,25 +85,38 @@ export class StripeService {
           'completed'
         ]
       );
+      console.log('🔔 Sponsorship log result:', logResult);
 
       console.log(`✅ Fiction ${fiction_id} sponsored by user ${user_id}`);
     } catch (error) {
       console.error('❌ Error handling successful payment:', error);
+      if (error instanceof Error) {
+        console.error('❌ Error details:', error.message);
+        console.error('❌ Error stack:', error.stack);
+      }
       throw error;
     }
   }
 
   // Verify webhook signature
   verifyWebhookSignature(payload: string, signature: string): Stripe.Event {
+    console.log('🔔 Verifying webhook signature...');
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
     if (!webhookSecret) {
+      console.error('❌ STRIPE_WEBHOOK_SECRET not configured');
       throw new Error('Webhook secret not configured');
     }
 
+    console.log('🔔 Webhook secret found, length:', webhookSecret.length);
     try {
-      return getStripeClient().webhooks.constructEvent(payload, signature, webhookSecret);
+      const event = getStripeClient().webhooks.constructEvent(payload, signature, webhookSecret);
+      console.log('🔔 Webhook signature verified successfully');
+      return event;
     } catch (error) {
       console.error('❌ Webhook signature verification failed:', error);
+      if (error instanceof Error) {
+        console.error('❌ Verification error details:', error.message);
+      }
       throw error;
     }
   }
