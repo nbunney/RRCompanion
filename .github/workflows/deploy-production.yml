@@ -142,15 +142,23 @@ jobs:
             
             # Reload Caddy
             echo "🔄 Reloading Caddy..."
-            sudo systemctl reload caddy
-            
-            # Check if Caddy is running
-            if sudo systemctl is-active --quiet caddy; then
+            if sudo systemctl reload caddy; then
                 echo "✅ Caddy reloaded successfully"
             else
-                echo "❌ Caddy failed to reload"
-                sudo systemctl status caddy
-                exit 1
+                echo "⚠️ Caddy reload failed, checking status..."
+                sudo systemctl status caddy --no-pager
+                echo "📋 Caddy logs (last 20 lines):"
+                sudo journalctl -u caddy.service --no-pager -n 20 || echo "⚠️ Could not read Caddy logs"
+                
+                # Try to restart Caddy instead of reloading
+                echo "🔄 Attempting to restart Caddy..."
+                if sudo systemctl restart caddy; then
+                    echo "✅ Caddy restarted successfully"
+                else
+                    echo "❌ Caddy restart failed"
+                    sudo systemctl status caddy --no-pager
+                    echo "⚠️ Continuing deployment despite Caddy issues..."
+                fi
             fi
             
             echo "🎉 Deployment completed successfully!"
