@@ -7,12 +7,13 @@ import { Fiction } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
+import Modal from '../components/Modal';
 
 // Stripe Elements configuration
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Payment form component
-const PaymentForm: React.FC<{ fiction: Fiction; onSuccess: () => void }> = ({ fiction, onSuccess }) => {
+const PaymentForm: React.FC<{ fiction: Fiction; onSuccess: () => void; onCancel: () => void }> = ({ fiction, onSuccess, onCancel }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -20,7 +21,7 @@ const PaymentForm: React.FC<{ fiction: Fiction; onSuccess: () => void }> = ({ fi
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    
+
     if (!stripe || !elements) {
       return;
     }
@@ -84,13 +85,23 @@ const PaymentForm: React.FC<{ fiction: Fiction; onSuccess: () => void }> = ({ fi
         </div>
       )}
 
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={!stripe || isProcessing}
-      >
-        {isProcessing ? 'Processing Payment...' : 'Pay $5 to Sponsor'}
-      </Button>
+      <div className="flex space-x-3">
+        <Button
+          type="submit"
+          className="flex-1"
+          disabled={!stripe || isProcessing}
+        >
+          {isProcessing ? 'Processing Payment...' : 'Pay $5 to Sponsor'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isProcessing}
+        >
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 };
@@ -137,7 +148,7 @@ const Sponsor: React.FC = () => {
   const handlePaymentSuccess = async () => {
     setPaymentStatus('success');
     setShowPaymentForm(false);
-    
+
     // Refresh the fiction data to show it's now sponsored
     if (fiction) {
       const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fiction.royalroad_id);
@@ -315,19 +326,6 @@ const Sponsor: React.FC = () => {
                         ✅ Payment successful! This fiction is now sponsored.
                       </p>
                     </div>
-                  ) : showPaymentForm ? (
-                    <div className="space-y-4">
-                      <Elements stripe={stripePromise}>
-                        <PaymentForm fiction={fiction} onSuccess={handlePaymentSuccess} />
-                      </Elements>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => setShowPaymentForm(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
                   ) : (
                     <Button
                       className="w-full"
@@ -342,6 +340,32 @@ const Sponsor: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Payment Modal */}
+      <Modal
+        isOpen={showPaymentForm}
+        onClose={() => setShowPaymentForm(false)}
+        title={`Sponsor ${fiction.title}`}
+        size="lg"
+      >
+        <div className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-lg font-medium text-blue-900 mb-2">Payment Details</h3>
+            <p className="text-blue-800 text-sm">
+              You're about to sponsor <strong>{fiction.title}</strong> by <strong>{fiction.author_name}</strong> for $5.
+              This will ensure daily data collection for this fiction.
+            </p>
+          </div>
+
+          <Elements stripe={stripePromise}>
+            <PaymentForm
+              fiction={fiction}
+              onSuccess={handlePaymentSuccess}
+              onCancel={() => setShowPaymentForm(false)}
+            />
+          </Elements>
+        </div>
+      </Modal>
     </div>
   );
 };
