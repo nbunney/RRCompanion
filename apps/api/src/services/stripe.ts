@@ -1,9 +1,21 @@
 import Stripe from 'stripe';
 import { client } from '../config/database.ts';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-  apiVersion: '2024-12-18.acacia',
-});
+// Lazy initialize Stripe client to ensure environment variables are loaded
+let stripe: Stripe | null = null;
+
+function getStripeClient(): Stripe {
+  if (!stripe) {
+    const apiKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!apiKey) {
+      throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+    }
+    stripe = new Stripe(apiKey, {
+      apiVersion: '2024-12-18.acacia',
+    });
+  }
+  return stripe;
+}
 
 export class StripeService {
   // Create a payment intent for sponsoring a fiction
@@ -22,7 +34,7 @@ export class StripeService {
       const fiction = fictionResult[0];
 
       // Create payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await getStripeClient().paymentIntents.create({
         amount: 500, // $5.00 in cents
         currency: 'usd',
         metadata: {
@@ -83,7 +95,7 @@ export class StripeService {
     }
 
     try {
-      return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+      return getStripeClient().webhooks.constructEvent(payload, signature, webhookSecret);
     } catch (error) {
       console.error('❌ Webhook signature verification failed:', error);
       throw error;
@@ -92,7 +104,7 @@ export class StripeService {
 
   // Get payment intent by ID
   async getPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
-    return await stripe.paymentIntents.retrieve(paymentIntentId);
+    return await getStripeClient().paymentIntents.retrieve(paymentIntentId);
   }
 }
 
