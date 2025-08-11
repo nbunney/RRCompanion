@@ -1,11 +1,99 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { fictionAPI, stripeAPI } from '../services/api';
 import { Fiction } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
+
+// Stripe Elements configuration
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
+// Payment form component
+const PaymentForm: React.FC<{ fiction: Fiction; onSuccess: () => void }> = ({ fiction, onSuccess }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // Create payment intent
+      const paymentResponse = await stripeAPI.createSponsorshipPayment(fiction.id);
+      if (!paymentResponse.success || !paymentResponse.data) {
+        throw new Error('Failed to create payment intent');
+      }
+
+      const { clientSecret } = paymentResponse.data;
+
+      // Confirm card payment
+      const { error: paymentError } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement)!,
+        },
+      });
+
+      if (paymentError) {
+        setError(paymentError.message || 'Payment failed');
+      } else {
+        onSuccess();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Payment failed');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h3 className="text-lg font-medium text-gray-900 mb-3">Credit Card Information</h3>
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+              invalid: {
+                color: '#9e2146',
+              },
+            },
+          }}
+        />
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800 text-sm">{error}</p>
+        </div>
+      )}
+
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={!stripe || isProcessing}
+      >
+        {isProcessing ? 'Processing Payment...' : 'Pay $5 to Sponsor'}
+      </Button>
+    </form>
+  );
+};
 
 const Sponsor: React.FC = () => {
   console.log('🔗 Sponsor component rendered');
@@ -14,8 +102,8 @@ const Sponsor: React.FC = () => {
   const [fiction, setFiction] = useState<Fiction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success'>('idle');
 
   useEffect(() => {
     const loadFiction = async () => {
@@ -46,55 +134,16 @@ const Sponsor: React.FC = () => {
     loadFiction();
   }, [id]);
 
-  const handleSponsorshipPayment = async () => {
-    if (!fiction) return;
-
-    setIsProcessingPayment(true);
-    setPaymentStatus('processing');
-
-    try {
-      // Initialize Stripe
-      const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-      if (!stripe) {
-        throw new Error('Failed to load Stripe');
+  const handlePaymentSuccess = async () => {
+    setPaymentStatus('success');
+    setShowPaymentForm(false);
+    
+    // Refresh the fiction data to show it's now sponsored
+    if (fiction) {
+      const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fiction.royalroad_id);
+      if (fictionResponse.success && fictionResponse.data) {
+        setFiction(fictionResponse.data);
       }
-
-      // Create payment intent
-      const paymentResponse = await stripeAPI.createSponsorshipPayment(fiction.id);
-      if (!paymentResponse.success || !paymentResponse.data) {
-        throw new Error('Failed to create payment intent');
-      }
-
-      const { clientSecret } = paymentResponse.data;
-
-      // For now, we'll use a test payment method
-      // In a real implementation, you'd use Stripe Elements to collect card details
-      const { error } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: {
-            token: 'tok_visa', // Test token for development
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Payment failed:', error);
-        setPaymentStatus('failed');
-        setError(`Payment failed: ${error.message}`);
-      } else {
-        setPaymentStatus('success');
-        // Refresh the fiction data to show it's now sponsored
-        const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fiction.royalroad_id);
-        if (fictionResponse.success && fictionResponse.data) {
-          setFiction(fictionResponse.data);
-        }
-      }
-    } catch (err) {
-      console.error('Payment error:', err);
-      setPaymentStatus('failed');
-      setError(err instanceof Error ? err.message : 'Payment failed');
-    } finally {
-      setIsProcessingPayment(false);
     }
   };
 
@@ -254,30 +303,38 @@ const Sponsor: React.FC = () => {
                     </p>
                   </div>
 
-                  <Button
-                    className="w-full"
-                    onClick={handleSponsorshipPayment}
-                    disabled={isProcessingPayment || fiction?.sponsored === 1}
-                  >
-                    {isProcessingPayment ? 'Processing Payment...' :
-                      fiction?.sponsored === 1 ? 'Already Sponsored' :
-                        'Sponsor This Fiction - $5'}
-                  </Button>
-
-                  {paymentStatus === 'success' && (
-                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  {fiction?.sponsored === 1 ? (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-green-800 text-sm font-medium">
+                        ✅ This fiction is already sponsored!
+                      </p>
+                    </div>
+                  ) : paymentStatus === 'success' ? (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                       <p className="text-green-800 text-sm font-medium">
                         ✅ Payment successful! This fiction is now sponsored.
                       </p>
                     </div>
-                  )}
-
-                  {paymentStatus === 'failed' && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-800 text-sm font-medium">
-                        ❌ Payment failed. Please try again.
-                      </p>
+                  ) : showPaymentForm ? (
+                    <div className="space-y-4">
+                      <Elements stripe={stripePromise}>
+                        <PaymentForm fiction={fiction} onSuccess={handlePaymentSuccess} />
+                      </Elements>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setShowPaymentForm(false)}
+                      >
+                        Cancel
+                      </Button>
                     </div>
+                  ) : (
+                    <Button
+                      className="w-full"
+                      onClick={() => setShowPaymentForm(true)}
+                    >
+                      Sponsor This Fiction - $5
+                    </Button>
                   )}
                 </div>
               </div>
