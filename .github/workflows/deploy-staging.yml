@@ -20,8 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: apps/web/package-lock.json
+
 
       - name: Setup Deno
         uses: denoland/setup-deno@v1
@@ -30,9 +29,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd apps/web
+          echo "📦 Installing dependencies from root..."
           npm ci
-          cd ../api
+          echo "✅ Dependencies installed successfully"
+          echo "🔧 Updating Deno dependencies..."
+          cd apps/api
           deno cache --reload src/main.ts
 
       - name: Validate Backend
@@ -76,8 +77,10 @@ jobs:
             sudo systemctl restart rrcompanion-api-staging
             
             # Deploy frontend
-            cd ../web
+            echo "📦 Installing dependencies..."
             npm ci
+            echo "🔨 Building frontend..."
+            cd apps/web
             npm run build
             sudo cp -r dist/* /var/www/staging/
             sudo chown -R www-data:www-data /var/www/staging/

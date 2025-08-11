@@ -65,18 +65,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: apps/web/package-lock.json
 
-      - name: Install Frontend Dependencies
+      - name: Install Dependencies
         run: |
-          cd apps/web
+          echo "📦 Installing dependencies from root..."
           npm ci
+          echo "✅ Dependencies installed successfully"
 
       - name: Build Frontend
         run: |
+          echo "🔨 Building frontend..."
           cd apps/web
           npm run build
+          echo "✅ Frontend built successfully"
         env:
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
 
@@ -94,11 +95,11 @@ jobs:
             # Pull latest changes
             git pull origin main
             
-            # Install/update dependencies
-            cd apps/web
+            # Install dependencies and build frontend
+            echo "📦 Installing dependencies..."
             npm ci
-            
-            # Build the frontend
+            echo "🔨 Building frontend..."
+            cd apps/web
             npm run build
             
             # Copy built files to web root (adjust path based on your Caddy config)
