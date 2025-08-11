@@ -19,7 +19,7 @@ litrpg.inventaweb.net {
 # RRCompanion.com - with automatic HTTPS
 RRCompanion.com {
 	# Handle API requests - proxy to backend
-	handle /api/* {
+	route /api/* {
 		reverse_proxy localhost:8000
 	}
 
