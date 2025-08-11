@@ -58,7 +58,7 @@ export class StripeService {
     try {
       console.log('🔔 Starting to handle successful payment...');
       console.log('🔔 Payment intent metadata:', paymentIntent.metadata);
-      
+
       const { fiction_id, user_id } = paymentIntent.metadata;
 
       if (!fiction_id || !user_id) {
@@ -99,7 +99,7 @@ export class StripeService {
   }
 
   // Verify webhook signature
-  verifyWebhookSignature(payload: string, signature: string): Stripe.Event {
+  async verifyWebhookSignature(payload: string, signature: string): Promise<Stripe.Event> {
     console.log('🔔 Verifying webhook signature...');
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
     if (!webhookSecret) {
@@ -109,7 +109,7 @@ export class StripeService {
 
     console.log('🔔 Webhook secret found, length:', webhookSecret.length);
     try {
-      const event = getStripeClient().webhooks.constructEvent(payload, signature, webhookSecret);
+      const event = await getStripeClient().webhooks.constructEventAsync(payload, signature, webhookSecret);
       console.log('🔔 Webhook signature verified successfully');
       return event;
     } catch (error) {

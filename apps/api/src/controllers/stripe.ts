@@ -57,7 +57,7 @@ export async function handleStripeWebhook(ctx: Context) {
     const body = await ctx.request.body.text();
     console.log('🔔 Webhook body length:', body.length);
 
-    const event = stripeService.verifyWebhookSignature(body, signature);
+    const event = await stripeService.verifyWebhookSignature(body, signature);
     console.log('🔔 Stripe webhook verified successfully, event type:', event.type);
     console.log('🔔 Event data:', JSON.stringify(event.data, null, 2));
 
