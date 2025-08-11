@@ -77,6 +77,13 @@ jobs:
             # Pull latest changes
             echo "📥 Pulling latest changes..."
             cd /var/www/rrcompanion
+            
+            # Handle any untracked files that might conflict with git pull
+            echo "🧹 Cleaning up any conflicting files..."
+            git clean -fd || echo "⚠️ Git clean failed, continuing..."
+            git reset --hard origin/master || echo "⚠️ Git reset failed, continuing..."
+            
+            # Now pull the latest changes
             git pull origin master
             
             # Install dependencies and build frontend
