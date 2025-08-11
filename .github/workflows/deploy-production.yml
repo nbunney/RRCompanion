@@ -91,6 +91,18 @@ jobs:
             npm ci
             echo "🔨 Building frontend..."
             cd apps/web
+            
+            # Copy environment file for build
+            echo "🔧 Setting up environment variables..."
+            if [ -f ".env" ]; then
+                echo "✅ Using existing .env file"
+            else
+                echo "📝 Creating .env file from template..."
+                cp .env.example .env
+                # Replace placeholder with actual key from GitHub secrets
+                sed -i "s/pk_test_your_stripe_publishable_key_here/${{ secrets.STRIPE_PUBLISHABLE_KEY }}/" .env
+                echo "✅ Environment file configured with secret"
+            fi
             npm run build
             
             # Check if build was successful

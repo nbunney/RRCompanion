@@ -54,7 +54,7 @@ const Sponsor: React.FC = () => {
 
     try {
       // Initialize Stripe
-      const stripe = await loadStripe('pk_test_your_stripe_publishable_key_here');
+      const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
       if (!stripe) {
         throw new Error('Failed to load Stripe');
       }
