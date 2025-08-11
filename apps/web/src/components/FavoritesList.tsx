@@ -78,23 +78,23 @@ const SortableFictionItem: React.FC<SortableFictionItemProps> = ({
             <img
               src={userFiction.fiction.image_url}
               alt={userFiction.fiction.title}
-              className="w-16 h-24 object-cover rounded"
+              className="w-20 h-28 object-cover rounded flex-shrink-0"
             />
           )}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
                   {userFiction.fiction?.title || 'Unknown Title'}
                 </h3>
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-gray-600 mb-2 truncate">
                   by {userFiction.fiction?.author_name || 'Unknown Author'}
                 </p>
                 <p className="text-sm text-gray-500 mb-3 line-clamp-2">
                   {userFiction.fiction?.description || 'No description available'}
                 </p>
               </div>
-              <div className="flex items-center space-x-2 ml-2">
+              <div className="flex items-center space-x-2 ml-2 flex-shrink-0">
                 {/* Drag Handle */}
                 <div
                   {...attributes}
@@ -373,7 +373,7 @@ const FavoritesList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-4xl mx-auto">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-900">
           Your Favorites ({favorites.length})
@@ -395,7 +395,7 @@ const FavoritesList: React.FC = () => {
           items={favorites.map(fav => fav.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-4">
             {favorites.map((userFiction) => (
               <SortableFictionItem
                 key={userFiction.id}
