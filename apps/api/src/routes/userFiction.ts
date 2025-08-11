@@ -9,6 +9,7 @@ import {
   toggleFavorite,
   updateReadingProgress,
   getUserReadingStats,
+  reorderFavorites,
 } from '../controllers/userFiction.ts';
 import { authMiddleware } from '../middleware/auth.ts';
 
@@ -24,5 +25,6 @@ router.put('/userFictions/:fictionId', authMiddleware, updateUserFiction);
 router.delete('/userFictions/:fictionId', authMiddleware, deleteUserFiction);
 router.post('/userFictions/:fictionId/favorite', authMiddleware, toggleFavorite);
 router.put('/userFictions/:fictionId/progress', authMiddleware, updateReadingProgress);
+router.post('/userFictions/favorites/reorder', authMiddleware, reorderFavorites);
 
 export default router; 

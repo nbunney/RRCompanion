@@ -431,4 +431,56 @@ export async function getUserReadingStats(ctx: Context): Promise<void> {
       error: 'Internal server error',
     } as ApiResponse;
   }
+}
+
+// Reorder user's favorite fictions
+export async function reorderFavorites(ctx: Context): Promise<void> {
+  try {
+    const user = ctx.state.user;
+    if (!user) {
+      ctx.response.status = 401;
+      ctx.response.body = {
+        success: false,
+        error: 'Authentication required',
+      } as ApiResponse;
+      return;
+    }
+
+    const body = await ctx.request.body.json();
+    const { fictionIds } = body;
+
+    if (!Array.isArray(fictionIds)) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: 'fictionIds array is required',
+      } as ApiResponse;
+      return;
+    }
+
+    // Validate that all fiction IDs are numbers
+    if (!fictionIds.every(id => typeof id === 'number' && id > 0)) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: 'All fiction IDs must be positive numbers',
+      } as ApiResponse;
+      return;
+    }
+
+    await UserFictionService.reorderFavorites(user.id, fictionIds);
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      message: 'Favorites reordered successfully',
+    } as ApiResponse;
+  } catch (error) {
+    console.error('Reorder favorites error:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Internal server error',
+    } as ApiResponse;
+  }
 } 

@@ -126,14 +126,20 @@ export class UserFictionService {
     );
     const total = countResult[0].total;
 
-    // Get userFictions for current page with joined data
+    // Get userFictions with custom order if available, fallback to default order
     const result = await client.query(`
-      SELECT uf.*, f.*, u.email, u.name as user_name
+      SELECT uf.*, f.*, u.email, u.name as user_name, ufo.position as custom_position
       FROM userFiction uf
       LEFT JOIN fiction f ON uf.fiction_id = f.id
       LEFT JOIN users u ON uf.user_id = u.id
+      LEFT JOIN userFictionOrder ufo ON uf.user_id = ufo.user_id AND uf.fiction_id = ufo.fiction_id
       WHERE uf.user_id = ? AND uf.is_favorite = TRUE
-      ORDER BY uf.updated_at DESC
+      ORDER BY 
+        CASE 
+          WHEN ufo.position IS NOT NULL THEN ufo.position 
+          ELSE 999999 
+        END,
+        uf.updated_at DESC
       LIMIT ? OFFSET ?
     `, [userId, limit, offset]);
 
@@ -260,6 +266,35 @@ export class UserFictionService {
       planToRead: stats.planToRead || 0,
       favorites: stats.favorites || 0,
     };
+  }
+
+  // Reorder user's favorite fictions
+  static async reorderFavorites(userId: number, fictionIds: number[]): Promise<void> {
+    // Start a transaction to ensure data consistency
+    await client.execute('START TRANSACTION');
+
+    try {
+      // Clear existing order for this user
+      await client.execute(
+        'DELETE FROM userFictionOrder WHERE user_id = ?',
+        [userId]
+      );
+
+      // Insert new order
+      for (let i = 0; i < fictionIds.length; i++) {
+        await client.execute(
+          'INSERT INTO userFictionOrder (user_id, fiction_id, position) VALUES (?, ?, ?)',
+          [userId, fictionIds[i], i + 1]
+        );
+      }
+
+      // Commit the transaction
+      await client.execute('COMMIT');
+    } catch (error) {
+      // Rollback on error
+      await client.execute('ROLLBACK');
+      throw error;
+    }
   }
 
   // Helper method to map database row to UserFiction object

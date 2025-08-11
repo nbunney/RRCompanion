@@ -160,6 +160,11 @@ export const userFictionAPI = {
     const response = await api.put(`/userFictions/${fictionId}/progress`, { currentChapter, totalChapters });
     return response.data;
   },
+
+  reorderFavorites: async (fictionIds: number[]): Promise<ApiResponse> => {
+    const response = await api.post('/userFictions/favorites/reorder', { fictionIds });
+    return response.data;
+  },
 };
 
 // RoyalRoad API

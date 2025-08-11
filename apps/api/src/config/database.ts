@@ -572,6 +572,29 @@ async function runMigrations(client: Client): Promise<void> {
           INDEX idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `
+    },
+    {
+      name: '010_add_user_fiction_order_table',
+      sql: `
+        CREATE TABLE IF NOT EXISTS userFictionOrder (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          fiction_id INT NOT NULL,
+          position INT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          
+          -- Ensure each user can only have one position per fiction
+          UNIQUE KEY unique_user_fiction (user_id, fiction_id),
+          
+          -- Foreign key constraints
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (fiction_id) REFERENCES fiction(id) ON DELETE CASCADE,
+          
+          -- Index for efficient ordering queries
+          INDEX idx_user_position (user_id, position)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
     }
   ];
 
