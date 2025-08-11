@@ -27,8 +27,8 @@ const Sponsor: React.FC = () => {
       }
 
       try {
-        console.log('🔗 Calling fictionAPI.getFictionByRoyalRoadId with:', parseInt(id));
-        const response = await fictionAPI.getFictionByRoyalRoadId(parseInt(id));
+        console.log('🔗 Calling fictionAPI.getFictionByRoyalRoadId with:', id);
+        const response = await fictionAPI.getFictionByRoyalRoadId(id);
         console.log('🔗 API response:', response);
         if (response.success && response.data) {
           setFiction(response.data);
@@ -67,13 +67,12 @@ const Sponsor: React.FC = () => {
 
       const { clientSecret } = paymentResponse.data;
 
-      // Confirm payment
+      // For now, we'll use a test payment method
+      // In a real implementation, you'd use Stripe Elements to collect card details
       const { error } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: {
-            // For testing, you can use Stripe's test card numbers
-            // 4242 4242 4242 4242 for success
-            // 4000 0000 0000 0002 for decline
+            token: 'tok_visa', // Test token for development
           },
         },
       });
