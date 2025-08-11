@@ -104,7 +104,18 @@ jobs:
             # Install/update Deno dependencies
             echo "🔧 Updating Deno dependencies..."
             cd ../api
-            deno cache --reload src/main.ts
+            
+            # Check if deno is available, if not use the full path
+            if command -v deno >/dev/null 2>&1; then
+                echo "✅ Deno found in PATH"
+                deno cache --reload src/main.ts
+            elif [ -f "$HOME/.deno/bin/deno" ]; then
+                echo "✅ Using Deno from ~/.deno/bin/deno"
+                $HOME/.deno/bin/deno cache --reload src/main.ts
+            else
+                echo "❌ Deno not found, skipping Deno dependency update"
+                echo "⚠️ Please ensure Deno is installed on the server"
+            fi
             
             # Start the API service
             echo "🚀 Starting API service..."
