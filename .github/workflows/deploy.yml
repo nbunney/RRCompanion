@@ -75,8 +75,7 @@ jobs:
       - name: Build Frontend
         run: |
           echo "🔨 Building frontend..."
-          cd apps/web
-          npm run build
+          npm run build --workspace=apps/web
           echo "✅ Frontend built successfully"
         env:
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}

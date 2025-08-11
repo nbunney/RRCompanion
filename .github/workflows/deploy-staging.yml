@@ -46,14 +46,14 @@ jobs:
       - name: Validate Frontend
         run: |
           echo "🔍 Validating frontend configuration..."
-          cd apps/web
-          npm run lint
+          npm run lint --workspace=apps/web
           echo "✅ Frontend validation passed"
 
       - name: Build Frontend
         run: |
-          cd apps/web
-          npm run build
+          echo "🔨 Building frontend..."
+          npm run build --workspace=apps/web
+          echo "✅ Frontend built successfully"
         env:
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
 
