@@ -12,13 +12,25 @@ function getDiscordConfig() {
   };
 }
 
+// Google OAuth configuration - read at runtime
+function getGoogleConfig() {
+  return {
+    clientId: Deno.env.get('GOOGLE_CLIENT_ID'),
+    clientSecret: Deno.env.get('GOOGLE_CLIENT_SECRET'),
+    redirectUri: Deno.env.get('GOOGLE_REDIRECT_URI') || 'https://rrcompanion.com/api/oauth/google/callback'
+  };
+}
+
 // OAuth providers configuration
 export async function getOAuthProviders(ctx: Context): Promise<void> {
   try {
     // Debug: Check environment variables at runtime
     const discordConfig = getDiscordConfig();
+    const googleConfig = getGoogleConfig();
     console.log(`🔧 getOAuthProviders - DISCORD_CLIENT_ID: ${discordConfig.clientId ? 'SET' : 'NOT SET'}`);
     console.log(`🔧 getOAuthProviders - Discord enabled: ${!!discordConfig.clientId}`);
+    console.log(`🔧 getOAuthProviders - GOOGLE_CLIENT_ID: ${googleConfig.clientId ? 'SET' : 'NOT SET'}`);
+    console.log(`🔧 getOAuthProviders - Google enabled: ${!!googleConfig.clientId}`);
 
     const providers = [
       {
@@ -33,7 +45,7 @@ export async function getOAuthProviders(ctx: Context): Promise<void> {
         displayName: 'Google',
         color: '#4285F4',
         icon: '🔍',
-        enabled: false, // Disabled for now
+        enabled: !!googleConfig.clientId, // Enable if Google is configured
       },
       {
         name: 'facebook',
@@ -73,7 +85,9 @@ export async function initiateOAuth(ctx: Context): Promise<void> {
 
     console.log(`🔧 initiateOAuth called for provider: ${provider}`);
     const discordConfig = getDiscordConfig();
+    const googleConfig = getGoogleConfig();
     console.log(`🔧 DISCORD_CLIENT_ID: ${discordConfig.clientId ? 'SET' : 'NOT SET'}`);
+    console.log(`🔧 GOOGLE_CLIENT_ID: ${googleConfig.clientId ? 'SET' : 'NOT SET'}`);
 
     if (provider === 'discord') {
       if (!discordConfig.clientId) {
@@ -100,6 +114,33 @@ export async function initiateOAuth(ctx: Context): Promise<void> {
         success: true,
         data: {
           authorizationUrl: discordAuthUrl.toString(),
+        },
+      } as ApiResponse;
+    } else if (provider === 'google') {
+      if (!googleConfig.clientId) {
+        console.log('❌ Google OAuth not configured - GOOGLE_CLIENT_ID is missing');
+        ctx.response.status = 400;
+        ctx.response.body = {
+          success: false,
+          error: 'Google OAuth is not configured',
+        } as ApiResponse;
+        return;
+      }
+
+      // Build Google OAuth URL
+      const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+      googleAuthUrl.searchParams.set('client_id', googleConfig.clientId);
+      googleAuthUrl.searchParams.set('redirect_uri', googleConfig.redirectUri);
+      googleAuthUrl.searchParams.set('response_type', 'code');
+      googleAuthUrl.searchParams.set('scope', 'openid email profile');
+
+      console.log(`🔧 Generated Google OAuth URL: ${googleAuthUrl.toString()}`);
+
+      ctx.response.status = 200;
+      ctx.response.body = {
+        success: true,
+        data: {
+          authorizationUrl: googleAuthUrl.toString(),
         },
       } as ApiResponse;
     } else {
