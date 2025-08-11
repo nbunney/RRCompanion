@@ -6,7 +6,7 @@ pastoracc.com {
 	root * /var/www/pastoracc.com
 	file_server
 	encode gzip
-	php_fastcgi unix//var/run/php/php5.6-fpm.sock
+	reverse_proxy unix//var/run/php/php5.6-fpm.sock
 }
 
 # LitRPG Scraper - with automatic HTTPS
@@ -18,15 +18,15 @@ litrpg.inventaweb.net {
 
 # RRCompanion.com - with automatic HTTPS
 RRCompanion.com {
-	# Handle API requests - use handle directive with path matching
+	# Handle API requests - proxy to backend
 	handle /api/* {
 		reverse_proxy localhost:8000
 	}
 
 	# Serve the React frontend for all other requests
 	root * /var/www/rrcompanion/apps/web/dist
-	try_files {path} /index.html
 	file_server
+	try_files {path} /index.html
 
 	# Enable compression
 	encode gzip
