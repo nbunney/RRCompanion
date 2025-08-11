@@ -16,8 +16,35 @@ import fictionHistoryRoutes from './routes/fictionHistory.ts';
 import { risingStarsRoutes } from './routes/risingStars.ts';
 import stripeRoutes from './routes/stripe.ts';
 
-// Load environment variables
-config({ export: true });
+// Load environment variables with multiple path attempts
+try {
+  // Try relative to current working directory first
+  config({ export: true });
+  console.log('✅ Loaded .env from current working directory');
+} catch (error) {
+  try {
+    // Try relative to the script location
+    const envPath = new URL('.env', import.meta.url).pathname;
+    config({ path: envPath, export: true });
+    console.log('✅ Loaded .env from script location:', envPath);
+  } catch (error2) {
+    try {
+      // Try absolute path from project root
+      config({ path: '/var/www/rrcompanion/apps/api/.env', export: true });
+      console.log('✅ Loaded .env from absolute path');
+    } catch (error3) {
+      console.warn('❌ Could not load .env file, using system environment variables');
+    }
+  }
+}
+
+// Debug: Check if Stripe key is loaded
+const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+if (stripeKey) {
+  console.log('✅ Stripe key loaded:', stripeKey.substring(0, 20) + '...');
+} else {
+  console.log('❌ Stripe key not found in environment variables');
+}
 
 const app = new Application();
 const router = new Router();
