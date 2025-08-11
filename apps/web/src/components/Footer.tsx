@@ -1,4 +1,5 @@
 import React from 'react';
+import { getCurrentYear } from '@/utils/dateUtils';
 import { Link } from 'react-router-dom';
 
 interface FooterProps {
@@ -11,7 +12,7 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="text-sm text-gray-500">
-            © {new Date().getFullYear()} RRCompanion. All rights reserved.
+            © {getCurrentYear()} RRCompanion. All rights reserved.
           </div>
 
         </div>

@@ -431,11 +431,11 @@ export async function refreshFiction(ctx: Context): Promise<void> {
         favorites: response.data.stats.favorites,
         views: response.data.stats.views,
         score: response.data.stats.score,
-        overall_score: response.data.stats.score || 0,
-        style_score: 0, // These would need to come from Royal Road if available
-        story_score: 0,
-        grammar_score: 0,
-        character_score: 0,
+        overall_score: response.data.stats.overall_score || response.data.stats.score || 0,
+        style_score: response.data.stats.style_score || 0,
+        story_score: response.data.stats.story_score || 0,
+        grammar_score: response.data.stats.grammar_score || 0,
+        character_score: response.data.stats.character_score || 0,
         total_views: response.data.stats.views || 0,
         average_views: response.data.stats.views || 0,
       }

@@ -4,6 +4,7 @@ import Card from '@/components/Card';
 import Button from '@/components/Button';
 import Footer from '@/components/Footer';
 import Logo from '@/components/Logo';
+import { formatLocalDate } from '@/utils/dateUtils';
 
 const Privacy: React.FC = () => {
   return (
@@ -33,7 +34,7 @@ const Privacy: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-8">Privacy Policy</h1>
 
             <p className="text-gray-600 mb-6">
-              <strong>Last updated:</strong> {new Date().toLocaleDateString()}
+              <strong>Last updated:</strong> {formatLocalDate(new Date())}
             </p>
 
             <section className="mb-8">

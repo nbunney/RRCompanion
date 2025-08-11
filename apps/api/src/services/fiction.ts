@@ -33,6 +33,13 @@ export class FictionService {
       favorites: fictionData.favorites || 0,
       views: typeof fictionData.views === 'number' ? fictionData.views : 0,
       score: typeof fictionData.score === 'number' ? fictionData.score : 0,
+      overall_score: typeof fictionData.overall_score === 'number' ? fictionData.overall_score : 0,
+      style_score: typeof fictionData.style_score === 'number' ? fictionData.style_score : 0,
+      story_score: typeof fictionData.story_score === 'number' ? fictionData.story_score : 0,
+      grammar_score: typeof fictionData.grammar_score === 'number' ? fictionData.grammar_score : 0,
+      character_score: typeof fictionData.character_score === 'number' ? fictionData.character_score : 0,
+      total_views: typeof fictionData.total_views === 'number' ? fictionData.total_views : 0,
+      average_views: typeof fictionData.average_views === 'number' ? fictionData.average_views : 0,
     };
 
     // Convert null values to empty strings to prevent replaceAll errors
@@ -54,6 +61,13 @@ export class FictionService {
       cleanData.favorites,
       cleanData.views,
       cleanData.score,
+      cleanData.overall_score,
+      cleanData.style_score,
+      cleanData.story_score,
+      cleanData.grammar_score,
+      cleanData.character_score,
+      cleanData.total_views,
+      cleanData.average_views,
     ];
 
     // Debug: Log the parameters to see what's being passed
@@ -63,8 +77,9 @@ export class FictionService {
       INSERT INTO fiction (
         royalroad_id, title, author_name, author_id, author_avatar,
         description, image_url, status, type, tags, warnings,
-        pages, ratings, followers, favorites, views, score
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        pages, ratings, followers, favorites, views, score, overall_score, style_score,
+        story_score, grammar_score, character_score, total_views, average_views
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, params);
 
     const fiction = await client.query(

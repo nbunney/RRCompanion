@@ -8,6 +8,7 @@ import Card from '@/components/Card';
 import Footer from '@/components/Footer';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { formatLocalDate, formatLocalTime, formatLocalDateTime } from '@/utils/dateUtils';
 
 const FictionDetail: React.FC = () => {
   const { id, slug } = useParams<{ id: string; slug?: string }>();
@@ -22,7 +23,6 @@ const FictionDetail: React.FC = () => {
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [canRefresh, setCanRefresh] = useState(true);
   const [remainingHours, setRemainingHours] = useState<number | null>(null);
-  const [showCurrentCharts, setShowCurrentCharts] = useState(false);
   const [showUnfavoriteConfirm, setShowUnfavoriteConfirm] = useState(false);
   const [risingStarsData, setRisingStarsData] = useState<any[]>([]);
   const [isLoadingRisingStars, setIsLoadingRisingStars] = useState(false);
@@ -168,7 +168,7 @@ const FictionDetail: React.FC = () => {
 
   const loadRisingStarsData = async () => {
     if (!fictionWithHistory?.id) return;
-    
+
     try {
       setIsLoadingRisingStars(true);
       const response = await risingStarsAPI.getRisingStarsForFiction(fictionWithHistory.id);
@@ -394,34 +394,9 @@ const FictionDetail: React.FC = () => {
                   <div className="flex-1">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">{fiction.title}</h1>
                     <p className="text-lg text-gray-600 mb-3">by {fiction.author.name}</p>
-                    {/* Current Charts Toggle Button - positioned under author name on mobile, to the right on desktop */}
-                    {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
-                      <div className="lg:hidden mb-4">
-                        <Button
-                          onClick={() => setShowCurrentCharts(!showCurrentCharts)}
-                          variant="outline"
-                          size="sm"
-                          className="w-fit"
-                        >
-                          {showCurrentCharts ? '📈 Hide Current Charts' : '📈 Show Current Charts'}
-                        </Button>
-                      </div>
-                    )}
+
                   </div>
                   <div className="flex flex-col space-y-2">
-                    {/* Current Charts Toggle Button - desktop version */}
-                    {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
-                      <div className="hidden lg:block mb-2">
-                        <Button
-                          onClick={() => setShowCurrentCharts(!showCurrentCharts)}
-                          variant="outline"
-                          size="sm"
-                          className="w-fit"
-                        >
-                          {showCurrentCharts ? '📈 Hide Current Charts' : '📈 Show Current Charts'}
-                        </Button>
-                      </div>
-                    )}
                     <div className="flex space-x-2">
                       {userFiction ? (
                         <Button
@@ -484,7 +459,7 @@ const FictionDetail: React.FC = () => {
                     {/* Last refresh time and countdown - inline with buttons */}
                     {lastRefreshTime && (
                       <div className="text-xs text-gray-500 mt-1">
-                        <span>Last refreshed: {lastRefreshTime.toLocaleDateString()} at {lastRefreshTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>Last refreshed: {formatLocalDateTime(lastRefreshTime, undefined, { hour: '2-digit', minute: '2-digit' })}</span>
                         {!canRefresh && remainingHours !== null && (
                           <span className="ml-2">
                             {remainingHours <= 0 ? (
@@ -502,7 +477,7 @@ const FictionDetail: React.FC = () => {
                 </div>
 
                 {/* Current Charts Section */}
-                {showCurrentCharts && fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
+                {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
                   <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       📈 Current Charts
@@ -526,13 +501,13 @@ const FictionDetail: React.FC = () => {
                               }))}>
                               <CartesianGrid strokeDasharray="3 3" />
                               <XAxis dataKey="date" />
-                              <YAxis 
-                                domain={[1, 50]} 
+                              <YAxis
+                                domain={[1, 50]}
                                 reversed={true}
                                 tickCount={6}
                                 tickFormatter={(value) => `${value}`}
                               />
-                              <Tooltip 
+                              <Tooltip
                                 formatter={(value: any, name: any) => [
                                   `Position ${value}`,
                                   name === 'position' ? 'Position' : name
@@ -540,16 +515,16 @@ const FictionDetail: React.FC = () => {
                                 labelFormatter={(label) => `Date: ${label}`}
                               />
                               <Legend />
-                              
+
                               {/* Create a line for each genre */}
                               {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
                                 const genreData = risingStarsData
                                   .filter(entry => entry.genre === genre)
-                                  .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime());
-                                
+                                  .sort((a, b) => new Date(a.captured_at).getTime() - new Date(a.captured_at).getTime());
+
                                 const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
                                 const color = colors[index % colors.length];
-                                
+
                                 return (
                                   <Line
                                     key={genre}
@@ -571,7 +546,7 @@ const FictionDetail: React.FC = () => {
                             </LineChart>
                           </ResponsiveContainer>
                         </div>
-                        
+
                         {/* Legend with genre breakdown */}
                         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                           {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
@@ -580,11 +555,11 @@ const FictionDetail: React.FC = () => {
                             const latestEntry = risingStarsData
                               .filter(entry => entry.genre === genre)
                               .sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime())[0];
-                            
+
                             return (
                               <div key={genre} className="flex items-center space-x-2">
-                                <div 
-                                  className="w-3 h-3 rounded-full" 
+                                <div
+                                  className="w-3 h-3 rounded-full"
                                   style={{ backgroundColor: color }}
                                 />
                                 <span className="font-medium">
@@ -697,10 +672,11 @@ const FictionDetail: React.FC = () => {
                 {/* Current Stats Section - Always Visible */}
                 {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
                   <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+
                     <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                       📊 Current Stats
                       <span className="ml-2 text-sm font-normal text-gray-600">
-                        (as of {fictionWithHistory.history[0].captured_at ? new Date(fictionWithHistory.history[0].captured_at).toLocaleDateString() : 'Unknown Date'})
+                        (as of {formatLocalDate(fictionWithHistory.history[0].captured_at)})
                       </span>
                     </h3>
 

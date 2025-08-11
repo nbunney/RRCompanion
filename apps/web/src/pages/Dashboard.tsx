@@ -8,6 +8,7 @@ import AddFiction from '@/components/AddFiction';
 import Footer from '@/components/Footer';
 import Logo from '@/components/Logo';
 import type { RoyalRoadFiction } from '@/types';
+import { formatLocalDate } from '@/utils/dateUtils';
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -102,7 +103,7 @@ const Dashboard: React.FC = () => {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Member since</label>
                   <p className="text-sm text-gray-900">
-                    {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+                    {formatLocalDate(user?.created_at)}
                   </p>
                 </div>
               </div>
