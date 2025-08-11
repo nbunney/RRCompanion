@@ -520,7 +520,7 @@ const FictionDetail: React.FC = () => {
                 {fictionWithHistory && (
                   <CurrentStats
                     fictionData={fictionWithHistory}
-                    latestHistory={fictionWithHistory.history && fictionWithHistory.history.length > 0 ? fictionWithHistory.history[0] : undefined}
+                    latestHistory={fictionWithHistory.history && fictionWithHistory.history.length > 0 ? fictionWithHistory.history[fictionWithHistory.history.length - 1] : undefined}
                   />
                 )}
 
@@ -530,7 +530,7 @@ const FictionDetail: React.FC = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       📈 Current Charts
                       <span className="ml-2 text-sm font-normal text-gray-600">
-                        (as of {formatLocalDate(fictionWithHistory.history[0].captured_at)})
+                        (as of {formatLocalDate(fictionWithHistory.history[fictionWithHistory.history.length - 1].captured_at)})
                       </span>
                     </h3>
 
