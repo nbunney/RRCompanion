@@ -147,6 +147,40 @@ const Sponsor: React.FC = () => {
     loadFiction();
   }, [id]);
 
+  // Refresh fiction data when user navigates back to the page
+  useEffect(() => {
+    const handleFocus = async () => {
+      if (id && fiction) {
+        console.log('🔗 Page focused, refreshing fiction data...');
+        try {
+          const response = await fictionAPI.getFictionByRoyalRoadId(id);
+          if (response.success && response.data) {
+            setFiction(response.data);
+            console.log('✅ Fiction data refreshed on page focus');
+          }
+        } catch (err) {
+          console.error('Error refreshing fiction data on focus:', err);
+        }
+      }
+    };
+
+    // Listen for page focus events (when user navigates back)
+    window.addEventListener('focus', handleFocus);
+
+    // Also refresh when the page becomes visible (for mobile browsers)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        handleFocus();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [id, fiction]);
+
   const handlePaymentSuccess = async (paymentIntentId: string) => {
     setPaymentStatus('success');
     setShowPaymentForm(false);
@@ -312,7 +346,7 @@ const Sponsor: React.FC = () => {
                     <div>
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Score</h3>
                       <p className="text-2xl font-bold text-green-600">
-                        {typeof fiction.score === 'number' ? fiction.score.toFixed(1) : 'N/A'}
+                        {typeof fiction.overall_score === 'number' ? fiction.overall_score.toFixed(1) : 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -372,12 +406,22 @@ const Sponsor: React.FC = () => {
                       </p>
                     </div>
                   ) : (
-                    <Button
-                      className="w-full"
-                      onClick={() => setShowPaymentForm(true)}
-                    >
-                      Sponsor This Fiction - $5
-                    </Button>
+                    <div className="space-y-3">
+                      <div className="text-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <p className="text-gray-600 text-sm font-medium mb-2">
+                          Current Status: <span className="text-red-600">Not Sponsored</span>
+                        </p>
+                        <p className="text-gray-500 text-xs">
+                          This fiction is not currently receiving daily data updates
+                        </p>
+                      </div>
+                      <Button
+                        className="w-full"
+                        onClick={() => setShowPaymentForm(true)}
+                      >
+                        Sponsor This Fiction - $5
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

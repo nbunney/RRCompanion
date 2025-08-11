@@ -141,7 +141,7 @@ const SortableFictionItem: React.FC<SortableFictionItemProps> = ({
               {userFiction.fiction && (
                 <>
                   <span>Followers: {typeof userFiction.fiction.followers === 'number' ? userFiction.fiction.followers.toLocaleString() : '0'}</span>
-                  <span>Score: {typeof userFiction.fiction.score === 'number' ? userFiction.fiction.score.toFixed(1) : 'N/A'}</span>
+                  <span>Score: {typeof userFiction.fiction.overall_score === 'number' ? userFiction.fiction.overall_score.toFixed(1) : 'N/A'}</span>
                 </>
               )}
             </div>

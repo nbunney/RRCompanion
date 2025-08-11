@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createFictionUrl } from '@/utils';
-import { royalroadAPI, userFictionAPI, fictionAPI } from '@/services/api';
+import { royalroadAPI, userFictionAPI, fictionAPI, risingStarsAPI } from '@/services/api';
 import type { RoyalRoadFiction, UserFiction, Fiction } from '@/types';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
@@ -24,6 +24,8 @@ const FictionDetail: React.FC = () => {
   const [remainingHours, setRemainingHours] = useState<number | null>(null);
   const [showCurrentCharts, setShowCurrentCharts] = useState(false);
   const [showUnfavoriteConfirm, setShowUnfavoriteConfirm] = useState(false);
+  const [risingStarsData, setRisingStarsData] = useState<any[]>([]);
+  const [isLoadingRisingStars, setIsLoadingRisingStars] = useState(false);
 
   // Check refresh status every minute
   const checkRefreshStatus = useCallback(() => {
@@ -76,6 +78,12 @@ const FictionDetail: React.FC = () => {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (fictionWithHistory?.id) {
+      loadRisingStarsData();
+    }
+  }, [fictionWithHistory?.id]);
+
   const loadFiction = async () => {
     try {
       setIsLoading(true);
@@ -108,7 +116,7 @@ const FictionDetail: React.FC = () => {
             followers: fictionResponse.data.followers || 0,
             favorites: fictionResponse.data.favorites || 0,
             views: fictionResponse.data.views || 0,
-            score: fictionResponse.data.score || 0,
+            score: fictionResponse.data.overall_score || 0,
           },
           chapters: [],
         };
@@ -155,6 +163,22 @@ const FictionDetail: React.FC = () => {
       }
     } catch (err) {
       // Silently fail - user might not have this fiction in their list
+    }
+  };
+
+  const loadRisingStarsData = async () => {
+    if (!fictionWithHistory?.id) return;
+    
+    try {
+      setIsLoadingRisingStars(true);
+      const response = await risingStarsAPI.getRisingStarsForFiction(fictionWithHistory.id);
+      if (response.success && response.data) {
+        setRisingStarsData(response.data);
+      }
+    } catch (err) {
+      console.error('Error loading Rising Stars data:', err);
+    } finally {
+      setIsLoadingRisingStars(false);
     }
   };
 
@@ -278,7 +302,7 @@ const FictionDetail: React.FC = () => {
             followers: response.data.followers || 0,
             favorites: response.data.favorites || 0,
             views: response.data.views || 0,
-            score: response.data.score || 0,
+            score: response.data.overall_score || 0,
           },
           chapters: [],
         };
@@ -540,7 +564,7 @@ const FictionDetail: React.FC = () => {
                                 storyScore: entry.story_score,
                                 grammarScore: entry.grammar_score,
                                 characterScore: entry.character_score,
-                                score: entry.score,
+                                score: entry.overall_score,
                                 ratings: entry.ratings,
                               }))}>
                               <CartesianGrid strokeDasharray="3 3" />
@@ -554,7 +578,7 @@ const FictionDetail: React.FC = () => {
                               <Line yAxisId="left" type="monotone" dataKey="storyScore" stroke="#ffc658" name="Story Score" />
                               <Line yAxisId="left" type="monotone" dataKey="grammarScore" stroke="#ff7300" name="Grammar Score" />
                               <Line yAxisId="left" type="monotone" dataKey="characterScore" stroke="#ff0000" name="Character Score" />
-                              <Line yAxisId="left" type="monotone" dataKey="score" stroke="#8B4513" name="Score" />
+                              <Line yAxisId="left" type="monotone" dataKey="score" stroke="#8B4513" name="Overall Score" />
                               <Line yAxisId="right" type="monotone" dataKey="ratings" stroke="#000000" name="Ratings" />
                             </LineChart>
                           </ResponsiveContainer>
@@ -570,6 +594,113 @@ const FictionDetail: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Rising Stars Chart */}
+                {isLoadingRisingStars ? (
+                  <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      ⭐ Rising Stars Performance
+                    </h3>
+                    <div className="flex items-center justify-center h-32 text-gray-500">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                        <div>Loading Rising Stars data...</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : risingStarsData.length > 0 ? (
+                  <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      ⭐ Rising Stars Performance
+                      <span className="ml-2 text-sm font-normal text-gray-600">
+                        (Position 1 = Top, 50 = Bottom)
+                      </span>
+                    </h3>
+                    
+                    <div className="w-full h-80 bg-white border border-gray-200 rounded-lg p-4">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={risingStarsData
+                          .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime())
+                          .map(entry => ({
+                            date: new Date(entry.captured_at).toLocaleDateString(),
+                            position: entry.position,
+                            genre: entry.genre,
+                          }))}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" />
+                          <YAxis 
+                            domain={[1, 50]} 
+                            reversed={true}
+                            tickCount={6}
+                            tickFormatter={(value) => `${value}`}
+                          />
+                          <Tooltip 
+                            formatter={(value: any, name: any) => [
+                              `Position ${value}`,
+                              name === 'position' ? 'Position' : name
+                            ]}
+                            labelFormatter={(label) => `Date: ${label}`}
+                          />
+                          <Legend />
+                          
+                          {/* Create a line for each genre */}
+                          {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
+                            const genreData = risingStarsData
+                              .filter(entry => entry.genre === genre)
+                              .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime());
+                            
+                            const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
+                            const color = colors[index % colors.length];
+                            
+                            return (
+                              <Line
+                                key={genre}
+                                type="monotone"
+                                dataKey="position"
+                                data={genreData.map(entry => ({
+                                  date: new Date(entry.captured_at).toLocaleDateString(),
+                                  position: entry.position,
+                                  genre: entry.genre,
+                                }))}
+                                stroke={color}
+                                name={genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}
+                                strokeWidth={2}
+                                dot={{ r: 4 }}
+                                connectNulls={false}
+                              />
+                            );
+                          })}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    {/* Legend with genre breakdown */}
+                    <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                      {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
+                        const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
+                        const color = colors[index % colors.length];
+                        const latestEntry = risingStarsData
+                          .filter(entry => entry.genre === genre)
+                          .sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime())[0];
+                        
+                        return (
+                          <div key={genre} className="flex items-center space-x-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: color }}
+                            />
+                            <span className="font-medium">
+                              {genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}:
+                            </span>
+                            <span className="text-gray-600">
+                              Position {latestEntry?.position || 'N/A'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
 
                 {/* Description */}
                 {fiction.description && (
@@ -599,9 +730,9 @@ const FictionDetail: React.FC = () => {
                       </div>
                       <div className="text-center">
                         <div className="text-2xl font-bold text-blue-600">
-                          {typeof fictionWithHistory.history[0].score === 'number' ? fictionWithHistory.history[0].score.toFixed(1) : 'N/A'}
+                          {typeof fictionWithHistory.history[0].overall_score === 'number' ? fictionWithHistory.history[0].overall_score.toFixed(1) : 'N/A'}
                         </div>
-                        <div className="text-sm text-gray-500">Score</div>
+                        <div className="text-sm text-gray-500">Overall Score</div>
                       </div>
                       <div className="text-center">
                         <div className="text-2xl font-bold text-blue-600">
