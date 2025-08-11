@@ -11,7 +11,11 @@ export const useOAuth = () => {
       setIsLoading(true);
       const response = await oauthAPI.getProviders();
       if (response.success && response.data) {
-        setProviders(response.data);
+        // Filter out Facebook and Apple providers
+        const filteredProviders = response.data.filter(
+          provider => !['facebook', 'apple'].includes(provider.name.toLowerCase())
+        );
+        setProviders(filteredProviders);
       } else {
         // If OAuth is disabled, set empty providers array
         setProviders([]);
