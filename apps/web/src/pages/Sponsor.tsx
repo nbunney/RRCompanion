@@ -13,7 +13,7 @@ import Modal from '../components/Modal';
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Payment form component
-const PaymentForm: React.FC<{ fiction: Fiction; onSuccess: () => void; onCancel: () => void }> = ({ fiction, onSuccess, onCancel }) => {
+const PaymentForm: React.FC<{ fiction: Fiction; onSuccess: (paymentIntentId: string) => void; onCancel: () => void }> = ({ fiction, onSuccess, onCancel }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -48,7 +48,9 @@ const PaymentForm: React.FC<{ fiction: Fiction; onSuccess: () => void; onCancel:
       if (paymentError) {
         setError(paymentError.message || 'Payment failed');
       } else {
-        onSuccess();
+        // Get the payment intent ID from the response
+        const paymentIntentId = paymentResponse.data.paymentIntentId;
+        onSuccess(paymentIntentId);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment failed');
@@ -145,17 +147,60 @@ const Sponsor: React.FC = () => {
     loadFiction();
   }, [id]);
 
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
     setPaymentStatus('success');
     setShowPaymentForm(false);
 
-    // Refresh the fiction data to show it's now sponsored
-    if (fiction) {
-      const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fiction.royalroad_id);
-      if (fictionResponse.success && fictionResponse.data) {
-        setFiction(fictionResponse.data);
+    // Poll for payment confirmation and fiction update
+    let attempts = 0;
+    const maxAttempts = 10;
+    const pollInterval = 2000; // 2 seconds
+
+    const pollPaymentStatus = async () => {
+      try {
+        // Check payment status
+        const paymentStatus = await stripeAPI.getPaymentStatus(paymentIntentId);
+
+        if (paymentStatus.success && paymentStatus.data.status === 'succeeded') {
+          // Payment confirmed, now refresh fiction data
+          if (fiction) {
+            const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fiction.royalroad_id);
+            if (fictionResponse.success && fictionResponse.data) {
+              setFiction(fictionResponse.data);
+              console.log('✅ Fiction updated as sponsored');
+              return; // Success, stop polling
+            }
+          }
+        }
+
+        // If not successful yet, continue polling
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(pollPaymentStatus, pollInterval);
+        } else {
+          console.warn('⚠️ Payment confirmation polling timed out');
+          // Still refresh fiction data as fallback
+          if (fiction) {
+            const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fiction.royalroad_id);
+            if (fictionResponse.success && fictionResponse.data) {
+              setFiction(fictionResponse.data);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error polling payment status:', error);
+        // Fallback: refresh fiction data
+        if (fiction) {
+          const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fiction.royalroad_id);
+          if (fictionResponse.success && fictionResponse.data) {
+            setFiction(fictionResponse.data);
+          }
+        }
       }
-    }
+    };
+
+    // Start polling
+    pollPaymentStatus();
   };
 
   if (loading) {
