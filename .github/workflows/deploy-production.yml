@@ -140,10 +140,14 @@ jobs:
             sudo chown -R www-data:www-data /var/www/html/
             sudo chmod -R 755 /var/www/html/
             
+            # Update Caddy configuration with new CSP
+            echo "🔧 Updating Caddy configuration..."
+            sudo cp /var/www/rrcompanion/scripts/caddyfile.template /etc/caddy/Caddyfile
+            
             # Reload Caddy
             echo "🔄 Reloading Caddy..."
             if sudo systemctl reload caddy; then
-                echo "✅ Caddy reloaded successfully"
+                echo "✅ Caddy configuration updated and reloaded successfully"
             else
                 echo "⚠️ Caddy reload failed, checking status..."
                 sudo systemctl status caddy --no-pager
