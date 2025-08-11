@@ -1,4 +1,4 @@
-import { Client } from 'mysql';
+import { client } from '../config/database.ts';
 
 export interface RisingStarEntry {
   id?: number;
@@ -9,48 +9,11 @@ export interface RisingStarEntry {
 }
 
 export class RisingStarsService {
-  private dbClient: Client;
-
-  constructor() {
-    this.dbClient = new Client();
-  }
-
-  // Get a fresh database connection
-  private async getConnection(): Promise<Client> {
-    try {
-      // If client is not connected, connect it
-      if (!this.dbClient.pool) {
-        const dbConfig = {
-          hostname: Deno.env.get('DB_HOST') || 'localhost',
-          port: parseInt(Deno.env.get('DB_PORT') || '3306'),
-          username: Deno.env.get('DB_USER') || 'root',
-          password: Deno.env.get('DB_PASSWORD') || '',
-          db: Deno.env.get('DB_NAME') || 'RRCompanion',
-          charset: 'utf8mb4',
-        };
-        await this.dbClient.connect(dbConfig);
-      }
-      return this.dbClient;
-    } catch (error) {
-      console.error('Error getting database connection:', error);
-      throw error;
-    }
-  }
-
-  // Close database connection
-  private async closeConnection(): Promise<void> {
-    try {
-      if (this.dbClient.pool) {
-        await this.dbClient.close();
-      }
-    } catch (error) {
-      console.error('Error closing database connection:', error);
-    }
-  }
+  // Use the shared database client from the config
+  private dbClient = client;
 
   // Save a rising star entry
   async saveRisingStarEntry(entry: RisingStarEntry): Promise<void> {
-    const client = await this.getConnection();
     try {
       const query = `
         INSERT INTO risingStars (fiction_id, genre, position, captured_at)
@@ -60,7 +23,7 @@ export class RisingStarsService {
           captured_at = VALUES(captured_at)
       `;
 
-      await client.execute(query, [
+      await this.dbClient.execute(query, [
         entry.fiction_id,
         entry.genre,
         entry.position,
@@ -71,14 +34,11 @@ export class RisingStarsService {
     } catch (error) {
       console.error('❌ Error saving rising star entry:', error);
       throw error;
-    } finally {
-      await this.closeConnection();
     }
   }
 
   // Get rising stars data for a specific genre and date range
   async getRisingStarsData(genre?: string, startDate?: Date, endDate?: Date): Promise<RisingStarEntry[]> {
-    const client = await this.getConnection();
     try {
       let query = `
         SELECT rs.*, f.title, f.author_name
@@ -105,19 +65,16 @@ export class RisingStarsService {
 
       query += ` ORDER BY rs.captured_at DESC, rs.position ASC`;
 
-      const result = await client.query(query, params);
+      const result = await this.dbClient.query(query, params);
       return result as RisingStarEntry[];
     } catch (error) {
       console.error('❌ Error getting rising stars data:', error);
       throw error;
-    } finally {
-      await this.closeConnection();
     }
   }
 
   // Get the latest rising stars data for all genres
   async getLatestRisingStarsData(): Promise<RisingStarEntry[]> {
-    const client = await this.getConnection();
     try {
       const query = `
         SELECT rs.*, f.title, f.author_name
@@ -131,19 +88,16 @@ export class RisingStarsService {
         ORDER BY rs.genre, rs.position
       `;
 
-      const result = await client.query(query);
+      const result = await this.dbClient.query(query);
       return result as RisingStarEntry[];
     } catch (error) {
       console.error('❌ Error getting latest rising stars data:', error);
       throw error;
-    } finally {
-      await this.closeConnection();
     }
   }
 
   // Get rising stars data for a specific fiction
   async getRisingStarsDataForFiction(fictionId: number): Promise<RisingStarEntry[]> {
-    const client = await this.getConnection();
     try {
       const query = `
         SELECT rs.*
@@ -152,7 +106,7 @@ export class RisingStarsService {
         ORDER BY rs.captured_at DESC
       `;
 
-      const result = await client.query(query, [fictionId]);
+      const result = await this.dbClient.query(query, [fictionId]);
       return result.map((row: any) => ({
         id: row.id,
         fiction_id: row.fiction_id,
@@ -163,16 +117,13 @@ export class RisingStarsService {
     } catch (error) {
       console.error('❌ Error getting rising stars data for fiction:', error);
       throw error;
-    } finally {
-      await this.closeConnection();
     }
   }
 
   // Get fiction ID by Royal Road ID
   private async getFictionIdByRoyalRoadId(royalroadId: string): Promise<number | null> {
-    const client = await this.getConnection();
     try {
-      const result = await client.query(
+      const result = await this.dbClient.query(
         'SELECT id FROM fiction WHERE royalroad_id = ?',
         [royalroadId]
       );
@@ -184,8 +135,6 @@ export class RisingStarsService {
     } catch (error) {
       console.error('❌ Error getting fiction ID by Royal Road ID:', error);
       throw error;
-    } finally {
-      await this.closeConnection();
     }
   }
 

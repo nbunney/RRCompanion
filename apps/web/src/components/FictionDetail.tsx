@@ -7,8 +7,9 @@ import Button from '@/components/Button';
 import Card from '@/components/Card';
 import Footer from '@/components/Footer';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { formatLocalDate, formatLocalTime, formatLocalDateTime } from '@/utils/dateUtils';
+import Tags from '@/components/Tags';
+import { RisingStarsChart, EngagementGrowthChart, PerceivedQualityChart, CurrentStats } from '@/components/charts';
+import { formatLocalDate, formatLocalDateTime } from '@/utils/dateUtils';
 
 const FictionDetail: React.FC = () => {
   const { id, slug } = useParams<{ id: string; slug?: string }>();
@@ -25,7 +26,7 @@ const FictionDetail: React.FC = () => {
   const [remainingHours, setRemainingHours] = useState<number | null>(null);
   const [showUnfavoriteConfirm, setShowUnfavoriteConfirm] = useState(false);
   const [risingStarsData, setRisingStarsData] = useState<any[]>([]);
-  const [isLoadingRisingStars, setIsLoadingRisingStars] = useState(false);
+
 
   // Check refresh status every minute
   const checkRefreshStatus = useCallback(() => {
@@ -53,7 +54,12 @@ const FictionDetail: React.FC = () => {
   // Initialize lastRefreshTime from the most recent fictionHistory entry
   useEffect(() => {
     if (fictionWithHistory?.history && fictionWithHistory.history.length > 0) {
-      const mostRecentEntry = fictionWithHistory.history[0]; // History is ordered by captured_at DESC
+      // Find the most recent entry by comparing dates
+      const mostRecentEntry = fictionWithHistory.history.reduce((latest, current) => {
+        if (!latest.captured_at) return current;
+        if (!current.captured_at) return latest;
+        return new Date(current.captured_at) > new Date(latest.captured_at) ? current : latest;
+      });
       if (mostRecentEntry.captured_at) {
         setLastRefreshTime(new Date(mostRecentEntry.captured_at));
       }
@@ -170,16 +176,40 @@ const FictionDetail: React.FC = () => {
     if (!fictionWithHistory?.id) return;
 
     try {
-      setIsLoadingRisingStars(true);
       const response = await risingStarsAPI.getRisingStarsForFiction(fictionWithHistory.id);
       if (response.success && response.data) {
-        setRisingStarsData(response.data);
+        // Process the data to remove duplicates and simplify dates
+        const processedData = processRisingStarsData(response.data);
+        setRisingStarsData(processedData);
       }
     } catch (err) {
       console.error('Error loading Rising Stars data:', err);
-    } finally {
-      setIsLoadingRisingStars(false);
     }
+  };
+
+  // Process Rising Stars data to remove duplicates and simplify dates
+  const processRisingStarsData = (data: any[]) => {
+    // Create a map to track the latest entry for each genre per day
+    const dailyGenreMap = new Map<string, any>();
+
+    data.forEach(entry => {
+      // Convert datetime to date only (YYYY-MM-DD format)
+      const dateOnly = new Date(entry.captured_at).toISOString().split('T')[0];
+      const key = `${dateOnly}-${entry.genre}`;
+
+      // If we already have an entry for this genre on this day, keep the latest one
+      if (!dailyGenreMap.has(key) ||
+        new Date(entry.captured_at) > new Date(dailyGenreMap.get(key).captured_at)) {
+        dailyGenreMap.set(key, {
+          ...entry,
+          captured_at: dateOnly // Store just the date, not the full datetime
+        });
+      }
+    });
+
+    // Convert map values back to array and sort by date
+    return Array.from(dailyGenreMap.values())
+      .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime());
   };
 
   const handleAddToFavorites = async () => {
@@ -310,8 +340,18 @@ const FictionDetail: React.FC = () => {
         setFictionWithHistory(response.data);
         setFiction(updatedFiction);
 
-        // Update refresh status
-        setLastRefreshTime(new Date());
+        // Update refresh status - use the most recent history entry time
+        if (response.data.history && response.data.history.length > 0) {
+          // Find the most recent entry by comparing dates
+          const mostRecentEntry = response.data.history.reduce((latest, current) => {
+            if (!latest.captured_at) return current;
+            if (!current.captured_at) return latest;
+            return new Date(current.captured_at) > new Date(latest.captured_at) ? current : latest;
+          });
+          if (mostRecentEntry.captured_at) {
+            setLastRefreshTime(new Date(mostRecentEntry.captured_at));
+          }
+        }
       } else {
         setError(response.message || 'Failed to refresh fiction');
       }
@@ -459,9 +499,9 @@ const FictionDetail: React.FC = () => {
                     {/* Last refresh time and countdown - inline with buttons */}
                     {lastRefreshTime && (
                       <div className="text-xs text-gray-500 mt-1">
-                        <span>Last refreshed: {formatLocalDateTime(lastRefreshTime, undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div>Last refreshed: {formatLocalDateTime(lastRefreshTime, undefined, { hour: '2-digit', minute: '2-digit' })}</div>
                         {!canRefresh && remainingHours !== null && (
-                          <span className="ml-2">
+                          <div className="mt-1">
                             {remainingHours <= 0 ? (
                               <span className="text-green-600 font-medium">• Can refresh now!</span>
                             ) : remainingHours < 1 ? (
@@ -469,12 +509,20 @@ const FictionDetail: React.FC = () => {
                             ) : (
                               <span>• Can refresh in {Math.floor(remainingHours)} hours {Math.ceil((remainingHours % 1) * 60)} minutes</span>
                             )}
-                          </span>
+                          </div>
                         )}
                       </div>
                     )}
                   </div>
                 </div>
+
+                {/* Current Stats Section - Always Visible */}
+                {fictionWithHistory && (
+                  <CurrentStats
+                    fictionData={fictionWithHistory}
+                    latestHistory={fictionWithHistory.history && fictionWithHistory.history.length > 0 ? fictionWithHistory.history[0] : undefined}
+                  />
+                )}
 
                 {/* Current Charts Section */}
                 {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
@@ -482,184 +530,20 @@ const FictionDetail: React.FC = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       📈 Current Charts
                       <span className="ml-2 text-sm font-normal text-gray-600">
-                        (as of {fictionWithHistory.history[0].captured_at ? new Date(fictionWithHistory.history[0].captured_at).toLocaleDateString() : 'Unknown Date'})
+                        (as of {formatLocalDate(fictionWithHistory.history[0].captured_at)})
                       </span>
                     </h3>
 
                     {/* Rising Stars Chart - Only show if we have data */}
-                    {risingStarsData.length > 0 && (
-                      <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                        <h4 className="text-md font-medium text-gray-700 mb-3">⭐ Rising Stars Performance</h4>
-                        <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={risingStarsData
-                              .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime())
-                              .map(entry => ({
-                                date: new Date(entry.captured_at).toLocaleDateString(),
-                                position: entry.position,
-                                genre: entry.genre,
-                              }))}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="date" />
-                              <YAxis
-                                domain={[1, 50]}
-                                reversed={true}
-                                tickCount={6}
-                                tickFormatter={(value) => `${value}`}
-                              />
-                              <Tooltip
-                                formatter={(value: any, name: any) => [
-                                  `Position ${value}`,
-                                  name === 'position' ? 'Position' : name
-                                ]}
-                                labelFormatter={(label) => `Date: ${label}`}
-                              />
-                              <Legend />
-
-                              {/* Create a line for each genre */}
-                              {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
-                                const genreData = risingStarsData
-                                  .filter(entry => entry.genre === genre)
-                                  .sort((a, b) => new Date(a.captured_at).getTime() - new Date(a.captured_at).getTime());
-
-                                const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
-                                const color = colors[index % colors.length];
-
-                                return (
-                                  <Line
-                                    key={genre}
-                                    type="monotone"
-                                    dataKey="position"
-                                    data={genreData.map(entry => ({
-                                      date: new Date(entry.captured_at).toLocaleDateString(),
-                                      position: entry.position,
-                                      genre: entry.genre,
-                                    }))}
-                                    stroke={color}
-                                    name={genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}
-                                    strokeWidth={2}
-                                    dot={{ r: 4 }}
-                                    connectNulls={false}
-                                  />
-                                );
-                              })}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-
-                        {/* Legend with genre breakdown */}
-                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                          {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
-                            const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
-                            const color = colors[index % colors.length];
-                            const latestEntry = risingStarsData
-                              .filter(entry => entry.genre === genre)
-                              .sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime())[0];
-
-                            return (
-                              <div key={genre} className="flex items-center space-x-2">
-                                <div
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: color }}
-                                />
-                                <span className="font-medium">
-                                  {genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}:
-                                </span>
-                                <span className="text-gray-600">
-                                  Position {latestEntry?.position || 'N/A'}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+                    <RisingStarsChart risingStarsData={risingStarsData} />
 
                     {/* Chart 1: Engagement & Growth Metrics */}
-                    <div className="mb-6">
-                      <h4 className="text-md font-medium text-gray-700 mb-3">Engagement & Growth Metrics</h4>
-                      <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4">
-                        {fictionWithHistory.history && fictionWithHistory.history.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={fictionWithHistory.history
-                              .sort((a, b) => new Date(a.captured_at!).getTime() - new Date(b.captured_at!).getTime())
-                              .map(entry => ({
-                                date: new Date(entry.captured_at!).toLocaleDateString(),
-                                pages: entry.pages,
-                                followers: entry.followers,
-                                totalViews: entry.total_views,
-                                averageViews: entry.average_views,
-                              }))}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="date" />
-                              <YAxis yAxisId="left" />
-                              <YAxis yAxisId="right" orientation="right" />
-                              <Tooltip />
-                              <Legend />
-                              <Line yAxisId="left" type="monotone" dataKey="pages" stroke="#8884d8" name="Pages" />
-                              <Line yAxisId="left" type="monotone" dataKey="followers" stroke="#82ca9d" name="Followers" />
-                              <Line yAxisId="right" type="monotone" dataKey="totalViews" stroke="#ffc658" name="Total Views" />
-                              <Line yAxisId="right" type="monotone" dataKey="averageViews" stroke="#ff7300" name="Average Views" />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-gray-500">
-                            <div className="text-center">
-                              <div className="text-2xl mb-2">📈</div>
-                              <div>No data available</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <EngagementGrowthChart history={fictionWithHistory.history || []} />
 
-                    {/* Chart 2: Rating & Quality Metrics */}
-                    <div>
-                      <h4 className="text-md font-medium text-gray-700 mb-3">Rating & Quality Metrics</h4>
-                      <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4">
-                        {fictionWithHistory.history && fictionWithHistory.history.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={fictionWithHistory.history
-                              .sort((a, b) => new Date(a.captured_at!).getTime() - new Date(b.captured_at!).getTime())
-                              .map(entry => ({
-                                date: new Date(entry.captured_at!).toLocaleDateString(),
-                                overallScore: entry.overall_score,
-                                styleScore: entry.style_score,
-                                storyScore: entry.story_score,
-                                grammarScore: entry.grammar_score,
-                                characterScore: entry.character_score,
-                                score: entry.overall_score,
-                                ratings: entry.ratings,
-                              }))}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="date" />
-                              <YAxis yAxisId="left" domain={[0, 5]} />
-                              <YAxis yAxisId="right" orientation="right" domain={[0, 'dataMax > 10 ? dataMax : 10']} />
-                              <Tooltip />
-                              <Legend />
-                              <Line yAxisId="left" type="monotone" dataKey="overallScore" stroke="#8884d8" name="Overall Score" />
-                              <Line yAxisId="left" type="monotone" dataKey="styleScore" stroke="#82ca9d" name="Style Score" />
-                              <Line yAxisId="left" type="monotone" dataKey="storyScore" stroke="#ffc658" name="Story Score" />
-                              <Line yAxisId="left" type="monotone" dataKey="grammarScore" stroke="#ff7300" name="Grammar Score" />
-                              <Line yAxisId="left" type="monotone" dataKey="characterScore" stroke="#ff0000" name="Character Score" />
-                              <Line yAxisId="left" type="monotone" dataKey="score" stroke="#8B4513" name="Overall Score" />
-                              <Line yAxisId="right" type="monotone" dataKey="ratings" stroke="#000000" name="Ratings" />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-gray-500">
-                            <div className="text-center">
-                              <div className="text-2xl mb-2">⭐</div>
-                              <div>No data available</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    {/* Chart 2: Perceived Quality Metrics */}
+                    <PerceivedQualityChart history={fictionWithHistory.history || []} />
                   </div>
                 )}
-
-
 
                 {/* Description */}
                 {fiction.description && (
@@ -669,179 +553,13 @@ const FictionDetail: React.FC = () => {
                   </div>
                 )}
 
-                {/* Current Stats Section - Always Visible */}
-                {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
-                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                      📊 Current Stats
-                      <span className="ml-2 text-sm font-normal text-gray-600">
-                        (as of {formatLocalDate(fictionWithHistory.history[0].captured_at)})
-                      </span>
-                    </h3>
-
-                    {/* Primary Stats - Large Display */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {typeof fictionWithHistory.history[0].pages === 'number' ? fictionWithHistory.history[0].pages.toLocaleString() : 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">Pages</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {typeof fictionWithHistory.history[0].overall_score === 'number' ? fictionWithHistory.history[0].overall_score.toFixed(1) : 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">Overall Score</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {typeof fictionWithHistory.history[0].followers === 'number' ? fictionWithHistory.history[0].followers.toLocaleString() : 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">Followers</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {typeof fictionWithHistory.history[0].views === 'number' ? fictionWithHistory.history[0].views.toLocaleString() : 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">Views</div>
-                      </div>
-                    </div>
-
-                    {/* All Stats Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Ratings:</span>
-                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].ratings === 'number' ? fictionWithHistory.history[0].ratings.toLocaleString() : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Favorites:</span>
-                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].favorites === 'number' ? fictionWithHistory.history[0].favorites.toLocaleString() : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Overall Score:</span>
-                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].overall_score === 'number' ? fictionWithHistory.history[0].overall_score.toFixed(1) : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Style Score:</span>
-                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].style_score === 'number' ? fictionWithHistory.history[0].style_score.toFixed(1) : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Story Score:</span>
-                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].story_score === 'number' ? fictionWithHistory.history[0].story_score.toFixed(1) : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Grammar Score:</span>
-                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].grammar_score === 'number' ? fictionWithHistory.history[0].grammar_score.toFixed(1) : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Character Score:</span>
-                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].character_score === 'number' ? fictionWithHistory.history[0].character_score.toFixed(1) : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Total Views:</span>
-                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].total_views === 'number' ? fictionWithHistory.history[0].total_views.toLocaleString() : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Average Views:</span>
-                        <span className="text-gray-900">{typeof fictionWithHistory.history[0].average_views === 'number' ? fictionWithHistory.history[0].average_views.toLocaleString() : 'N/A'}</span>
-                      </div>
-                    </div>
-
-                    {/* Metadata */}
-                    {(fictionWithHistory.history[0].status || fictionWithHistory.history[0].type || fictionWithHistory.history[0].tags || fictionWithHistory.history[0].warnings) && (
-                      <div className="mt-4 pt-4 border-t border-blue-200">
-                        <h4 className="font-medium text-gray-700 mb-2">Additional Details</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          {fictionWithHistory.history[0].status && (
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">Status:</span>
-                              <span className="text-gray-900">{fictionWithHistory.history[0].status}</span>
-                            </div>
-                          )}
-                          {fictionWithHistory.history[0].type && (
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">Type:</span>
-                              <span className="text-gray-900">{fictionWithHistory.history[0].type}</span>
-                            </div>
-                          )}
-                          {fictionWithHistory.history[0].tags && Array.isArray(fictionWithHistory.history[0].tags) && fictionWithHistory.history[0].tags.length > 0 && (
-                            <div className="md:col-span-2">
-                              <span className="font-medium text-gray-600">Tags:</span>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {fictionWithHistory.history[0].tags.map((tag, index) => (
-                                  <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {fictionWithHistory.history[0].warnings && Array.isArray(fictionWithHistory.history[0].warnings) && fictionWithHistory.history[0].warnings.length > 0 && (
-                            <div className="md:col-span-2">
-                              <span className="font-medium text-gray-600">Warnings:</span>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {fictionWithHistory.history[0].warnings.map((warning, index) => (
-                                  <span key={index} className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
-                                    {warning}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Tags */}
-                {fiction.tags && fiction.tags.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Tags</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {fiction.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Warnings */}
-                {fiction.warnings && fiction.warnings.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Content Warnings</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {fiction.warnings
-                        .filter((warning) => warning && warning.trim() !== '')
-                        .map((warning, index) => (
-                          <span
-                            key={`warning-${index}-${warning}`}
-                            className="px-3 py-1 bg-red-100 text-red-800 text-sm rounded-full"
-                          >
-                            {warning}
-                          </span>
-                        ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Status and Type - only show if they have values */}
-                {(fiction.status || fiction.type) && (
-                  <div className="flex space-x-4 text-sm text-gray-600">
-                    {fiction.status && (
-                      <span>Status: <span className="font-semibold">{fiction.status}</span></span>
-                    )}
-                    {fiction.type && (
-                      <span>Type: <span className="font-semibold">{fiction.type}</span></span>
-                    )}
-                  </div>
-                )}
+                {/* Tags, Warnings, Status, and Type */}
+                <Tags
+                  tags={fiction.tags || []}
+                  warnings={fiction.warnings || []}
+                  status={fiction.status}
+                  type={fiction.type}
+                />
               </div>
             </div>
           </Card>

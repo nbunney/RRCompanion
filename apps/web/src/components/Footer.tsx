@@ -1,6 +1,5 @@
 import React from 'react';
 import { getCurrentYear } from '@/utils/dateUtils';
-import { Link } from 'react-router-dom';
 
 interface FooterProps {
   className?: string;
