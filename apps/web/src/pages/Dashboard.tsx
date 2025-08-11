@@ -39,12 +39,6 @@ const Dashboard: React.FC = () => {
               <span className="text-sm text-gray-700">
                 Welcome, {user?.name || user?.email}
               </span>
-              <Link to="/privacy" className="text-sm text-gray-600 hover:text-gray-900">
-                Privacy
-              </Link>
-              <Link to="/terms" className="text-sm text-gray-600 hover:text-gray-900">
-                Terms
-              </Link>
               <Button
                 variant="outline"
                 size="sm"

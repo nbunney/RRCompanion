@@ -13,14 +13,7 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
           <div className="text-sm text-gray-500">
             © {new Date().getFullYear()} RRCompanion. All rights reserved.
           </div>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <Link to="/privacy" className="text-sm text-gray-500 hover:text-gray-900">
-              Privacy Policy
-            </Link>
-            <Link to="/terms" className="text-sm text-gray-500 hover:text-gray-900">
-              Terms of Service
-            </Link>
-          </div>
+
         </div>
       </div>
     </footer>
