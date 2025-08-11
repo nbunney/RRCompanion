@@ -327,6 +327,168 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
         } as ApiResponse;
         return;
       }
+    } else if (provider === 'google') {
+      const googleConfig = getGoogleConfig();
+      if (!googleConfig.clientId || !googleConfig.clientSecret) {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          success: false,
+          error: 'Google OAuth is not configured',
+        } as ApiResponse;
+        return;
+      }
+
+      // Get the authorization code from query parameters
+      const url = new URL(ctx.request.url);
+      const code = url.searchParams.get('code');
+      const error = url.searchParams.get('error');
+
+      if (error) {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          success: false,
+          error: `OAuth error: ${error}`,
+        } as ApiResponse;
+        return;
+      }
+
+      if (!code) {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          success: false,
+          error: 'No authorization code provided',
+        } as ApiResponse;
+        return;
+      }
+
+      // Exchange code for access token
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: googleConfig.clientId,
+          client_secret: googleConfig.clientSecret,
+          grant_type: 'authorization_code',
+          code: code,
+          redirect_uri: googleConfig.redirectUri,
+        }),
+      });
+
+      if (!tokenResponse.ok) {
+        console.error('Google token exchange failed:', await tokenResponse.text());
+        ctx.response.status = 400;
+        ctx.response.body = {
+          success: false,
+          error: 'Failed to exchange authorization code for token',
+        } as ApiResponse;
+        return;
+      }
+
+      const tokenData = await tokenResponse.json();
+      const accessToken = tokenData.access_token;
+
+      // Get user information
+      const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!userResponse.ok) {
+        console.error('Google user info failed:', await userResponse.text());
+        ctx.response.status = 400;
+        ctx.response.body = {
+          success: false,
+          error: 'Failed to get user information',
+        } as ApiResponse;
+        return;
+      }
+
+      const userData = await userResponse.json();
+
+      // Create or update user in database
+      try {
+        // Check if user already exists with this Google OAuth ID
+        const existingOAuthUser = await client.query(
+          'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE oauth_id = ? AND oauth_provider = ?',
+          [userData.id, 'google']
+        );
+
+        let user;
+        if (existingOAuthUser.length > 0) {
+          // User exists with this OAuth ID, update their information
+          user = existingOAuthUser[0];
+          await client.execute(
+            'UPDATE users SET name = ?, avatar_url = ?, updated_at = NOW() WHERE id = ?',
+            [userData.name, userData.picture, user.id]
+          );
+        } else {
+          // Check if user exists with this email
+          const existingEmailUser = await client.query(
+            'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE email = ?',
+            [userData.email]
+          );
+
+          if (existingEmailUser.length > 0) {
+            // User exists with this email, update with OAuth info
+            user = existingEmailUser[0];
+            await client.execute(
+              'UPDATE users SET oauth_provider = ?, oauth_id = ?, name = ?, avatar_url = ?, updated_at = NOW() WHERE id = ?',
+              ['google', userData.id, userData.name, userData.picture, user.id]
+            );
+          } else {
+            // Create completely new user
+            const insertResult = await client.execute(
+              'INSERT INTO users (email, name, oauth_provider, oauth_id, avatar_url) VALUES (?, ?, ?, ?, ?)',
+              [
+                userData.email,
+                userData.name,
+                'google',
+                userData.id,
+                userData.picture
+              ]
+            );
+
+            const newUser = await client.query(
+              'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
+              [insertResult.lastInsertId]
+            );
+            user = newUser[0];
+          }
+        }
+
+        // Generate JWT token
+        const token = await generateToken(user);
+        console.log('🔧 Generated JWT token for Google user:', user.id);
+
+        // Redirect to frontend with token and user data
+        const frontendUrl = new URL('https://rrcompanion.com/oauth/callback');
+        frontendUrl.searchParams.set('token', token);
+        frontendUrl.searchParams.set('provider', 'google');
+        frontendUrl.searchParams.set('user', JSON.stringify({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          oauth_provider: user.oauth_provider,
+          avatar_url: user.avatar_url,
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        }));
+
+        console.log('🔧 Redirecting Google user to:', frontendUrl.toString());
+        ctx.response.status = 302;
+        ctx.response.headers.set('Location', frontendUrl.toString());
+      } catch (error) {
+        console.error('Database error during Google OAuth login:', error);
+        ctx.response.status = 500;
+        ctx.response.body = {
+          success: false,
+          error: 'Failed to create or update user',
+        } as ApiResponse;
+        return;
+      }
     } else {
       ctx.response.status = 400;
       ctx.response.body = {
