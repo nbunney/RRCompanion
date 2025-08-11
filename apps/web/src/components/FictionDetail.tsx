@@ -511,6 +511,95 @@ const FictionDetail: React.FC = () => {
                       </span>
                     </h3>
 
+                    {/* Rising Stars Chart - Only show if we have data */}
+                    {risingStarsData.length > 0 && (
+                      <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <h4 className="text-md font-medium text-gray-700 mb-3">⭐ Rising Stars Performance</h4>
+                        <div className="w-full h-64 bg-white border border-gray-200 rounded-lg p-4">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={risingStarsData
+                              .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime())
+                              .map(entry => ({
+                                date: new Date(entry.captured_at).toLocaleDateString(),
+                                position: entry.position,
+                                genre: entry.genre,
+                              }))}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="date" />
+                              <YAxis 
+                                domain={[1, 50]} 
+                                reversed={true}
+                                tickCount={6}
+                                tickFormatter={(value) => `${value}`}
+                              />
+                              <Tooltip 
+                                formatter={(value: any, name: any) => [
+                                  `Position ${value}`,
+                                  name === 'position' ? 'Position' : name
+                                ]}
+                                labelFormatter={(label) => `Date: ${label}`}
+                              />
+                              <Legend />
+                              
+                              {/* Create a line for each genre */}
+                              {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
+                                const genreData = risingStarsData
+                                  .filter(entry => entry.genre === genre)
+                                  .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime());
+                                
+                                const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
+                                const color = colors[index % colors.length];
+                                
+                                return (
+                                  <Line
+                                    key={genre}
+                                    type="monotone"
+                                    dataKey="position"
+                                    data={genreData.map(entry => ({
+                                      date: new Date(entry.captured_at).toLocaleDateString(),
+                                      position: entry.position,
+                                      genre: entry.genre,
+                                    }))}
+                                    stroke={color}
+                                    name={genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}
+                                    strokeWidth={2}
+                                    dot={{ r: 4 }}
+                                    connectNulls={false}
+                                  />
+                                );
+                              })}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                        
+                        {/* Legend with genre breakdown */}
+                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                          {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
+                            const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
+                            const color = colors[index % colors.length];
+                            const latestEntry = risingStarsData
+                              .filter(entry => entry.genre === genre)
+                              .sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime())[0];
+                            
+                            return (
+                              <div key={genre} className="flex items-center space-x-2">
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: color }}
+                                />
+                                <span className="font-medium">
+                                  {genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}:
+                                </span>
+                                <span className="text-gray-600">
+                                  Position {latestEntry?.position || 'N/A'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Chart 1: Engagement & Growth Metrics */}
                     <div className="mb-6">
                       <h4 className="text-md font-medium text-gray-700 mb-3">Engagement & Growth Metrics</h4>
@@ -595,112 +684,7 @@ const FictionDetail: React.FC = () => {
                   </div>
                 )}
 
-                {/* Rising Stars Chart */}
-                {isLoadingRisingStars ? (
-                  <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      ⭐ Rising Stars Performance
-                    </h3>
-                    <div className="flex items-center justify-center h-32 text-gray-500">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
-                        <div>Loading Rising Stars data...</div>
-                      </div>
-                    </div>
-                  </div>
-                ) : risingStarsData.length > 0 ? (
-                  <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      ⭐ Rising Stars Performance
-                      <span className="ml-2 text-sm font-normal text-gray-600">
-                        (Position 1 = Top, 50 = Bottom)
-                      </span>
-                    </h3>
-                    
-                    <div className="w-full h-80 bg-white border border-gray-200 rounded-lg p-4">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={risingStarsData
-                          .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime())
-                          .map(entry => ({
-                            date: new Date(entry.captured_at).toLocaleDateString(),
-                            position: entry.position,
-                            genre: entry.genre,
-                          }))}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="date" />
-                          <YAxis 
-                            domain={[1, 50]} 
-                            reversed={true}
-                            tickCount={6}
-                            tickFormatter={(value) => `${value}`}
-                          />
-                          <Tooltip 
-                            formatter={(value: any, name: any) => [
-                              `Position ${value}`,
-                              name === 'position' ? 'Position' : name
-                            ]}
-                            labelFormatter={(label) => `Date: ${label}`}
-                          />
-                          <Legend />
-                          
-                          {/* Create a line for each genre */}
-                          {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
-                            const genreData = risingStarsData
-                              .filter(entry => entry.genre === genre)
-                              .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime());
-                            
-                            const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
-                            const color = colors[index % colors.length];
-                            
-                            return (
-                              <Line
-                                key={genre}
-                                type="monotone"
-                                dataKey="position"
-                                data={genreData.map(entry => ({
-                                  date: new Date(entry.captured_at).toLocaleDateString(),
-                                  position: entry.position,
-                                  genre: entry.genre,
-                                }))}
-                                stroke={color}
-                                name={genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}
-                                strokeWidth={2}
-                                dot={{ r: 4 }}
-                                connectNulls={false}
-                              />
-                            );
-                          })}
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                    
-                    {/* Legend with genre breakdown */}
-                    <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      {Array.from(new Set(risingStarsData.map(entry => entry.genre))).map((genre, index) => {
-                        const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
-                        const color = colors[index % colors.length];
-                        const latestEntry = risingStarsData
-                          .filter(entry => entry.genre === genre)
-                          .sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime())[0];
-                        
-                        return (
-                          <div key={genre} className="flex items-center space-x-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: color }}
-                            />
-                            <span className="font-medium">
-                              {genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}:
-                            </span>
-                            <span className="text-gray-600">
-                              Position {latestEntry?.position || 'N/A'}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
+
 
                 {/* Description */}
                 {fiction.description && (
