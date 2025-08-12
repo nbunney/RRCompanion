@@ -15,6 +15,7 @@ export interface User {
   updated_at: string;
   oauth_provider?: string;
   avatar_url?: string;
+  admin?: boolean;
 }
 
 export interface AuthResponse {

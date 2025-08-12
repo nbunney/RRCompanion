@@ -11,6 +11,7 @@ import Privacy from '@/pages/Privacy';
 import Terms from '@/pages/Terms';
 import About from '@/pages/About';
 import Sponsor from '@/pages/Sponsor';
+import Admin from '@/pages/Admin';
 import FictionDetail from '@/components/FictionDetail';
 
 // Protected Route component
@@ -56,6 +57,14 @@ const App: React.FC = () => {
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/about" element={<About />} />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <Admin />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/sponsor/:id"
         element={

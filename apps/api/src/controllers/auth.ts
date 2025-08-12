@@ -129,7 +129,7 @@ export async function login(ctx: Context): Promise<void> {
     try {
       // Get user with password hash
       const result = await client.query(
-        'SELECT id, email, password_hash, name, created_at, updated_at FROM users WHERE email = ?',
+        'SELECT id, email, password_hash, name, created_at, updated_at, admin FROM users WHERE email = ?',
         [email]
       );
 
@@ -166,6 +166,7 @@ export async function login(ctx: Context): Promise<void> {
             name: user.name,
             created_at: user.created_at.toISOString(),
             updated_at: user.updated_at.toISOString(),
+            admin: user.admin,
           } as UserResponse,
           token,
         },
@@ -207,6 +208,7 @@ export async function getProfile(ctx: Context): Promise<void> {
         name: user.name,
         created_at: user.created_at.toISOString(),
         updated_at: user.updated_at.toISOString(),
+        admin: user.admin,
       } as UserResponse,
     } as ApiResponse;
   } catch (error) {

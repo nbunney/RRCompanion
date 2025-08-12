@@ -100,7 +100,7 @@ export async function getUserFromContext(ctx: any): Promise<any> {
   // Get user from database
   const client = await import('../config/database.ts').then(m => m.client);
   const userResult = await client.query(
-    'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
+    'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at, admin FROM users WHERE id = ?',
     [payload.userId]
   );
 

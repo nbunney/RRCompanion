@@ -69,6 +69,14 @@ const Header: React.FC<HeaderProps> = ({
                 About
               </Link>
             )}
+            {user?.admin && (
+              <Link
+                to="/admin"
+                className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Admin
+              </Link>
+            )}
 
             {showUserInfo && user ? (
               <>

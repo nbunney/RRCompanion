@@ -595,6 +595,59 @@ async function runMigrations(client: Client): Promise<void> {
           INDEX idx_user_position (user_id, position)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `
+    },
+    {
+      name: '011_add_admin_column',
+      sql: `ALTER TABLE users ADD COLUMN admin BOOLEAN DEFAULT FALSE`
+    },
+    {
+      name: '011b_add_admin_index',
+      sql: `CREATE INDEX idx_users_admin ON users(admin)`
+    },
+    {
+      name: '012_create_coupon_codes_table',
+      sql: `
+        CREATE TABLE IF NOT EXISTS coupon_codes (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          code VARCHAR(20) NOT NULL UNIQUE,
+          discount_percent INT NOT NULL,
+          expires_at TIMESTAMP NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          used BOOLEAN DEFAULT FALSE,
+          used_by_user_id INT NULL,
+          used_for_fiction_id INT NULL,
+          used_at TIMESTAMP NULL,
+          is_active BOOLEAN DEFAULT TRUE,
+          INDEX idx_code (code),
+          INDEX idx_is_active (is_active),
+          INDEX idx_expires_at (expires_at),
+          INDEX idx_used (used),
+          FOREIGN KEY (used_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+          FOREIGN KEY (used_for_fiction_id) REFERENCES fiction(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: '013_add_coupon_code_id_to_sponsorship_logs',
+      sql: `
+        ALTER TABLE sponsorship_logs 
+        ADD COLUMN coupon_code_id INT NULL,
+        ADD INDEX idx_coupon_code_id (coupon_code_id),
+        ADD FOREIGN KEY (coupon_code_id) REFERENCES coupon_codes(id) ON DELETE SET NULL
+      `
+    },
+    {
+      name: '014_fix_coupon_used_column',
+      sql: `
+        ALTER TABLE coupon_codes 
+        CHANGE COLUMN used_count used BOOLEAN DEFAULT FALSE,
+        ADD COLUMN used_by_user_id INT NULL,
+        ADD COLUMN used_for_fiction_id INT NULL,
+        ADD COLUMN used_at TIMESTAMP NULL,
+        ADD INDEX idx_used (used),
+        ADD FOREIGN KEY (used_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+        ADD FOREIGN KEY (used_for_fiction_id) REFERENCES fiction(id) ON DELETE SET NULL
+      `
     }
   ];
 

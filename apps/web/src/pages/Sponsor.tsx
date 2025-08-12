@@ -117,6 +117,10 @@ const Sponsor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success'>('idle');
+  const [couponCode, setCouponCode] = useState('');
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+  const [isProcessingCoupon, setIsProcessingCoupon] = useState(false);
 
   useEffect(() => {
     const loadFiction = async () => {
@@ -145,6 +149,11 @@ const Sponsor: React.FC = () => {
     };
 
     loadFiction();
+
+    // Clear coupon messages when fiction changes
+    setCouponCode('');
+    setCouponError(null);
+    setCouponSuccess(null);
   }, [id]);
 
   // Refresh fiction data when user navigates back to the page
@@ -235,6 +244,47 @@ const Sponsor: React.FC = () => {
 
     // Start polling
     pollPaymentStatus();
+  };
+
+  const handleCouponSubmit = async () => {
+    if (!couponCode.trim() || !fiction) return;
+
+    try {
+      setIsProcessingCoupon(true);
+      setCouponError(null);
+      setCouponSuccess(null);
+
+      const response = await fetch('/api/coupons/use', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          fictionId: fiction.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCouponSuccess('Coupon used successfully! Fiction is now sponsored.');
+        setCouponCode('');
+        // Refresh fiction data to show as sponsored
+        const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fiction.royalroad_id);
+        if (fictionResponse.success && fictionResponse.data) {
+          setFiction(fictionResponse.data);
+        }
+      } else {
+        setCouponError(data.error || 'Failed to use coupon');
+      }
+    } catch (error) {
+      console.error('Error using coupon:', error);
+      setCouponError('Failed to use coupon. Please try again.');
+    } finally {
+      setIsProcessingCoupon(false);
+    }
   };
 
   if (loading) {
@@ -417,10 +467,44 @@ const Sponsor: React.FC = () => {
                       </div>
                       <Button
                         className="w-full"
-                        onClick={() => setShowPaymentForm(true)}
+                        onClick={() => {
+                          setShowPaymentForm(true);
+                          setCouponError(null);
+                          setCouponSuccess(null);
+                        }}
                       >
                         Sponsor This Fiction - $5
                       </Button>
+
+                      {/* Coupon Code Section */}
+                      <div className="border-t border-gray-200 pt-4">
+                        <div className="text-center mb-3">
+                          <p className="text-gray-600 text-sm font-medium">Or use a coupon code for free sponsorship</p>
+                        </div>
+                        <div className="space-y-3">
+                          <input
+                            type="text"
+                            placeholder="Enter coupon code"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            maxLength={20}
+                          />
+                          <Button
+                            onClick={handleCouponSubmit}
+                            disabled={!couponCode.trim() || isProcessingCoupon}
+                            className="w-full"
+                          >
+                            {isProcessingCoupon ? 'Processing...' : 'Use Coupon'}
+                          </Button>
+                        </div>
+                        {couponError && (
+                          <p className="text-red-600 text-xs mt-2 text-center">{couponError}</p>
+                        )}
+                        {couponSuccess && (
+                          <p className="text-green-600 text-xs mt-2 text-center">{couponSuccess}</p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

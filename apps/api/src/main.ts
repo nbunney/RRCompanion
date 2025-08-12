@@ -15,6 +15,8 @@ import userFictionRoutes from './routes/userFiction.ts';
 import fictionHistoryRoutes from './routes/fictionHistory.ts';
 import { risingStarsRoutes } from './routes/risingStars.ts';
 import stripeRoutes from './routes/stripe.ts';
+import adminRoutes from './routes/admin.ts';
+import couponRoutes from './routes/coupon.ts';
 
 // Load environment variables with multiple path attempts
 try {
@@ -110,6 +112,8 @@ router.use('/api', userFictionRoutes.routes(), userFictionRoutes.allowedMethods(
 router.use('/api', fictionHistoryRoutes.routes(), fictionHistoryRoutes.allowedMethods());
 router.use('/api', risingStarsRoutes.routes(), risingStarsRoutes.allowedMethods());
 router.use('/api/stripe', stripeRoutes.routes(), stripeRoutes.allowedMethods());
+router.use('/api/admin', adminRoutes.routes(), adminRoutes.allowedMethods());
+router.use('/api/coupons', couponRoutes.routes(), couponRoutes.allowedMethods());
 
 // Register router routes
 app.use(router.routes());

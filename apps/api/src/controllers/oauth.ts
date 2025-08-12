@@ -290,7 +290,7 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
             );
 
             const newUser = await client.query(
-              'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
+              'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at, admin FROM users WHERE id = ?',
               [insertResult.lastInsertId]
             );
             user = newUser[0];
@@ -312,7 +312,8 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
           oauth_provider: user.oauth_provider,
           avatar_url: user.avatar_url,
           created_at: user.created_at,
-          updated_at: user.updated_at
+          updated_at: user.updated_at,
+          admin: user.admin
         }));
 
         console.log('🔧 Redirecting to:', frontendUrl.toString());
@@ -452,7 +453,7 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
             );
 
             const newUser = await client.query(
-              'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
+              'SELECT id, email, name, oauth_provider, oauth_id, avatar_url, created_at, updated_at, admin FROM users WHERE id = ?',
               [insertResult.lastInsertId]
             );
             user = newUser[0];
@@ -474,7 +475,8 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
           oauth_provider: user.oauth_provider,
           avatar_url: user.avatar_url,
           created_at: user.created_at,
-          updated_at: user.updated_at
+          updated_at: user.updated_at,
+          admin: user.admin
         }));
 
         console.log('🔧 Redirecting Google user to:', frontendUrl.toString());

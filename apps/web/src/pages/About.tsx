@@ -98,7 +98,7 @@ const About: React.FC = () => {
                 <div>
                   <h3 className="font-medium text-gray-900">Add Your Fiction</h3>
                   <p className="text-gray-700">
-                    Search for and add RoyalRoad fiction to your personal tracking list.
+                    Search for and add RoyalRoad fictions to your personal tracking list.
                   </p>
                 </div>
               </div>
@@ -109,7 +109,7 @@ const About: React.FC = () => {
                 <div>
                   <h3 className="font-medium text-gray-900">Sponsor Your Fiction or Update Daily</h3>
                   <p className="text-gray-700">
-                    Either sponsor your fiction (one time fee of $5) or update it daily to keep your data current.
+                    Either sponsor your fiction (one time fee of $5) or update it every 24 hours to keep your data current.
                   </p>
                 </div>
               </div>
@@ -141,7 +141,9 @@ const About: React.FC = () => {
               </div>
               <div className="flex-1">
                 <p className="text-gray-700 leading-relaxed">
-                  <a href="https://www.royalroad.com/profile/373252" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">NateDogg</a> is the founder of RRCompanion. He is a RoyalRoad reader and author, and he is the one who built the system.
+                  <a href="https://www.royalroad.com/profile/373252" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">NateDogg</a> is the founder of RRCompanion. He is a RoyalRoad reader and author, and he is the one who built the system.<br />
+                  <br />
+                  His new fiction, <a href="https://www.royalroad.com/fiction/122933/prisoner-of-the-system/chapter/2497771" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Prisoner of the System</a>, is launching on August 28th.
                 </p>
               </div>
             </div>
