@@ -166,7 +166,7 @@ export async function login(ctx: Context): Promise<void> {
             name: user.name,
             created_at: user.created_at.toISOString(),
             updated_at: user.updated_at.toISOString(),
-            admin: user.admin,
+            admin: Boolean(user.admin),
           } as UserResponse,
           token,
         },
@@ -208,7 +208,7 @@ export async function getProfile(ctx: Context): Promise<void> {
         name: user.name,
         created_at: user.created_at.toISOString(),
         updated_at: user.updated_at.toISOString(),
-        admin: user.admin,
+        admin: Boolean(user.admin),
       } as UserResponse,
     } as ApiResponse;
   } catch (error) {
@@ -297,7 +297,7 @@ export async function updateProfile(ctx: Context): Promise<void> {
           name: updatedUser.name,
           created_at: updatedUser.created_at.toISOString(),
           updated_at: updatedUser.updated_at.toISOString(),
-          admin: updatedUser.admin,
+          admin: Boolean(updatedUser.admin),
         } as UserResponse,
         message: 'Profile updated successfully',
       } as ApiResponse;

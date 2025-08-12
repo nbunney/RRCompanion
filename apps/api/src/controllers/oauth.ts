@@ -313,7 +313,7 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
           avatar_url: user.avatar_url,
           created_at: user.created_at,
           updated_at: user.updated_at,
-          admin: user.admin
+          admin: Boolean(user.admin)
         }));
 
         console.log('🔧 Redirecting to:', frontendUrl.toString());
@@ -476,7 +476,7 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
           avatar_url: user.avatar_url,
           created_at: user.created_at,
           updated_at: user.updated_at,
-          admin: user.admin
+          admin: Boolean(user.admin)
         }));
 
         console.log('🔧 Redirecting Google user to:', frontendUrl.toString());
