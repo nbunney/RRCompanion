@@ -90,7 +90,7 @@ const App: React.FC = () => {
         }
       />
       <Route path="/royalroad" element={<RoyalRoad />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/about" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
