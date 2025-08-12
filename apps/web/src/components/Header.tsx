@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/Button';
@@ -21,6 +21,17 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Debug logging for admin link
+  console.log('🔐 Header - Component rendered with props:', { title, showBackButton, backUrl, showUserInfo, showAboutLink });
+  console.log('🔐 Header - Auth state:', { user: user ? { id: user.id, email: user.email, admin: user.admin, adminType: typeof user.admin } : 'null' });
+  console.log('🔐 Header - Admin check result:', user?.admin);
+  console.log('🔐 Header - Should show admin link:', user?.admin ? 'YES' : 'NO');
+
+  // Log when user state changes
+  useEffect(() => {
+    console.log('🔐 Header - User state changed:', { user: user ? { id: user.id, email: user.email, admin: user.admin, adminType: typeof user.admin } : 'null' });
+  }, [user]);
 
   const handleLogout = () => {
     logout();

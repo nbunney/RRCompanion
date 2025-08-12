@@ -51,10 +51,17 @@ const Admin: React.FC = () => {
     expiresInDays: 30
   });
 
+  console.log('🔐 Admin component - Auth state:', { isAuthenticated, user: user ? { id: user.id, email: user.email, admin: user.admin } : 'null' });
+
   // Redirect if not admin
   if (!isAuthenticated || !user?.admin) {
+    console.log('❌ Admin component - Access denied, redirecting to dashboard');
+    console.log('❌ Admin component - isAuthenticated:', isAuthenticated);
+    console.log('❌ Admin component - user.admin:', user?.admin);
     return <Navigate to="/dashboard" replace />;
   }
+
+  console.log('✅ Admin component - Access granted, rendering admin page');
 
   useEffect(() => {
     loadData();

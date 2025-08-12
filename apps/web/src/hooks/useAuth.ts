@@ -117,8 +117,9 @@ export const useAuth = create<AuthStore>()(
 
         try {
           const user: User = JSON.parse(userStr);
-          console.log('🔐 checkAuth - Parsed user:', user);
-          
+          console.log('🔐 checkAuth - Parsed user from localStorage:', user);
+          console.log('🔐 checkAuth - User admin value:', user.admin, 'Type:', typeof user.admin);
+
           console.log('🔐 checkAuth - Setting authentication state...');
           set({
             user,
@@ -130,8 +131,25 @@ export const useAuth = create<AuthStore>()(
 
           // Verify token is still valid
           console.log('🔐 checkAuth - Verifying token with getProfile()...');
-          await authAPI.getProfile();
+          const profileResponse = await authAPI.getProfile();
+          console.log('🔐 checkAuth - Profile API response:', profileResponse);
           console.log('🔐 checkAuth - Token verification successful');
+
+          if (profileResponse.success && profileResponse.data) {
+            // Update user data with fresh data from server
+            const freshUser = profileResponse.data;
+            console.log('🔐 checkAuth - Fresh user data from server:', freshUser);
+            console.log('🔐 checkAuth - Fresh user admin value:', freshUser.admin, 'Type:', typeof freshUser.admin);
+
+            localStorage.setItem('user', JSON.stringify(freshUser));
+            set({
+              user: freshUser,
+              token,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+            console.log('🔐 checkAuth - Updated user data with fresh profile data');
+          }
         } catch (error) {
           console.error('🔐 checkAuth - Token verification failed:', error);
           // Token is invalid, clear auth state

@@ -14,6 +14,10 @@ const Dashboard: React.FC = () => {
   const [showAddFiction, setShowAddFiction] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Debug logging
+  console.log('🔐 Dashboard - Component rendered');
+  console.log('🔐 Dashboard - User state:', { user: user ? { id: user.id, email: user.email, admin: user.admin, adminType: typeof user.admin } : 'null' });
+
   const handleFictionAdded = (fiction: RoyalRoadFiction) => {
     // Refresh the favorites list by incrementing the refresh key
     console.log('Fiction added:', fiction);
