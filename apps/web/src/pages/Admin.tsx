@@ -261,7 +261,6 @@ const Admin: React.FC = () => {
           {/* Existing Coupons */}
           <Card className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Existing Coupon Codes</h3>
-            {console.log('🔍 Rendering coupons:', coupons, 'Length:', coupons.length)}
             {coupons.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No coupon codes found</p>
             ) : (

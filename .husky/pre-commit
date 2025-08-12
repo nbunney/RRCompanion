@@ -1,0 +1,11 @@
+echo "🔍 Running pre-commit checks..."
+
+# Run TypeScript type checking for web app (from web directory)
+echo "📝 Checking Web TypeScript..."
+cd apps/web && npm run type-check
+
+# Run TypeScript type checking for API
+echo "📝 Checking Deno TypeScript..."
+cd ../api && deno check src/main.ts
+
+echo "✅ Pre-commit checks passed!"
