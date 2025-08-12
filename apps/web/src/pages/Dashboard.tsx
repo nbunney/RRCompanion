@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
@@ -11,13 +10,9 @@ import type { RoyalRoadFiction } from '@/types';
 import { formatLocalDate } from '@/utils/dateUtils';
 
 const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [showAddFiction, setShowAddFiction] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  const handleLogout = () => {
-    logout();
-  };
 
   const handleFictionAdded = (fiction: RoyalRoadFiction) => {
     // Refresh the favorites list by incrementing the refresh key

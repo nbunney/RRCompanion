@@ -5,7 +5,6 @@ import Button from '@/components/Button';
 import Logo from '@/components/Logo';
 
 interface HeaderProps {
-  variant?: 'dashboard' | 'fiction-detail' | 'public';
   title?: string;
   showBackButton?: boolean;
   backUrl?: string;
@@ -14,7 +13,6 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-  variant = 'dashboard',
   title,
   showBackButton = false,
   backUrl = '/dashboard',

@@ -1,15 +1,6 @@
 import React from 'react';
 import { formatLocalDate } from '@/utils/dateUtils';
 
-interface FictionData {
-  pages: number;
-  followers: number;
-  views: number;
-  ratings: number;
-  favorites: number;
-  overall_score: string | number;
-}
-
 interface FictionHistoryEntry {
   pages: number;
   overall_score: string | number;

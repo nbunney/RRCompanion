@@ -75,6 +75,27 @@ export async function handleStripeWebhook(ctx: Context) {
 
       case 'payment_intent.payment_failed':
         console.log('❌ Payment failed:', event.data.object.id);
+        await stripeService.handleFailedPayment(event.data.object as any);
+        break;
+
+      case 'charge.succeeded':
+        console.log('💳 Charge succeeded:', event.data.object.id);
+        await stripeService.handleSuccessfulCharge(event.data.object as any);
+        break;
+
+      case 'charge.failed':
+        console.log('❌ Charge failed:', event.data.object.id);
+        await stripeService.handleFailedCharge(event.data.object as any);
+        break;
+
+      case 'invoice.payment_succeeded':
+        console.log('📄 Invoice payment succeeded:', event.data.object.id);
+        await stripeService.handleSuccessfulInvoice(event.data.object as any);
+        break;
+
+      case 'invoice.payment_failed':
+        console.log('❌ Invoice payment failed:', event.data.object.id);
+        await stripeService.handleFailedInvoice(event.data.object as any);
         break;
 
       default:

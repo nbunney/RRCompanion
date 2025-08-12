@@ -98,6 +98,122 @@ export class StripeService {
     }
   }
 
+  // Handle failed payment
+  async handleFailedPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+    try {
+      console.log('❌ Handling failed payment:', paymentIntent.id);
+
+      // Log the failed payment
+      await client.execute(
+        'INSERT INTO sponsorship_logs (fiction_id, user_id, stripe_payment_intent_id, amount, status, created_at) VALUES (?, ?, ?, ?, NOW())',
+        [
+          parseInt(paymentIntent.metadata.fiction_id || '0'),
+          parseInt(paymentIntent.metadata.user_id || '0'),
+          paymentIntent.id,
+          paymentIntent.amount,
+          'failed'
+        ]
+      );
+
+      console.log('✅ Failed payment logged successfully');
+    } catch (error) {
+      console.error('❌ Error handling failed payment:', error);
+      throw error;
+    }
+  }
+
+  // Handle successful charge
+  async handleSuccessfulCharge(charge: Stripe.Charge): Promise<void> {
+    try {
+      console.log('💳 Handling successful charge:', charge.id);
+
+      // Log the successful charge
+      await client.execute(
+        'INSERT INTO charge_logs (stripe_charge_id, amount, currency, status, created_at) VALUES (?, ?, ?, ?, NOW())',
+        [
+          charge.id,
+          charge.amount,
+          charge.currency,
+          'succeeded'
+        ]
+      );
+
+      console.log('✅ Successful charge logged');
+    } catch (error) {
+      console.error('❌ Error handling successful charge:', error);
+      throw error;
+    }
+  }
+
+  // Handle failed charge
+  async handleFailedCharge(charge: Stripe.Charge): Promise<void> {
+    try {
+      console.log('❌ Handling failed charge:', charge.id);
+
+      // Log the failed charge
+      await client.execute(
+        'INSERT INTO charge_logs (stripe_charge_id, amount, currency, status, created_at) VALUES (?, ?, ?, ?, NOW())',
+        [
+          charge.id,
+          charge.amount,
+          charge.currency,
+          'failed'
+        ]
+      );
+
+      console.log('✅ Failed charge logged');
+    } catch (error) {
+      console.error('❌ Error handling failed charge:', error);
+      throw error;
+    }
+  }
+
+  // Handle successful invoice
+  async handleSuccessfulInvoice(invoice: Stripe.Invoice): Promise<void> {
+    try {
+      console.log('📄 Handling successful invoice:', invoice.id);
+
+      // Log the successful invoice
+      await client.execute(
+        'INSERT INTO invoice_logs (stripe_charge_id, amount, currency, status, created_at) VALUES (?, ?, ?, ?, NOW())',
+        [
+          invoice.id,
+          invoice.amount_paid,
+          invoice.currency,
+          'succeeded'
+        ]
+      );
+
+      console.log('✅ Successful invoice logged');
+    } catch (error) {
+      console.error('❌ Error handling successful invoice:', error);
+      throw error;
+    }
+  }
+
+  // Handle failed invoice
+  async handleFailedInvoice(invoice: Stripe.Invoice): Promise<void> {
+    try {
+      console.log('❌ Handling failed invoice:', invoice.id);
+
+      // Log the failed invoice
+      await client.execute(
+        'INSERT INTO invoice_logs (stripe_charge_id, amount, currency, status, created_at) VALUES (?, ?, ?, ?, NOW())',
+        [
+          invoice.id,
+          invoice.amount_due,
+          invoice.currency,
+          'failed'
+        ]
+      );
+
+      console.log('✅ Failed invoice logged');
+    } catch (error) {
+      console.error('❌ Error handling failed invoice:', error);
+      throw error;
+    }
+  }
+
   // Verify webhook signature
   async verifyWebhookSignature(payload: string, signature: string): Promise<Stripe.Event> {
     console.log('🔔 Verifying webhook signature...');
