@@ -400,8 +400,8 @@ const FictionDetail: React.FC = () => {
         title="Fiction Details"
         showBackButton={true}
         backUrl="/dashboard"
-        showUserInfo={false}
-        showAboutLink={false}
+        showUserInfo={true}
+        showAboutLink={true}
       />
 
       <main className="flex-1 max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">

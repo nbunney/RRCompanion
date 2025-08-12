@@ -6,7 +6,7 @@ import { fictionAPI, stripeAPI } from '../services/api';
 import { Fiction } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import Logo from '../components/Logo';
+import Header from '../components/Header';
 import Modal from '../components/Modal';
 
 // Stripe Elements configuration
@@ -312,26 +312,17 @@ const Sponsor: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <Logo />
-              <h1 className="text-2xl font-bold text-gray-900">
-                Sponsor {fiction.title}
-              </h1>
-            </div>
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              ← Back
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header
+        title={`Sponsor ${fiction.title}`}
+        showBackButton={true}
+        backUrl="/dashboard"
+        showUserInfo={true}
+        showAboutLink={true}
+      />
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Fiction Info */}
           <div className="lg:col-span-2">
