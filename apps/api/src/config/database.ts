@@ -648,6 +648,13 @@ async function runMigrations(client: Client): Promise<void> {
         ADD FOREIGN KEY (used_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
         ADD FOREIGN KEY (used_for_fiction_id) REFERENCES fiction(id) ON DELETE SET NULL
       `
+    },
+    {
+      name: '015_make_stripe_payment_intent_id_nullable',
+      sql: `
+        ALTER TABLE sponsorship_logs 
+        MODIFY COLUMN stripe_payment_intent_id VARCHAR(255) NULL
+      `
     }
   ];
 

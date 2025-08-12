@@ -37,7 +37,7 @@ export async function useCoupon(ctx: Context) {
         const responseData = {
           success: true,
           message: 'Coupon used successfully! Fiction is now sponsored.',
-          data: { 
+          data: {
             coupon: result.coupon ? {
               id: result.coupon.id,
               code: result.coupon.code,
@@ -48,9 +48,9 @@ export async function useCoupon(ctx: Context) {
             } : null
           }
         };
-        
+
         console.log('🔐 useCoupon - Response data prepared:', responseData);
-        
+
         ctx.response.status = 200;
         ctx.response.body = responseData;
         console.log('🔐 useCoupon - Success response set successfully');
