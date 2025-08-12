@@ -74,7 +74,7 @@ export async function register(ctx: Context): Promise<void> {
       );
 
       const result = await client.query(
-        'SELECT id, email, name, created_at, updated_at FROM users WHERE id = ?',
+        'SELECT id, email, name, created_at, updated_at, admin FROM users WHERE id = ?',
         [insertResult.lastInsertId]
       );
 
@@ -282,7 +282,7 @@ export async function updateProfile(ctx: Context): Promise<void> {
 
       // Get updated user
       const result = await client.query(
-        'SELECT id, email, name, created_at, updated_at FROM users WHERE id = ?',
+        'SELECT id, email, name, created_at, updated_at, admin FROM users WHERE id = ?',
         [user.id]
       );
 
@@ -297,6 +297,7 @@ export async function updateProfile(ctx: Context): Promise<void> {
           name: updatedUser.name,
           created_at: updatedUser.created_at.toISOString(),
           updated_at: updatedUser.updated_at.toISOString(),
+          admin: updatedUser.admin,
         } as UserResponse,
         message: 'Profile updated successfully',
       } as ApiResponse;

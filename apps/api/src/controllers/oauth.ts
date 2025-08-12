@@ -250,7 +250,7 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
       try {
         // Check if user already exists with this Discord OAuth ID
         const existingOAuthUser = await client.query(
-          'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE oauth_id = ? AND oauth_provider = ?',
+          'SELECT id, email, name, oauth_provider, oauth_id, admin FROM users WHERE oauth_id = ? AND oauth_provider = ?',
           [userData.id, 'discord']
         );
 
@@ -265,7 +265,7 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
         } else {
           // Check if user exists with this email
           const existingEmailUser = await client.query(
-            'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE email = ?',
+            'SELECT id, email, name, oauth_provider, oauth_id, admin FROM users WHERE email = ?',
             [userData.email]
           );
 
@@ -413,7 +413,7 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
       try {
         // Check if user already exists with this Google OAuth ID
         const existingOAuthUser = await client.query(
-          'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE oauth_id = ? AND oauth_provider = ?',
+          'SELECT id, email, name, oauth_provider, oauth_id, admin FROM users WHERE oauth_id = ? AND oauth_provider = ?',
           [userData.id, 'google']
         );
 
@@ -428,7 +428,7 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
         } else {
           // Check if user exists with this email
           const existingEmailUser = await client.query(
-            'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE email = ?',
+            'SELECT id, email, name, oauth_provider, oauth_id, admin FROM users WHERE email = ?',
             [userData.email]
           );
 

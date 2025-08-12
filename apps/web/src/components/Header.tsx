@@ -50,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({
               </Link>
             )}
           </div>
-          
+
           <div className="flex items-center space-x-4">
             {showAboutLink && (
               <Link
@@ -60,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({
                 About
               </Link>
             )}
-            
+
             {user?.admin && (
               <Link
                 to="/admin"
@@ -69,22 +69,25 @@ const Header: React.FC<HeaderProps> = ({
                 Admin
               </Link>
             )}
-            
-            {showUserInfo && user ? (
-              <>
-                <span className="text-sm text-gray-700">
-                  Welcome, {user?.name || user?.email}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
-              </>
-            ) : !showUserInfo ? (
-              // Show login/register links when user is not logged in and showUserInfo is false
+
+            {user ? (
+              // User is logged in - show user info if requested
+              showUserInfo ? (
+                <>
+                  <span className="text-sm text-gray-700">
+                    Welcome, {user?.name || user?.email}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : null
+            ) : (
+              // User is not logged in - show login/register links
               <div className="flex items-center space-x-4">
                 <Link
                   to="/login"
@@ -99,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({
                   Register
                 </Link>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       </div>

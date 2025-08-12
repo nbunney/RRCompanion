@@ -8,6 +8,7 @@ export interface User {
   oauth_provider?: string;
   oauth_id?: string;
   avatar_url?: string;
+  admin?: boolean;
 }
 
 export interface CreateUserRequest {

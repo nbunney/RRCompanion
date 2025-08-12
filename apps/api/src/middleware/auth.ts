@@ -58,7 +58,7 @@ export async function authMiddleware(
 
     // Get user from database
     const result = await client.query(
-      'SELECT id, email, name, created_at, updated_at FROM users WHERE id = ?',
+      'SELECT id, email, name, created_at, updated_at, admin FROM users WHERE id = ?',
       [payload.userId]
     );
 
@@ -98,7 +98,7 @@ export async function optionalAuthMiddleware(
       const payload = await verifyToken(token);
       if (payload && payload.exp > Date.now() / 1000) {
         const result = await client.query(
-          'SELECT id, email, name, created_at, updated_at FROM users WHERE id = ?',
+          'SELECT id, email, name, created_at, updated_at, admin FROM users WHERE id = ?',
           [payload.userId]
         );
 
