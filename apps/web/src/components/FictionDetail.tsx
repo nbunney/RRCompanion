@@ -6,6 +6,7 @@ import type { RoyalRoadFiction, UserFiction, Fiction } from '@/types';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import Footer from '@/components/Footer';
+import Header from '@/components/Header';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import Tags from '@/components/Tags';
 import { RisingStarsChart, EngagementGrowthChart, PerceivedQualityChart, CurrentStats } from '@/components/charts';
@@ -99,6 +100,7 @@ const FictionDetail: React.FC = () => {
 
       if (fictionResponse.success && fictionResponse.data) {
         // Store the original response with history data
+        console.log('🔗 Fiction response:', fictionResponse.data);
         setFictionWithHistory(fictionResponse.data);
 
         // Convert our Fiction type to RoyalRoadFiction type for display
@@ -394,24 +396,14 @@ const FictionDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/dashboard')}
-              >
-                ← Back
-              </Button>
-              <h1 className="text-xl font-semibold text-gray-900 ml-4">
-                Fiction Details
-              </h1>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header
+        variant="fiction-detail"
+        title="Fiction Details"
+        showBackButton={true}
+        backUrl="/dashboard"
+        showUserInfo={false}
+        showAboutLink={false}
+      />
 
       <main className="flex-1 max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -519,7 +511,6 @@ const FictionDetail: React.FC = () => {
                 {/* Current Stats Section - Always Visible */}
                 {fictionWithHistory && (
                   <CurrentStats
-                    fictionData={fictionWithHistory}
                     latestHistory={fictionWithHistory.history && fictionWithHistory.history.length > 0 ? fictionWithHistory.history[fictionWithHistory.history.length - 1] : undefined}
                   />
                 )}

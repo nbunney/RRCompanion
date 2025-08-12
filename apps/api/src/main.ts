@@ -145,14 +145,19 @@ try {
   // Initialize database tables
   await initializeDatabase();
 
-  // Start cron service for nightly Rising Stars collection
-  const cronService = new CronService();
-  cronService.start();
+  // Start cron service for nightly Rising Stars collection only in production
+  const nodeEnv = Deno.env.get('NODE_ENV') || 'development';
+  if (nodeEnv === 'production') {
+    const cronService = new CronService();
+    cronService.start();
+    console.log(`🌙 Cron service started - nightly Rising Stars collection at 12:23am PST`);
+  } else {
+    console.log(`🌙 Cron service skipped - NODE_ENV is '${nodeEnv}' (only runs in production)`);
+  }
 
   console.log(`🚀 Server running on http://${host}:${port}`);
   console.log(`📊 Health check: http://${host}:${port}/health`);
   console.log(`🔐 API endpoints: http://${host}:${port}/api`);
-  console.log(`🌙 Cron service started - nightly Rising Stars collection at 12:23am PST`);
 
   // Always bind to 0.0.0.0 for production deployment
   // This allows the server to accept connections from any IP address

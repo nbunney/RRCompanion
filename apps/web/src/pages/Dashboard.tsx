@@ -6,7 +6,7 @@ import Card from '@/components/Card';
 import FavoritesList from '@/components/FavoritesList';
 import AddFiction from '@/components/AddFiction';
 import Footer from '@/components/Footer';
-import Logo from '@/components/Logo';
+import Header from '@/components/Header';
 import type { RoyalRoadFiction } from '@/types';
 import { formatLocalDate } from '@/utils/dateUtils';
 
@@ -28,29 +28,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/dashboard">
-                <Logo size="md" />
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                Welcome, {user?.name || user?.email}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-              >
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header variant="dashboard" />
 
       <main className="flex-1 max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">

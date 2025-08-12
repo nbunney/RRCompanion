@@ -7,26 +7,32 @@ interface FictionData {
   views: number;
   ratings: number;
   favorites: number;
-  overall_score: number;
+  overall_score: string | number;
 }
 
 interface FictionHistoryEntry {
-  style_score: number;
-  story_score: number;
-  grammar_score: number;
-  character_score: number;
+  pages: number;
+  overall_score: string | number;
+  followers: number;
+  views: number;
+  ratings: number;
+  favorites: number;
+  style_score: string | number;
+  story_score: string | number;
+  grammar_score: string | number;
+  character_score: string | number;
   total_views: number;
   average_views: number;
   captured_at?: string;
 }
 
 interface CurrentStatsProps {
-  fictionData: FictionData;
   latestHistory?: FictionHistoryEntry;
 }
 
-const CurrentStats: React.FC<CurrentStatsProps> = ({ fictionData, latestHistory }) => {
-  if (!fictionData) {
+const CurrentStats: React.FC<CurrentStatsProps> = ({ latestHistory }) => {
+  console.log('🔗 Latest history:', latestHistory);
+  if (!latestHistory) {
     return null;
   }
 
@@ -43,25 +49,25 @@ const CurrentStats: React.FC<CurrentStatsProps> = ({ fictionData, latestHistory 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-600">
-            {typeof fictionData.pages === 'number' ? fictionData.pages.toLocaleString() : 'N/A'}
+            {typeof latestHistory.pages === 'number' ? latestHistory.pages.toLocaleString() : 'N/A'}
           </div>
           <div className="text-sm text-gray-500">Pages</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-600">
-            {typeof fictionData.overall_score === 'number' ? fictionData.overall_score.toFixed(1) : 'N/A'}
+            {latestHistory.overall_score && latestHistory.overall_score !== '' ? latestHistory.overall_score : 'N/A'}
           </div>
           <div className="text-sm text-gray-500">Overall Score</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-600">
-            {typeof fictionData.followers === 'number' ? fictionData.followers.toLocaleString() : 'N/A'}
+            {typeof latestHistory.followers === 'number' ? latestHistory.followers.toLocaleString() : 'N/A'}
           </div>
           <div className="text-sm text-gray-500">Followers</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-600">
-            {typeof fictionData.views === 'number' ? fictionData.views.toLocaleString() : 'N/A'}
+            {typeof latestHistory.total_views === 'number' ? latestHistory.total_views.toLocaleString() : 'N/A'}
           </div>
           <div className="text-sm text-gray-500">Views</div>
         </div>
@@ -71,31 +77,31 @@ const CurrentStats: React.FC<CurrentStatsProps> = ({ fictionData, latestHistory 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Ratings:</span>
-          <span className="text-gray-900">{typeof fictionData.ratings === 'number' ? fictionData.ratings.toLocaleString() : 'N/A'}</span>
+          <span className="text-gray-900">{typeof latestHistory.ratings === 'number' ? latestHistory.ratings.toLocaleString() : 'N/A'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Favorites:</span>
-          <span className="text-gray-900">{typeof fictionData.favorites === 'number' ? fictionData.favorites.toLocaleString() : 'N/A'}</span>
+          <span className="text-gray-900">{typeof latestHistory.favorites === 'number' ? latestHistory.favorites.toLocaleString() : 'N/A'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Overall Score:</span>
-          <span className="text-gray-900">{typeof fictionData.overall_score === 'number' ? fictionData.overall_score.toFixed(1) : 'N/A'}</span>
+          <span className="text-gray-900">{latestHistory.overall_score && latestHistory.overall_score !== '' ? latestHistory.overall_score : 'N/A'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Style Score:</span>
-          <span className="text-gray-900">{typeof latestHistory?.style_score === 'number' ? latestHistory.style_score.toFixed(1) : 'N/A'}</span>
+          <span className="text-gray-900">{latestHistory?.style_score && latestHistory.style_score !== '' ? latestHistory.style_score : 'N/A'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Story Score:</span>
-          <span className="text-gray-900">{typeof latestHistory?.story_score === 'number' ? latestHistory.story_score.toFixed(1) : 'N/A'}</span>
+          <span className="text-gray-900">{latestHistory?.story_score && latestHistory.story_score !== '' ? latestHistory.story_score : 'N/A'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Grammar Score:</span>
-          <span className="text-gray-900">{typeof latestHistory?.grammar_score === 'number' ? latestHistory.grammar_score.toFixed(1) : 'N/A'}</span>
+          <span className="text-gray-900">{latestHistory?.grammar_score && latestHistory.grammar_score !== '' ? latestHistory.grammar_score : 'N/A'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Character Score:</span>
-          <span className="text-gray-900">{typeof latestHistory?.character_score === 'number' ? latestHistory.character_score.toFixed(1) : 'N/A'}</span>
+          <span className="text-gray-900">{latestHistory?.character_score && latestHistory.character_score !== '' ? latestHistory.character_score : 'N/A'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Total Views:</span>
