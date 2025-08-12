@@ -93,7 +93,7 @@ const PaymentForm: React.FC<{ fiction: Fiction; onSuccess: (paymentIntentId: str
           className="flex-1"
           disabled={!stripe || isProcessing}
         >
-          {isProcessing ? 'Processing Payment...' : 'Pay $5 to Sponsor'}
+          {isProcessing ? 'Processing Payment...' : 'Pay $5 once to sponsor'}
         </Button>
         <Button
           type="button"
