@@ -4,23 +4,31 @@ import { getUserFromContext } from '../utils/auth.ts';
 
 export async function useCoupon(ctx: Context) {
   try {
+    console.log('🔐 useCoupon - Starting coupon usage...');
     const user = await getUserFromContext(ctx);
+    console.log('🔐 useCoupon - User loaded:', user ? { id: user.id, email: user.email } : 'null');
+
     if (!user) {
+      console.log('❌ useCoupon - No user found, returning 401');
       ctx.response.status = 401;
       ctx.response.body = { success: false, error: 'Unauthorized' };
       return;
     }
 
     const body = await ctx.request.body.json();
+    console.log('🔐 useCoupon - Request body:', body);
     const { code, fictionId } = body;
 
     if (!code || !fictionId) {
+      console.log('❌ useCoupon - Missing required fields:', { code: !!code, fictionId: !!fictionId });
       ctx.response.status = 400;
       ctx.response.body = { success: false, error: 'Coupon code and fiction ID are required' };
       return;
     }
 
+    console.log('🔐 useCoupon - Calling coupon service with:', { code, userId: user.id, fictionId });
     const result = await couponService.useCoupon(code, user.id, fictionId);
+    console.log('🔐 useCoupon - Service result:', result);
 
     if (result.success) {
       ctx.response.status = 200;

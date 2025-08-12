@@ -4,25 +4,32 @@ export class CouponService {
   // Validate and use a coupon code
   async useCoupon(code: string, userId: number, fictionId: number): Promise<{ success: boolean; error?: string; coupon?: any }> {
     try {
+      console.log('🔐 CouponService.useCoupon - Starting with:', { code, userId, fictionId });
+
       // Check if coupon exists and is valid
       const couponResult = await client.query(
         'SELECT * FROM coupon_codes WHERE code = ? AND is_active = 1',
         [code]
       );
+      console.log('🔐 CouponService.useCoupon - Coupon query result:', couponResult);
 
       if (couponResult.length === 0) {
+        console.log('❌ CouponService.useCoupon - No coupon found with code:', code);
         return { success: false, error: 'Invalid coupon code' };
       }
 
       const coupon = couponResult[0];
+      console.log('🔐 CouponService.useCoupon - Found coupon:', { id: coupon.id, used: coupon.used, expires_at: coupon.expires_at });
 
       // Check if coupon is already used
       if (coupon.used) {
+        console.log('❌ CouponService.useCoupon - Coupon already used');
         return { success: false, error: 'Coupon code has already been used' };
       }
 
       // Check if coupon has expired
       if (new Date(coupon.expires_at) < new Date()) {
+        console.log('❌ CouponService.useCoupon - Coupon expired:', coupon.expires_at);
         return { success: false, error: 'Coupon code has expired' };
       }
 
@@ -31,14 +38,19 @@ export class CouponService {
         'SELECT sponsored FROM fiction WHERE id = ?',
         [fictionId]
       );
+      console.log('🔐 CouponService.useCoupon - Fiction query result:', fictionResult);
 
       if (fictionResult.length === 0) {
+        console.log('❌ CouponService.useCoupon - Fiction not found with ID:', fictionId);
         return { success: false, error: 'Fiction not found' };
       }
 
       if (fictionResult[0].sponsored === 1) {
+        console.log('❌ CouponService.useCoupon - Fiction already sponsored');
         return { success: false, error: 'Fiction is already sponsored' };
       }
+
+      console.log('🔐 CouponService.useCoupon - All checks passed, proceeding with coupon usage...');
 
       // Use the coupon and sponsor the fiction
       await client.execute(
@@ -64,6 +76,7 @@ export class CouponService {
         ]
       );
 
+      console.log('✅ CouponService.useCoupon - Coupon used successfully');
       return { success: true, coupon };
     } catch (error) {
       console.error('❌ Error using coupon:', error);
