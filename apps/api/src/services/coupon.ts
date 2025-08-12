@@ -66,13 +66,14 @@ export class CouponService {
 
       // Log the sponsorship (similar to Stripe payment)
       await client.execute(
-        'INSERT INTO sponsorship_logs (fiction_id, user_id, coupon_code_id, amount, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+        'INSERT INTO sponsorship_logs (fiction_id, user_id, coupon_code_id, amount, status, stripe_payment_intent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
         [
           fictionId,
           userId,
           coupon.id,
           0, // $0 since it's free
-          'completed'
+          'completed',
+          null // No Stripe payment intent for coupon usage
         ]
       );
 

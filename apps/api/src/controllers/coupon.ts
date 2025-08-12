@@ -31,15 +31,45 @@ export async function useCoupon(ctx: Context) {
     console.log('🔐 useCoupon - Service result:', result);
 
     if (result.success) {
-      ctx.response.status = 200;
-      ctx.response.body = {
-        success: true,
-        message: 'Coupon used successfully! Fiction is now sponsored.',
-        data: { coupon: result.coupon }
-      };
+      console.log('🔐 useCoupon - Setting success response...');
+      try {
+        // Validate coupon object before sending in response
+        const responseData = {
+          success: true,
+          message: 'Coupon used successfully! Fiction is now sponsored.',
+          data: { 
+            coupon: result.coupon ? {
+              id: result.coupon.id,
+              code: result.coupon.code,
+              discount_percent: result.coupon.discount_percent,
+              expires_at: result.coupon.expires_at,
+              used: result.coupon.used,
+              is_active: result.coupon.is_active
+            } : null
+          }
+        };
+        
+        console.log('🔐 useCoupon - Response data prepared:', responseData);
+        
+        ctx.response.status = 200;
+        ctx.response.body = responseData;
+        console.log('🔐 useCoupon - Success response set successfully');
+      } catch (responseError) {
+        console.error('❌ useCoupon - Error setting success response:', responseError);
+        ctx.response.status = 500;
+        ctx.response.body = { success: false, error: 'Failed to set response' };
+      }
     } else {
-      ctx.response.status = 400;
-      ctx.response.body = { success: false, error: result.error };
+      console.log('🔐 useCoupon - Setting error response...');
+      try {
+        ctx.response.status = 400;
+        ctx.response.body = { success: false, error: result.error };
+        console.log('🔐 useCoupon - Error response set successfully');
+      } catch (responseError) {
+        console.error('❌ useCoupon - Error setting error response:', responseError);
+        ctx.response.status = 500;
+        ctx.response.body = { success: false, error: 'Failed to set error response' };
+      }
     }
   } catch (error) {
     console.error('❌ Error using coupon:', error);
