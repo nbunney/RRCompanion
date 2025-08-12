@@ -397,7 +397,6 @@ const FictionDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header
-        variant="fiction-detail"
         title="Fiction Details"
         showBackButton={true}
         backUrl="/dashboard"
