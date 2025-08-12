@@ -16,22 +16,15 @@ const Header: React.FC<HeaderProps> = ({
   title,
   showBackButton = false,
   backUrl = '/dashboard',
-  showUserInfo = true,
-  showAboutLink = true,
+  showUserInfo = false,
+  showAboutLink = true
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleBack = () => {
-    if (backUrl) {
-      navigate(backUrl);
-    } else {
-      navigate(-1);
-    }
-  };
-
   const handleLogout = () => {
     logout();
+    navigate('/login');
   };
 
   return (
@@ -39,27 +32,25 @@ const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            {showBackButton ? (
+            {showBackButton && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleBack}
+                onClick={() => navigate(backUrl)}
+                className="mr-4"
               >
                 ← Back
               </Button>
+            )}
+            {title ? (
+              <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
             ) : (
               <Link to="/dashboard">
                 <Logo size="md" />
               </Link>
             )}
-
-            {title && (
-              <h1 className="text-xl font-semibold text-gray-900 ml-4">
-                {title}
-              </h1>
-            )}
           </div>
-
+          
           <div className="flex items-center space-x-4">
             {showAboutLink && (
               <Link
@@ -69,6 +60,7 @@ const Header: React.FC<HeaderProps> = ({
                 About
               </Link>
             )}
+            
             {user?.admin && (
               <Link
                 to="/admin"
@@ -77,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({
                 Admin
               </Link>
             )}
-
+            
             {showUserInfo && user ? (
               <>
                 <span className="text-sm text-gray-700">
@@ -91,6 +83,22 @@ const Header: React.FC<HeaderProps> = ({
                   Logout
                 </Button>
               </>
+            ) : !showUserInfo ? (
+              // Show login/register links when user is not logged in and showUserInfo is false
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/login"
+                  className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  Register
+                </Link>
+              </div>
             ) : null}
           </div>
         </div>

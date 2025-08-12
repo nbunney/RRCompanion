@@ -6,7 +6,7 @@ export const oauthConfigs: Record<string, OAuthConfig> = {
     clientId: Deno.env.get('DISCORD_CLIENT_ID') || '',
     clientSecret: Deno.env.get('DISCORD_CLIENT_SECRET') || '',
     redirectUri: Deno.env.get('DISCORD_REDIRECT_URI') ||
-      'http://localhost:8000/api/auth/discord/callback',
+      'http://localhost:8000/api/oauth/discord/callback',
     scope: 'identify email',
     authorizationUrl: 'https://discord.com/api/oauth2/authorize',
     tokenUrl: 'https://discord.com/api/oauth2/token',

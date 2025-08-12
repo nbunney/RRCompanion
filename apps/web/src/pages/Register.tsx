@@ -7,6 +7,7 @@ import Input from '@/components/Input';
 import Card from '@/components/Card';
 import OAuthButton from '@/components/OAuthButton';
 import Footer from '@/components/Footer';
+import Header from '@/components/Header';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      <Header showUserInfo={false} />
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div>
