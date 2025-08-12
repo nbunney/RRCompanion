@@ -32,11 +32,7 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
   // Create chart data with all dates, filling in missing values
   const chartData = allDates.map(date => {
     const dataPoint: any = {
-      date: new Date(date).toLocaleDateString('en-US', {
-        month: 'numeric',
-        day: 'numeric',
-        year: 'numeric'
-      })
+      date: date // Keep date in UTC format (YYYY-MM-DD)
     };
     // Find entries for this date and add genre positions
     risingStarsData.forEach(entry => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { formatLocalDate } from '@/utils/dateUtils';
+
 import { FictionHistoryEntry } from '@/types';
 
 interface EngagementGrowthChartProps {
@@ -33,7 +33,7 @@ const EngagementGrowthChart: React.FC<EngagementGrowthChartProps> = ({ history }
             .filter(entry => entry.captured_at)
             .sort((a, b) => new Date(a.captured_at!).getTime() - new Date(b.captured_at!).getTime())
             .map(entry => ({
-              date: formatLocalDate(entry.captured_at!),
+              date: entry.captured_at!.split('T')[0], // Keep date in UTC format (YYYY-MM-DD)
               pages: entry.pages,
               followers: entry.followers,
               totalViews: entry.total_views,
