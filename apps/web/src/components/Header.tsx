@@ -27,6 +27,8 @@ const Header: React.FC<HeaderProps> = ({
   console.log('🔐 Header - Auth state:', { user: user ? { id: user.id, email: user.email, admin: user.admin, adminType: typeof user.admin } : 'null' });
   console.log('🔐 Header - Admin check result:', user?.admin);
   console.log('🔐 Header - Should show admin link:', user?.admin ? 'YES' : 'NO');
+  console.log('🔐 Header - Complete user object:', user);
+  console.log('🔐 Header - User keys:', user ? Object.keys(user) : 'null');
 
   // Log when user state changes
   useEffect(() => {
