@@ -11,10 +11,12 @@ import ConfirmationDialog from '@/components/ConfirmationDialog';
 import Tags from '@/components/Tags';
 import { RisingStarsChart, EngagementGrowthChart, PerceivedQualityChart, CurrentStats } from '@/components/charts';
 import { formatLocalDate, formatLocalDateTime } from '@/utils/dateUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 const FictionDetail: React.FC = () => {
   const { id, slug } = useParams<{ id: string; slug?: string }>();
   const navigate = useNavigate();
+  const { checkAuth } = useAuth();
   const [fiction, setFiction] = useState<RoyalRoadFiction | null>(null);
   const [fictionWithHistory, setFictionWithHistory] = useState<Fiction | null>(null);
   const [userFiction, setUserFiction] = useState<UserFiction | null>(null);
@@ -77,6 +79,11 @@ const FictionDetail: React.FC = () => {
   useEffect(() => {
     checkRefreshStatus();
   }, [checkRefreshStatus]);
+
+  // Check authentication when component mounts
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
     if (id) {

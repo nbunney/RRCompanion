@@ -8,6 +8,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Header from '../components/Header';
 import Modal from '../components/Modal';
+import { useAuth } from '../hooks/useAuth';
 
 // Stripe Elements configuration
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -112,6 +113,7 @@ const Sponsor: React.FC = () => {
   console.log('🔗 Sponsor component rendered');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { checkAuth } = useAuth();
   const [fiction, setFiction] = useState<Fiction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,6 +123,11 @@ const Sponsor: React.FC = () => {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
   const [isProcessingCoupon, setIsProcessingCoupon] = useState(false);
+
+  // Check authentication when component mounts
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
     const loadFiction = async () => {
