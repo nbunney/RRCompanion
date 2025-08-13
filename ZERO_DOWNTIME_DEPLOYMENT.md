@@ -5,6 +5,14 @@
 Your current deployment process stops the entire API service, causing users to
 be knocked off for over a minute during updates.
 
+## Important Notes
+
+### 🌿 **Branch Naming**
+
+- **Main branch**: `master` (not `main`)
+- **All deployments**: Pull from `origin master`
+- **GitHub Actions**: Configured to deploy from `master` branch
+
 ## Solution: Blue-Green Deployment
 
 **File**: `scripts/deploy.sh`

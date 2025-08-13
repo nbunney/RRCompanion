@@ -2,6 +2,9 @@
 
 # RRCompanion Zero-Downtime Deployment Script
 # This script implements blue-green deployment for both API and frontend
+# 
+# IMPORTANT: This repository uses 'master' as the main branch (not 'main')
+# All deployments pull from 'origin master'
 
 set -e  # Exit on any error
 
@@ -51,7 +54,7 @@ if sudo systemctl is-active --quiet rrcompanion-api; then
     NEW_SERVICE="rrcompanion-api-green"
     CURRENT_PORT="8000"
     NEW_PORT="8001"
-    CURRENT_FRONTEND="/var/www/rrcompanion/apps/web/dist"
+    CURRENT_FRONTEND="/var/www/rrcompanion/apps/web/dist-blue"
     NEW_FRONTEND="/var/www/rrcompanion/apps/web/dist-green"
 else
     CURRENT_INSTANCE="green"
@@ -61,7 +64,16 @@ else
     CURRENT_PORT="8001"
     NEW_PORT="8000"
     CURRENT_FRONTEND="/var/www/rrcompanion/apps/web/dist-green"
-    NEW_FRONTEND="/var/www/rrcompanion/apps/web/dist"
+    NEW_FRONTEND="/var/www/rrcompanion/apps/web/dist-blue"
+fi
+
+# Handle initial setup - if neither directory exists, create blue as current
+if [ ! -d "$CURRENT_FRONTEND" ] && [ ! -d "$NEW_FRONTEND" ]; then
+    print_info "Initial setup detected - creating dist-blue directory"
+    CURRENT_FRONTEND="/var/www/rrcompanion/apps/web/dist-blue"
+    NEW_FRONTEND="/var/www/rrcompanion/apps/web/dist-green"
+    CURRENT_INSTANCE="blue"
+    NEW_INSTANCE="green"
 fi
 
 print_info "Current active instance: $CURRENT_INSTANCE"
@@ -230,6 +242,12 @@ EOF
 sudo ln -sf /etc/nginx/sites-available/rrcompanion-new /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/rrcompanion
 
+# Handle initial setup - if no existing site, create the first one
+if [ ! -f "/etc/nginx/sites-available/rrcompanion" ]; then
+    print_info "Initial Nginx setup - creating first site configuration"
+    sudo cp /etc/nginx/sites-available/rrcompanion-new /etc/nginx/sites-available/rrcompanion
+fi
+
 # Test Nginx configuration
 print_status "Testing Nginx configuration..."
 if sudo nginx -t; then
@@ -277,10 +295,10 @@ sudo systemctl daemon-reload
 
 # Clean up old frontend directory (optional - keep for rollback)
 print_status "Cleaning up old frontend directory..."
-if [ -d "$CURRENT_FRONTEND" ] && [ "$CURRENT_FRONTEND" != "/var/www/rrcompanion/apps/web/dist" ]; then
+if [ -d "$CURRENT_FRONTEND" ]; then
     print_info "Keeping old frontend directory for potential rollback: $CURRENT_FRONTEND"
 else
-    print_info "Old frontend directory is the default dist folder, keeping for safety"
+    print_info "Old frontend directory was already cleaned up"
 fi
 
 print_status "Zero-downtime deployment completed successfully!"
