@@ -61,74 +61,25 @@ jobs:
           port: ${{ secrets.SERVER_SSH_PORT }}
           script: |
             set -e  # Exit on any error
-            
-            echo "🚀 Starting RRCompanion blue-green deployment..."
-            
-            # Check if we're in the right directory
-            if [ ! -f "/var/www/rrcompanion/apps/api/src/main.ts" ]; then
-                echo "❌ Error: Please run from /var/www/rrcompanion directory"
-                exit 1
-            fi
-            
-            # Navigate to the project directory
+            echo "🚀 Starting RRCompanion simple deployment..."
             cd /var/www/rrcompanion
-            
-            # Pull latest changes
             echo "📥 Pulling latest changes..."
             git pull origin master
-            
-            # Install dependencies and build frontend
             echo "📦 Installing dependencies..."
             npm ci
             echo "🔨 Building frontend..."
             cd apps/web
-            
-            # Copy environment file for build
-            echo "🔧 Setting up environment variables..."
-            if [ -f ".env" ]; then
-                echo "✅ Using existing .env file"
-            else
-                echo "📝 Creating .env file from template..."
-                cp .env.example .env
-                # Replace placeholder with actual key from GitHub secrets
-                sed -i "s/pk_test_your_stripe_publishable_key_here/${{ secrets.STRIPE_PUBLISHABLE_KEY }}/" .env
-                echo "✅ Environment file configured with secret"
+            # Install frontend dependencies if needed
+            if [ ! -d "node_modules" ]; then
+              echo "Installing frontend dependencies..."
+              npm install
             fi
             npm run build
-            
-            # Check if build was successful
-            if [ ! -d "dist" ]; then
-                echo "❌ Frontend build failed"
-                exit 1
-            fi
-            
-            echo "✅ Frontend built successfully"
-            
-            # Install/update Deno dependencies
-            echo "🔧 Updating Deno dependencies..."
-            cd ../api
-            
-            # Check if deno is available, if not use the full path
-            if command -v deno >/dev/null 2>&1; then
-                echo "✅ Deno found in PATH"
-                deno cache --reload src/main.ts
-            elif [ -f "$HOME/.deno/bin/deno" ]; then
-                echo "✅ Using Deno from ~/.deno/bin/deno"
-                $HOME/.deno/bin/deno cache --reload src/main.ts
-            else
-                echo "❌ Deno not found, skipping Deno dependency update"
-                echo "⚠️ Please ensure Deno is installed on the server"
-            fi
-            
-            # Run the blue-green deployment script
-            echo "🔄 Executing blue-green deployment..."
+            echo "🔄 Executing simple deployment..."
             cd /var/www/rrcompanion
-            chmod +x scripts/deploy.sh
-            ./scripts/deploy.sh
-            
-            echo "🎉 Blue-green deployment completed successfully!"
-            
-            # Show service status
+            chmod +x scripts/deploy-simple.sh
+            ./scripts/deploy-simple.sh
+            echo "🎉 Simple deployment completed successfully!"
             echo "📊 Service Status:"
             sudo systemctl status rrcompanion-api --no-pager
 
