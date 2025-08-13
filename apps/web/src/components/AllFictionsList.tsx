@@ -16,6 +16,9 @@ const AllFictionsList: React.FC = () => {
   const [isRemoving, setIsRemoving] = useState(false);
   const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
 
+  console.log('🚀 AllFictionsList component loaded!');
+  console.log('🚀 Current time:', new Date().toISOString());
+
   // Add logging to track state changes
   useEffect(() => {
     console.log('📊 AllFictionsList state update:');
@@ -30,6 +33,9 @@ const AllFictionsList: React.FC = () => {
       fictionToRemove,
       isLoading: isRemoving
     });
+
+    // Log render time
+    console.log('🎨 AllFictionsList rendering at:', new Date().toISOString());
   }, [showRemoveConfirm, fictionToRemove, isRemoving, allFictions.length]);
 
   useEffect(() => {
@@ -203,7 +209,11 @@ const AllFictionsList: React.FC = () => {
           <div
             key={userFiction.id}
             className="cursor-pointer"
-            onClick={(_e: React.MouseEvent<HTMLDivElement>) => handleFictionClick(userFiction)}
+            onClick={(_e: React.MouseEvent<HTMLDivElement>) => {
+              console.log('🎯 Parent div clicked for fiction:', userFiction.fiction?.title);
+              console.log('🎯 This should NOT happen when clicking the remove button');
+              handleFictionClick(userFiction);
+            }}
           >
             <Card className="p-4 hover:shadow-lg transition-shadow">
               <div className="flex space-x-4">
@@ -255,10 +265,23 @@ const AllFictionsList: React.FC = () => {
                             console.log('🔘 Event target:', e.target);
                             console.log('🔘 Event currentTarget:', e.currentTarget);
                             console.log('🔘 Event type:', e.type);
+                            console.log('🔘 Event bubbles:', e.bubbles);
+                            console.log('🔘 Event defaultPrevented:', e.defaultPrevented);
+
                             e.stopPropagation();
                             console.log('🛑 Event propagation stopped');
                             console.log('🔘 About to call handleRemoveFiction with:', userFiction);
+
+                            // Prevent default behavior as well
+                            e.preventDefault();
+                            console.log('🛑 Event default prevented');
+
                             handleRemoveFiction(userFiction);
+                          }}
+                          onMouseDown={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            console.log('🖱️ Remove button onMouseDown triggered');
+                            e.stopPropagation();
+                            console.log('🛑 MouseDown propagation stopped');
                           }}
                           disabled={isRemoving}
                         >
