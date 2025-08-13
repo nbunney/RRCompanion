@@ -236,7 +236,7 @@ const AllFictionsList: React.FC = () => {
                         <h3 className="text-lg font-semibold text-gray-900 truncate">
                           {userFiction.fiction?.title || 'Unknown Title'}
                         </h3>
-                        {userFiction.is_favorite && (
+                        {userFiction.is_favorite === true && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             ⭐ Favorite
                           </span>
