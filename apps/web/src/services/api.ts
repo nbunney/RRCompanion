@@ -252,6 +252,11 @@ export const risingStarsAPI = {
     const response = await api.get(`/rising-stars/fiction/${fictionId}`);
     return response.data;
   },
+
+  getTopRisingStars: async (limit: number = 5): Promise<ApiResponse<any[]>> => {
+    const response = await api.get(`/rising-stars/top?limit=${limit}`);
+    return response.data;
+  },
 };
 
 // Stripe API

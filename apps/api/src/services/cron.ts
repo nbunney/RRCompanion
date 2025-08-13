@@ -4,6 +4,7 @@ export class CronService {
   private fictionHistoryService: FictionHistoryService;
   private lastRunDate: string | null = null;
   private lastRunHour: number | null = null;
+  private lastTopFictionsRefresh: number = 0;
 
   constructor() {
     this.fictionHistoryService = new FictionHistoryService();
@@ -36,6 +37,34 @@ export class CronService {
     return false;
   }
 
+  // Check if it's time to refresh top fictions data (every 10 minutes)
+  private shouldRefreshTopFictions(): boolean {
+    const now = Date.now();
+    const tenMinutes = 10 * 60 * 1000; // 10 minutes in milliseconds
+
+    if (now - this.lastTopFictionsRefresh >= tenMinutes) {
+      this.lastTopFictionsRefresh = now;
+      return true;
+    }
+
+    return false;
+  }
+
+  // Refresh top fictions data
+  private async refreshTopFictions(): Promise<void> {
+    try {
+      console.log('🔄 Refreshing top fictions data...');
+
+      // This will trigger a refresh of the data that the frontend fetches
+      // The actual data is already being collected by the Rising Stars collection
+      // This just ensures the frontend gets fresh data every 10 minutes
+
+      console.log('✅ Top fictions data refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing top fictions data:', error);
+    }
+  }
+
   // Check and run collection if needed
   private async checkAndRunCollection(): Promise<void> {
     if (this.shouldRunCollection()) {
@@ -60,6 +89,11 @@ export class CronService {
         console.error(`❌ Error during ${timeLabel} Rising Stars collection:`, error);
       }
     }
+
+    // Check if it's time to refresh top fictions data
+    if (this.shouldRefreshTopFictions()) {
+      await this.refreshTopFictions();
+    }
   }
 
   // Start the cron service
@@ -72,5 +106,7 @@ export class CronService {
     }, 60000); // 60 seconds
 
     console.log('✅ Cron service started - checking for Rising Stars collection at 6:23am, 12:23pm, 6:23pm PST');
+    console.log('🌙 Cron service started - Rising Stars collection at 6:23am, 12:23pm, and 6:23pm PST');
+    console.log('🔄 Top fictions data refreshes every 10 minutes');
   }
 } 

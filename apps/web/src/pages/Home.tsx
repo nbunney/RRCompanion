@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Card from '@/components/Card';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
+import TopFictionsTable from '@/components/TopFictionsTable';
 
 const Home: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -40,6 +41,9 @@ const Home: React.FC = () => {
               for further analysis or record-keeping.
             </p>
           </Card>
+
+          {/* Top Fictions Table */}
+          <TopFictionsTable />
 
           <Card className="p-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">

@@ -59,6 +59,29 @@ export async function getLatestRisingStars(ctx: Context) {
   }
 }
 
+// Get top 5 Rising Stars across all genres
+export async function getTopRisingStars(ctx: Context) {
+  try {
+    const url = new URL(ctx.request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '5');
+    
+    const data = await risingStarsService.getTopRisingStars(limit);
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: data,
+    };
+  } catch (error) {
+    console.error('❌ Error getting top rising stars:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      message: 'Failed to get top rising stars data',
+    };
+  }
+}
+
 // Get rising stars data for a specific fiction
 export async function getRisingStarsForFiction(ctx: Context) {
   try {

@@ -138,6 +138,30 @@ export class RisingStarsService {
     }
   }
 
+  // Get the top 5 Rising Stars across all genres
+  async getTopRisingStars(limit: number = 5): Promise<any[]> {
+    try {
+      const query = `
+        SELECT rs.*, f.title, f.author_name, f.royalroad_id, f.slug
+        FROM risingStars rs
+        JOIN fiction f ON rs.fiction_id = f.id
+        WHERE rs.captured_at = (
+          SELECT MAX(captured_at) 
+          FROM risingStars 
+          WHERE genre = rs.genre
+        )
+        ORDER BY rs.position ASC
+        LIMIT ?
+      `;
+
+      const result = await this.dbClient.query(query, [limit]);
+      return result as any[];
+    } catch (error) {
+      console.error('❌ Error getting top rising stars:', error);
+      throw error;
+    }
+  }
+
   // Save multiple rising star entries
   async saveRisingStarsData(entries: RisingStarEntry[]): Promise<void> {
     console.log(`\n💾 Saving ${entries.length} rising star entries to database...`);
