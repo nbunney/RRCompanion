@@ -48,7 +48,7 @@ sudo systemctl stop rrcompanion-api
 
 # Build frontend
 print_status "Building frontend..."
-cd apps/web
+cd /var/www/rrcompanion/apps/web
 
 # Install dependencies if needed
 if [ ! -d "node_modules" ]; then
