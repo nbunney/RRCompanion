@@ -56,9 +56,15 @@ const Header: React.FC<HeaderProps> = ({
               </Button>
             )}
             {title ? (
-              <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
+              <h1
+                className="text-xl font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                onClick={() => navigate('/')}
+                title="Click to go to home page"
+              >
+                {title}
+              </h1>
             ) : (
-              <Link to="/dashboard">
+              <Link to="/">
                 <Logo size="md" />
               </Link>
             )}
