@@ -1,4 +1,5 @@
 import { client } from '../config/database.ts';
+import { cacheService } from './cache.ts';
 import type { UserFiction, CreateUserFictionRequest, UpdateUserFictionRequest, UserFictionStatus } from '../types/index.ts';
 
 export class UserFictionService {
@@ -19,6 +20,9 @@ export class UserFictionService {
       fictionData.total_chapters || 0,
       fictionData.is_favorite || false,
     ]);
+
+    // Clear popular fictions cache since user counts may have changed
+    cacheService.clear();
 
     const userFiction = await client.query(
       'SELECT * FROM userFiction WHERE id = ?',
@@ -209,6 +213,9 @@ export class UserFictionService {
       params
     );
 
+    // Clear popular fictions cache since user counts may have changed
+    cacheService.clear();
+
     return this.getUserFictionByUserAndFiction(userId, fictionId);
   }
 
@@ -219,7 +226,13 @@ export class UserFictionService {
       [userId, fictionId]
     );
 
-    return (result.affectedRows || 0) > 0;
+    if (result.affectedRows && result.affectedRows > 0) {
+      // Clear popular fictions cache since user counts may have changed
+      cacheService.clear();
+      return true;
+    }
+
+    return false;
   }
 
   // Toggle favorite status

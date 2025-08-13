@@ -1,4 +1,5 @@
 import { client } from '../config/database.ts';
+import { cacheService } from './cache.ts';
 
 export interface RisingStarEntry {
   id?: number;
@@ -28,6 +29,9 @@ export class RisingStarsService {
       ]);
 
       console.log(`✅ Saved rising star entry for fiction ${entry.fiction_id} (position ${entry.position} in ${entry.genre})`);
+
+      // Clear cache when new data is added
+      cacheService.clear();
     } catch (error) {
       console.error('❌ Error saving rising star entry:', error);
       throw error;
@@ -138,6 +142,14 @@ export class RisingStarsService {
   // Get the top 5 Rising Stars from the main genre only
   async getTopRisingStars(limit: number = 5): Promise<any[]> {
     try {
+      // Check cache first
+      const cacheKey = `top_rising_stars_${limit}`;
+      const cached = cacheService.get<any[]>(cacheKey);
+      if (cached) {
+        console.log('📦 Returning cached top Rising Stars data');
+        return cached;
+      }
+
       // Get the most recent timestamp
       const maxTimestampQuery = `SELECT MAX(captured_at) as max_timestamp FROM risingStars`;
       const maxResult = await this.dbClient.query(maxTimestampQuery);
@@ -162,6 +174,10 @@ export class RisingStarsService {
 
       const result = await this.dbClient.query(query, [maxTimestamp, limit]);
       console.log('🔍 Debug - Top Rising Stars query result:', result);
+
+      // Cache the result for 10 minutes
+      cacheService.set(cacheKey, result, 600000);
+
       return result as any[];
     } catch (error) {
       console.error('❌ Error getting top rising stars:', error);

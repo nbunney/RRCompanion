@@ -1,4 +1,5 @@
 import { client } from '../config/database.ts';
+import { cacheService } from './cache.ts';
 import type { Fiction, CreateFictionRequest, UpdateFictionRequest } from '../types/index.ts';
 
 export class FictionService {
@@ -292,6 +293,14 @@ export class FictionService {
 
   // Get popular fictions by site users (how many users have added them to their lists)
   static async getPopularFictionsBySiteUsers(limit: number = 10): Promise<any[]> {
+    const cacheKey = `popular_fictions_by_site_users_${limit}`;
+    const cachedResult = cacheService.get<any[]>(cacheKey);
+
+    if (cachedResult) {
+      console.log('📦 Returning cached popular fictions data');
+      return cachedResult;
+    }
+
     const result = await client.query(`
       SELECT f.id, f.royalroad_id, f.title, f.author_name, f.author_id, f.author_avatar, 
              f.description, f.image_url, f.status, f.type, f.tags, f.warnings,
@@ -304,6 +313,9 @@ export class FictionService {
       ORDER BY user_count DESC, f.score DESC
       LIMIT ?
     `, [limit]);
+
+    // Cache the result for 10 minutes
+    cacheService.set(cacheKey, result, 600000);
 
     return result; // Return raw result to preserve user_count
   }

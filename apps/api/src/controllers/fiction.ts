@@ -519,6 +519,27 @@ export async function getPopularFictionsBySiteUsers(ctx: Context): Promise<void>
   }
 }
 
+// Get cache stats for debugging
+export async function getCacheStats(ctx: Context): Promise<void> {
+  try {
+    const { cacheService } = await import('../services/cache.ts');
+    const stats = cacheService.getStats();
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: stats,
+    };
+  } catch (error) {
+    console.error('Get cache stats error:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      message: 'Failed to get cache stats',
+    };
+  }
+}
+
 // Get fictions by author
 export async function getFictionsByAuthor(ctx: Context): Promise<void> {
   try {
