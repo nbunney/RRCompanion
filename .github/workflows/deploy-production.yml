@@ -76,8 +76,8 @@ jobs:
             echo "📥 Pulling latest changes..."
             git pull origin master
             echo "🔄 Executing simple deployment..."
-            chmod +x scripts/deploy-simple.sh
-            ./scripts/deploy-simple.sh
+            chmod +x scripts/deploy.sh
+            ./scripts/deploy.sh
             echo "🎉 Simple deployment completed successfully!"
             echo "📊 Service Status:"
             sudo systemctl status rrcompanion-api --no-pager
