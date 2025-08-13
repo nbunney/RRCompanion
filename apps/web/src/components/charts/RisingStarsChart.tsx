@@ -37,17 +37,31 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  // Create chart data with all dates, filling in missing values
+  // Create chart data with all dates, handling multiple entries per day
   const chartData = allDates.map(date => {
     const dataPoint: any = {
       date: date // Keep date in UTC format (YYYY-MM-DD)
     };
-    // Find entries for this date and add genre positions
-    risingStarsData.forEach(entry => {
-      if (entry.captured_at === date) {
-        dataPoint[entry.genre] = entry.position;
+    
+    // Find all entries for this date and handle multiple entries per day
+    const entriesForDate = risingStarsData.filter(entry => 
+      entry.captured_at.startsWith(date)
+    );
+    
+    // Group entries by genre and take the latest entry for each genre per day
+    const genreMap = new Map<string, RisingStarEntry>();
+    entriesForDate.forEach(entry => {
+      const existing = genreMap.get(entry.genre);
+      if (!existing || new Date(entry.captured_at) > new Date(existing.captured_at)) {
+        genreMap.set(entry.genre, entry);
       }
     });
+    
+    // Add the latest position for each genre to the data point
+    genreMap.forEach((entry, genre) => {
+      dataPoint[genre] = entry.position;
+    });
+    
     return dataPoint;
   });
 

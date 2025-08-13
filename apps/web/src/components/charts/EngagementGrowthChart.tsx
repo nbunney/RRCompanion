@@ -48,14 +48,31 @@ const EngagementGrowthChart: React.FC<EngagementGrowthChartProps> = ({ history }
   const chartData = history
     .filter(entry => entry.captured_at)
     .sort((a, b) => new Date(a.captured_at!).getTime() - new Date(b.captured_at!).getTime())
-    .map(entry => ({
-      date: entry.captured_at!.split('T')[0], // Keep date in UTC format (YYYY-MM-DD)
-      pages: entry.pages,
-      followers: entry.followers,
-      totalViews: entry.total_views,
-      averageViews: entry.average_views,
-      ratings: entry.ratings,
-    }));
+    .reduce((acc: any[], entry) => {
+      const date = entry.captured_at!.split('T')[0];
+      const existingDataPoint = acc.find(dp => dp.date === date);
+      
+      if (existingDataPoint) {
+        // Update existing data point with latest values for this date
+        existingDataPoint.pages = entry.pages;
+        existingDataPoint.followers = entry.followers;
+        existingDataPoint.totalViews = entry.total_views;
+        existingDataPoint.averageViews = entry.average_views;
+        existingDataPoint.ratings = entry.ratings;
+      } else {
+        // Create new data point for this date
+        acc.push({
+          date: date,
+          pages: entry.pages,
+          followers: entry.followers,
+          totalViews: entry.total_views,
+          averageViews: entry.average_views,
+          ratings: entry.ratings,
+        });
+      }
+      
+      return acc;
+    }, []);
 
   const lineConfigs = [
     { key: 'pages', name: 'Pages', stroke: '#8884d8', yAxisId: 'left' },

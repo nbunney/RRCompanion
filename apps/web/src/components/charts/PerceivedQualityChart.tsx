@@ -48,14 +48,31 @@ const PerceivedQualityChart: React.FC<PerceivedQualityChartProps> = ({ history }
   const chartData = history
     .filter(entry => entry.captured_at)
     .sort((a, b) => new Date(a.captured_at!).getTime() - new Date(b.captured_at!).getTime())
-    .map(entry => ({
-      date: entry.captured_at!.split('T')[0], // Keep date in UTC format (YYYY-MM-DD)
-      overallScore: entry.overall_score,
-      styleScore: entry.style_score,
-      storyScore: entry.story_score,
-      grammarScore: entry.grammar_score,
-      characterScore: entry.character_score,
-    }));
+    .reduce((acc: any[], entry) => {
+      const date = entry.captured_at!.split('T')[0];
+      const existingDataPoint = acc.find(dp => dp.date === date);
+      
+      if (existingDataPoint) {
+        // Update existing data point with latest values for this date
+        existingDataPoint.overallScore = entry.overall_score;
+        existingDataPoint.styleScore = entry.style_score;
+        existingDataPoint.storyScore = entry.story_score;
+        existingDataPoint.grammarScore = entry.grammar_score;
+        existingDataPoint.characterScore = entry.character_score;
+      } else {
+        // Create new data point for this date
+        acc.push({
+          date: date,
+          overallScore: entry.overall_score,
+          styleScore: entry.style_score,
+          storyScore: entry.story_score,
+          grammarScore: entry.grammar_score,
+          characterScore: entry.character_score,
+        });
+      }
+      
+      return acc;
+    }, []);
 
   const lineConfigs = [
     { key: 'overallScore', name: 'Overall Score', stroke: '#8884d8' },
