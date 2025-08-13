@@ -10,6 +10,7 @@ import RoyalRoad from '@/pages/RoyalRoad';
 import Privacy from '@/pages/Privacy';
 import Terms from '@/pages/Terms';
 import About from '@/pages/About';
+import Home from '@/pages/Home';
 import Sponsor from '@/pages/Sponsor';
 import Admin from '@/pages/Admin';
 import FictionDetail from '@/components/FictionDetail';
@@ -90,7 +91,7 @@ const App: React.FC = () => {
         }
       />
       <Route path="/royalroad" element={<RoyalRoad />} />
-      <Route path="/" element={<Navigate to="/about" replace />} />
+      <Route path="/" element={<Home />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
