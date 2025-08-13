@@ -268,21 +268,29 @@ const AllFictionsList: React.FC = () => {
                             console.log('🔘 Event type:', e.type);
                             console.log('🔘 Event bubbles:', e.bubbles);
                             console.log('🔘 Event defaultPrevented:', e.defaultPrevented);
-
+                            
                             e.stopPropagation();
+                            (e.nativeEvent as any).stopImmediatePropagation();
                             console.log('🛑 Event propagation stopped');
                             console.log('🔘 About to call handleRemoveFiction with:', userFiction);
-
+                            
                             // Prevent default behavior as well
                             e.preventDefault();
                             console.log('🛑 Event default prevented');
-
+                            
                             handleRemoveFiction(userFiction);
                           }}
                           onMouseDown={(e: React.MouseEvent<HTMLButtonElement>) => {
                             console.log('🖱️ Remove button onMouseDown triggered');
                             e.stopPropagation();
+                            (e.nativeEvent as any).stopImmediatePropagation();
                             console.log('🛑 MouseDown propagation stopped');
+                          }}
+                          onMouseUp={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            console.log('🖱️ Remove button onMouseUp triggered');
+                            e.stopPropagation();
+                            (e.nativeEvent as any).stopImmediatePropagation();
+                            console.log('🛑 MouseUp propagation stopped');
                           }}
                           disabled={isRemoving}
                         >
