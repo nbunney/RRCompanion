@@ -66,17 +66,25 @@ fi
 
 # Copy frontend to web directory
 print_status "Deploying frontend..."
-if [ -d "/var/www/rrcompanion/apps/web/dist" ]; then
-    sudo rm -rf /var/www/rrcompanion/apps/web/dist
-fi
 
-# Check if dist directory exists before copying
+# Check if dist directory exists in current directory after build
 if [ -d "dist" ]; then
+    print_info "Found dist directory, deploying frontend..."
+    
+    # Remove old dist directory if it exists
+    if [ -d "/var/www/rrcompanion/apps/web/dist" ]; then
+        sudo rm -rf /var/www/rrcompanion/apps/web/dist
+    fi
+    
+    # Copy the dist directory
     sudo cp -r dist /var/www/rrcompanion/apps/web/
     sudo chown -R ubuntu:ubuntu /var/www/rrcompanion/apps/web/dist
     print_status "Frontend deployed successfully"
 else
     print_error "Frontend dist directory not found. Build may have failed."
+    print_error "Current directory: $(pwd)"
+    print_error "Contents of current directory:"
+    ls -la
     exit 1
 fi
 
