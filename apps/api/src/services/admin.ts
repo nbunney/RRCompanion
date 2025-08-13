@@ -139,6 +139,42 @@ export class AdminService {
       throw error;
     }
   }
+
+  // Get all users with statistics
+  async getAllUsers() {
+    try {
+      const result = await client.query(`
+        SELECT 
+          u.id,
+          u.name,
+          u.email,
+          u.admin,
+          u.created_at,
+          COUNT(DISTINCT uf.id) as fiction_count,
+          COUNT(DISTINCT CASE WHEN uf.is_favorite = 1 THEN uf.id END) as favorites_count,
+          COUNT(DISTINCT CASE WHEN f.sponsored = 1 THEN f.id END) as sponsored_count
+        FROM users u
+        LEFT JOIN userFictionOrder uf ON u.id = uf.user_id
+        LEFT JOIN fiction f ON uf.fiction_id = f.id
+        GROUP BY u.id, u.name, u.email, u.admin, u.created_at
+        ORDER BY u.created_at DESC
+      `);
+
+      return result.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        admin: Boolean(row.admin),
+        created_at: row.created_at,
+        fiction_count: parseInt(row.fiction_count) || 0,
+        favorites_count: parseInt(row.favorites_count) || 0,
+        sponsored_count: parseInt(row.sponsored_count) || 0,
+      }));
+    } catch (error) {
+      console.error('❌ Error getting all users:', error);
+      throw error;
+    }
+  }
 }
 
 export const adminService = new AdminService();

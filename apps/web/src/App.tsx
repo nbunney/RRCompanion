@@ -13,6 +13,7 @@ import About from '@/pages/About';
 import Home from '@/pages/Home';
 import Sponsor from '@/pages/Sponsor';
 import Admin from '@/pages/Admin';
+import AdminUsers from '@/pages/AdminUsers';
 import FictionDetail from '@/components/FictionDetail';
 
 // Protected Route component
@@ -63,6 +64,14 @@ const App: React.FC = () => {
         element={
           <ProtectedRoute>
             <Admin />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute>
+            <AdminUsers />
           </ProtectedRoute>
         }
       />

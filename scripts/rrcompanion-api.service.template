@@ -1,5 +1,5 @@
 [Unit]
-Description=RRCompanion API
+Description=RRCompanion API Service
 After=network.target
 
 [Service]
@@ -9,7 +9,8 @@ Group=ubuntu
 WorkingDirectory=/var/www/rrcompanion/apps/api
 Environment=PATH=/home/ubuntu/.deno/bin:/usr/local/bin:/usr/bin:/bin
 Environment=NODE_ENV=production
-ExecStart=/home/ubuntu/.deno/bin/deno run --allow-net --allow-env --allow-read --allow-write src/main.ts
+Environment=PORT=$NEW_PORT
+ExecStart=/var/www/rrcompanion/apps/api/start-api.sh
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 RestartSec=10

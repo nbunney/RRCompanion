@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
@@ -50,6 +50,7 @@ const Admin: React.FC = () => {
     count: 1,
     expiresInDays: 30
   });
+  const navigate = useNavigate();
 
   console.log('🔐 Admin component - Auth state:', { isAuthenticated, user: user ? { id: user.id, email: user.email, admin: user.admin } : 'null' });
 
@@ -188,9 +189,17 @@ const Admin: React.FC = () => {
       <Header showUserInfo={true} showAboutLink={true} />
 
       <main className="flex-1 max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="mb-6">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600 mt-2">Welcome back, {user?.name || user?.email}</p>
+          <div className="mt-4 flex space-x-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/admin/users')}
+            >
+              👥 Manage Users
+            </Button>
+          </div>
         </div>
 
         {/* Site Statistics */}

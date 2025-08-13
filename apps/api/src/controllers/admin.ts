@@ -1,22 +1,44 @@
 import { Context } from 'oak';
 import { adminService } from '../services/admin.ts';
+import type { ApiResponse } from '../types/index.ts';
 
-export async function getSiteStatistics(ctx: Context) {
+// Get site statistics
+export async function getSiteStatistics(ctx: Context): Promise<void> {
   try {
     const stats = await adminService.getSiteStatistics();
 
     ctx.response.status = 200;
     ctx.response.body = {
       success: true,
-      data: stats
-    };
+      data: stats,
+    } as ApiResponse;
   } catch (error) {
-    console.error('❌ Error getting site statistics:', error);
+    console.error('Get site statistics error:', error);
     ctx.response.status = 500;
     ctx.response.body = {
       success: false,
-      error: 'Failed to get site statistics'
-    };
+      error: 'Failed to get site statistics',
+    } as ApiResponse;
+  }
+}
+
+// Get all users with statistics
+export async function getAllUsers(ctx: Context): Promise<void> {
+  try {
+    const users = await adminService.getAllUsers();
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: users,
+    } as ApiResponse;
+  } catch (error) {
+    console.error('Get all users error:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Failed to get users',
+    } as ApiResponse;
   }
 }
 

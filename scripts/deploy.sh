@@ -2,7 +2,7 @@
 
 # RRCompanion Zero-Downtime Deployment Script
 # This script implements blue-green deployment for both API and frontend
-# 
+````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````# 
 # IMPORTANT: This repository uses 'master' as the main branch (not 'main')
 # All deployments pull from 'origin master'
 
@@ -154,6 +154,46 @@ ReadWritePaths=/var/www/rrcompanion
 [Install]
 WantedBy=multi-user.target
 EOF
+
+# Create new systemd service file for the new instance
+print_status "Creating new systemd service file..."
+sudo tee /etc/systemd/system/$NEW_SERVICE.service > /dev/null <<EOF
+[Unit]
+Description=RRCompanion API Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/var/www/rrcompanion/apps/api
+Environment=PATH=/home/ubuntu/.deno/bin:/usr/local/bin:/usr/bin:/bin
+Environment=NODE_ENV=production
+Environment=PORT=$NEW_PORT
+ExecStart=/var/www/rrcompanion/apps/api/start-api.sh
+ExecReload=/bin/kill -HUP \$MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rrcompanion-api
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/rrcompanion
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Copy and make executable the startup script
+print_status "Setting up startup script..."
+sudo cp /var/www/rrcompanion/scripts/start-api.sh /var/www/rrcompanion/apps/api/
+sudo chmod +x /var/www/rrcompanion/apps/api/start-api.sh
+sudo chown ubuntu:ubuntu /var/www/rrcompanion/apps/api/start-api.sh
 
 # Reload systemd and start new service
 sudo systemctl daemon-reload
