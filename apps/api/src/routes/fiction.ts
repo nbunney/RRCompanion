@@ -10,6 +10,7 @@ import {
   getPopularFictions,
   getFictionsByAuthor,
   refreshFiction,
+  downloadFictionHistoryCSV,
 } from '../controllers/fiction.ts';
 import { authMiddleware } from '../middleware/auth.ts';
 
@@ -20,6 +21,7 @@ const router = new Router();
 
 // Protected routes (require authentication)
 router.get('/fictions/:id', authMiddleware, getFictionByRoyalRoadId);
+router.get('/fictions/:id/csv', authMiddleware, downloadFictionHistoryCSV);
 router.post('/fictions', authMiddleware, createFiction);
 router.put('/fictions/:id', authMiddleware, updateFiction);
 router.delete('/fictions/:id', authMiddleware, deleteFiction);

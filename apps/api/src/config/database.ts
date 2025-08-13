@@ -655,6 +655,10 @@ async function runMigrations(client: Client): Promise<void> {
         ALTER TABLE sponsorship_logs 
         MODIFY COLUMN stripe_payment_intent_id VARCHAR(255) NULL
       `
+    },
+    {
+      name: '016_ensure_userFiction_favorite_column',
+      conditional: true
     }
   ];
 
@@ -706,6 +710,9 @@ async function runConditionalMigration(client: Client, migration: Migration): Pr
       break;
     case '008_add_fiction_score_columns':
       await addFictionScoreColumns(client);
+      break;
+    case '016_ensure_userFiction_favorite_column':
+      await ensureUserFictionFavoriteColumn(client);
       break;
     default:
       throw new Error(`Unknown conditional migration: ${migration.name}`);
@@ -765,5 +772,25 @@ async function addFictionScoreColumns(client: Client): Promise<void> {
     } catch (error) {
       console.log(`ℹ️ ${column.name} column already exists in fiction table`);
     }
+  }
+}
+
+async function ensureUserFictionFavoriteColumn(client: Client): Promise<void> {
+  try {
+    // Check if the is_favorite column exists
+    const columns = await client.query(`SHOW COLUMNS FROM userFiction LIKE 'is_favorite'`);
+    if (columns.length === 0) {
+      console.log('🔄 Adding is_favorite column to userFiction table...');
+      await client.execute(`
+        ALTER TABLE userFiction 
+        ADD COLUMN is_favorite BOOLEAN DEFAULT FALSE,
+        ADD INDEX idx_is_favorite (is_favorite)
+      `);
+      console.log('✅ Added is_favorite column to userFiction table');
+    } else {
+      console.log('ℹ️ is_favorite column already exists in userFiction table');
+    }
+  } catch (error) {
+    console.log('ℹ️ Could not add is_favorite column to userFiction table:', error);
   }
 }

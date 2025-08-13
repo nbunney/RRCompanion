@@ -36,7 +36,7 @@ export async function getFictions(ctx: Context): Promise<void> {
   }
 }
 
-// Get fiction by Royal Road ID
+// Get fiction by RoyalRoad ID
 export async function getFictionByRoyalRoadId(ctx: Context): Promise<void> {
   try {
     const royalroadId = (ctx as any).params?.id;
@@ -59,7 +59,7 @@ export async function getFictionByRoyalRoadId(ctx: Context): Promise<void> {
       return;
     }
 
-    // Get fiction history data
+    // Get fiction history
     const fictionHistoryService = new FictionHistoryService();
     const historyEntries = await fictionHistoryService.getFictionHistoryByFictionId(fiction.id);
 
@@ -79,6 +79,136 @@ export async function getFictionByRoyalRoadId(ctx: Context): Promise<void> {
       error: 'Internal server error',
     } as ApiResponse;
   }
+}
+
+// Download CSV data for sponsored fiction
+export async function downloadFictionHistoryCSV(ctx: Context): Promise<void> {
+  try {
+    const fictionId = parseInt((ctx as any).params?.id);
+    const userId = ctx.state.user?.id;
+
+    if (!fictionId || isNaN(fictionId)) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: 'Valid fiction ID is required',
+      } as ApiResponse;
+      return;
+    }
+
+    if (!userId) {
+      ctx.response.status = 401;
+      ctx.response.body = {
+        success: false,
+        error: 'Unauthorized',
+      } as ApiResponse;
+      return;
+    }
+
+    // Check if user has sponsored this fiction
+    const isSponsored = await checkUserSponsorship(fictionId, userId);
+    
+    if (!isSponsored) {
+      ctx.response.status = 403;
+      ctx.response.body = {
+        success: false,
+        error: 'Access denied. Only sponsors can download this data.',
+      } as ApiResponse;
+      return;
+    }
+
+    // Get fiction details for filename
+    const fiction = await FictionService.getFictionById(fictionId);
+    if (!fiction) {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: 'Fiction not found',
+      } as ApiResponse;
+      return;
+    }
+
+    // Get fiction history data
+    const fictionHistoryService = new FictionHistoryService();
+    const historyData = await fictionHistoryService.getFictionHistoryByFictionId(fictionId);
+
+    // Generate CSV content
+    const csvContent = generateFictionHistoryCSV(historyData, fiction.title);
+
+    // Set response headers for CSV download
+    const filename = `${fiction.title.replace(/[^a-zA-Z0-9]/g, '_')}_history_${new Date().toISOString().split('T')[0]}.csv`;
+    
+    ctx.response.headers.set('Content-Type', 'text/csv');
+    ctx.response.headers.set('Content-Disposition', `attachment; filename="${filename}"`);
+    ctx.response.headers.set('Cache-Control', 'no-cache');
+    
+    ctx.response.status = 200;
+    ctx.response.body = csvContent;
+  } catch (error) {
+    console.error('Download fiction history CSV error:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Failed to generate CSV',
+    } as ApiResponse;
+  }
+}
+
+// Helper function to check if user has sponsored a fiction
+async function checkUserSponsorship(fictionId: number, userId: number): Promise<boolean> {
+  try {
+    // Check if there's a sponsorship record for this user and fiction
+    const { client } = await import('../config/database.ts');
+    const result = await client.query(`
+      SELECT COUNT(*) as count 
+      FROM sponsorship_logs 
+      WHERE fiction_id = ? AND user_id = ? AND status = 'completed'
+    `, [fictionId, userId]);
+    
+    return result[0]?.count > 0;
+  } catch (error) {
+    console.error('Error checking user sponsorship:', error);
+    return false;
+  }
+}
+
+// Helper function to generate CSV content
+function generateFictionHistoryCSV(historyData: any[], fictionTitle: string): string {
+  if (!historyData || historyData.length === 0) {
+    return 'No data available';
+  }
+
+  // Define CSV headers based on the first data entry
+  const headers = Object.keys(historyData[0]).filter(key => 
+    key !== 'id' && key !== 'fiction_id' // Exclude internal IDs
+  );
+
+  // Create CSV header row
+  let csv = headers.join(',') + '\n';
+
+  // Add data rows
+  historyData.forEach(entry => {
+    const row = headers.map(header => {
+      let value = entry[header];
+      
+      // Handle different data types
+      if (value === null || value === undefined) {
+        value = '';
+      } else if (typeof value === 'object') {
+        // Handle JSON fields like tags, warnings
+        value = JSON.stringify(value);
+      } else if (typeof value === 'string' && value.includes(',')) {
+        // Escape strings containing commas
+        value = `"${value.replace(/"/g, '""')}"`;
+      }
+      
+      return value;
+    });
+    
+    csv += row.join(',') + '\n';
+  });
+
+  return csv;
 }
 
 // Create new fiction

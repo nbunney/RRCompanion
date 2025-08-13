@@ -371,6 +371,36 @@ const FictionDetail: React.FC = () => {
     }
   };
 
+  const handleDownloadCSV = async () => {
+    if (!fictionWithHistory) return;
+
+    try {
+      const response = await fetch(`/api/fictions/${fictionWithHistory.id}/csv`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fictionWithHistory.title.replace(/[^a-zA-Z0-9]/g, '_')}_history.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        console.log('CSV downloaded successfully!');
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to download CSV');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to download CSV');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
@@ -475,6 +505,15 @@ const FictionDetail: React.FC = () => {
                             </svg>
                           </div>
                           <span className="text-sm text-gray-600">Sponsored</span>
+                          
+                          {/* CSV Download Button for Sponsored Fictions */}
+                          <Button
+                            onClick={handleDownloadCSV}
+                            variant="outline"
+                            className="ml-2"
+                          >
+                            📊 Download CSV
+                          </Button>
                         </div>
                       ) : (
                         <button
