@@ -5,36 +5,9 @@
 Your current deployment process stops the entire API service, causing users to
 be knocked off for over a minute during updates.
 
-## Solutions Implemented
+## Solution: Blue-Green Deployment
 
-### 1. Rolling Restart Deployment (Recommended for now)
-
-**File**: `scripts/deploy-rolling.sh`
-
-**How it works**:
-
-- Uses `systemctl reload` when possible (graceful restart)
-- Falls back to `systemctl restart` if reload isn't supported
-- Includes health checks to ensure service is ready before proceeding
-- **Reduces downtime from 60+ seconds to ~8-10 seconds**
-
-**Usage**:
-
-```bash
-cd /var/www/rrcompanion
-./scripts/deploy-rolling.sh
-```
-
-**Benefits**:
-
-- ✅ Much simpler to implement and debug
-- ✅ Reduces downtime significantly
-- ✅ No additional infrastructure needed
-- ✅ Easy to rollback if issues occur
-
-### 2. Blue-Green Deployment (Advanced)
-
-**File**: `scripts/deploy.sh` (updated)
+**File**: `scripts/deploy.sh`
 
 **How it works**:
 
@@ -55,14 +28,9 @@ cd /var/www/rrcompanion
 - ✅ Zero downtime
 - ✅ Easy rollback (switch back to old instance)
 - ✅ No user interruption
+- ✅ Professional-grade deployment strategy
 
-**Considerations**:
-
-- ⚠️ More complex to implement
-- ⚠️ Requires more memory (two instances running)
-- ⚠️ More complex debugging
-
-## Quick Start: Use Rolling Restart
+## Quick Start: Blue-Green Deployment
 
 1. **Update your server** with the new service file:
    ```bash
@@ -71,22 +39,57 @@ cd /var/www/rrcompanion
    sudo systemctl restart rrcompanion-api
    ```
 
-2. **Deploy using the rolling restart script**:
+2. **Deploy using the blue-green script**:
    ```bash
    cd /var/www/rrcompanion
-   ./scripts/deploy-rolling.sh
+   ./scripts/deploy.sh
    ```
 
 ## Expected Results
 
 - **Before**: 60+ seconds of downtime
-- **After**: 8-10 seconds of downtime (85% reduction)
+- **After**: Zero downtime
+
+## How Blue-Green Deployment Works
+
+1. **Current State**: One API instance running on port 8000, frontend served
+   from `/var/www/rrcompanion/apps/web/dist`
+2. **Deployment**:
+   - New API instance starts on port 8001 with updated code
+   - New frontend built to `/var/www/rrcompanion/apps/web/dist-green`
+3. **Health Check**: New API instance is verified to be working
+4. **Traffic Switch**: Nginx configuration updated to point to new API instance
+   AND new frontend directory
+5. **Cleanup**: Old API instance stopped, old frontend directory preserved for
+   rollback
+
+## What Gets Deployed
+
+### 🔧 **API (Backend)**
+
+- **Blue Instance**: Port 8000, service `rrcompanion-api`
+- **Green Instance**: Port 8001, service `rrcompanion-api-green`
+- **Switching**: Nginx proxy rules updated to point to new port
+
+### 🎨 **Frontend (Vite)**
+
+- **Blue Directory**: `/var/www/rrcompanion/apps/web/dist`
+- **Green Directory**: `/var/www/rrcompanion/apps/web/dist-green`
+- **Switching**: Nginx root directory updated to serve from new location
+
+### 🔄 **Complete Blue-Green Strategy**
+
+- **API**: Two separate Deno processes on different ports
+- **Frontend**: Two separate build directories
+- **Nginx**: Single configuration that switches both simultaneously
+- **Result**: Zero downtime for both backend and frontend updates
 
 ## Health Check Endpoints
 
-The deployment scripts use these endpoints to verify service health:
+The deployment script uses these endpoints to verify service health:
 
-- `http://localhost:8000/health` - Local health check
+- `http://localhost:8000/health` - Local health check (port 8000)
+- `http://localhost:8001/health` - Local health check (port 8001)
 - `https://rrcompanion.com/health` - Public health check
 
 ## Monitoring Deployment
@@ -96,12 +99,15 @@ Watch the deployment progress:
 ```bash
 # Monitor service status
 sudo systemctl status rrcompanion-api
+sudo systemctl status rrcompanion-api-green
 
 # Monitor logs
 sudo journalctl -u rrcompanion-api -f
+sudo journalctl -u rrcompanion-api-green -f
 
-# Check health endpoint
+# Check health endpoints
 curl http://localhost:8000/health
+curl http://localhost:8001/health
 
 # Monitor Nginx status
 sudo systemctl status nginx
@@ -115,7 +121,7 @@ sudo tail -f /var/log/nginx/error.log
 
 ## Nginx Configuration
 
-The deployment scripts now work with **Nginx** instead of Caddy:
+The deployment script works with **Nginx**:
 
 - **Configuration files**: `/etc/nginx/sites-available/` and
   `/etc/nginx/sites-enabled/`
@@ -144,7 +150,7 @@ The deployment scripts now work with **Nginx** instead of Caddy:
 ### If health checks fail:
 
 1. Verify the service is running
-2. Check if port 8000 is accessible
+2. Check if ports 8000 and 8001 are accessible
 3. Verify firewall settings
 
 ### If Nginx issues occur:
@@ -154,22 +160,29 @@ The deployment scripts now work with **Nginx** instead of Caddy:
 3. Check error logs: `sudo tail -f /var/log/nginx/error.log`
 4. Verify site configurations: `ls -la /etc/nginx/sites-enabled/`
 
+## Rollback Strategy
+
+If something goes wrong during deployment:
+
+1. **Quick Rollback**: The old instance is still running on the original port
+2. **Manual Rollback**: Update Nginx to point back to the old instance
+3. **Service Rollback**: Stop new instance, restart old instance
+
 ## Future Improvements
 
-Once you're comfortable with the rolling restart approach, you can:
+Once you're comfortable with the blue-green deployment, you can:
 
-1. Implement the full blue-green deployment
-2. Add database migration safety checks
-3. Implement automated rollback on health check failures
-4. Add deployment notifications (Slack, email, etc.)
-5. Customize Nginx configuration for your specific SSL setup
+1. Add database migration safety checks
+2. Implement automated rollback on health check failures
+3. Add deployment notifications (Slack, email, etc.)
+4. Customize Nginx configuration for your specific SSL setup
+5. Add deployment metrics and monitoring
 
 ## Recommendation
 
-**Start with the rolling restart approach** (`deploy-rolling.sh`). It will
-immediately reduce your downtime from 60+ seconds to under 10 seconds with
-minimal complexity. Once you're comfortable with that, you can explore the full
-blue-green deployment for zero downtime.
+**Use the blue-green deployment approach** (`deploy.sh`). It provides zero
+downtime deployments with professional-grade reliability and easy rollback
+capabilities.
 
 ## Nginx-Specific Commands
 

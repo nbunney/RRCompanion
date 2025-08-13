@@ -62,7 +62,7 @@ jobs:
           script: |
             set -e  # Exit on any error
             
-            echo "🚀 Starting RRCompanion deployment..."
+            echo "🚀 Starting RRCompanion blue-green deployment..."
             
             # Check if we're in the right directory
             if [ ! -f "/var/www/rrcompanion/apps/api/src/main.ts" ]; then
@@ -70,20 +70,11 @@ jobs:
                 exit 1
             fi
             
-            # Stop the API service
-            echo "🛑 Stopping API service..."
-            sudo systemctl stop rrcompanion-api || echo "⚠️ Service was not running"
+            # Navigate to the project directory
+            cd /var/www/rrcompanion
             
             # Pull latest changes
             echo "📥 Pulling latest changes..."
-            cd /var/www/rrcompanion
-            
-            # Handle any untracked files that might conflict with git pull
-            echo "🧹 Cleaning up any conflicting files..."
-            git clean -fd || echo "⚠️ Git clean failed, continuing..."
-            git reset --hard origin/master || echo "⚠️ Git reset failed, continuing..."
-            
-            # Now pull the latest changes
             git pull origin master
             
             # Install dependencies and build frontend
@@ -129,33 +120,13 @@ jobs:
                 echo "⚠️ Please ensure Deno is installed on the server"
             fi
             
-            # Start the API service
-            echo "🚀 Starting API service..."
-            sudo systemctl start rrcompanion-api
+            # Run the blue-green deployment script
+            echo "🔄 Executing blue-green deployment..."
+            cd /var/www/rrcompanion
+            chmod +x scripts/deploy.sh
+            ./scripts/deploy.sh
             
-            # Wait a moment for the service to start
-            sleep 10
-            
-            # Check if the service is running
-            if sudo systemctl is-active --quiet rrcompanion-api; then
-                echo "✅ API service started successfully"
-            else
-                echo "❌ API service failed to start"
-                sudo systemctl status rrcompanion-api
-                exit 1
-            fi
-            
-            # Copy built files to web root
-            echo "📁 Copying frontend files..."
-            cd ../web
-            sudo cp -r dist/* /var/www/html/
-            sudo chown -R www-data:www-data /var/www/html/
-            sudo chmod -R 755 /var/www/html/
-            
-            # Note: Caddy configuration is managed manually on the server
-            echo "ℹ️ Caddy configuration updates are managed manually on the server"
-            
-            echo "🎉 Deployment completed successfully!"
+            echo "🎉 Blue-green deployment completed successfully!"
             
             # Show service status
             echo "📊 Service Status:"
@@ -174,7 +145,7 @@ jobs:
         run: |
           echo "🔍 Checking backend health..."
           for i in {1..5}; do
-            if curl -f ${{ secrets.BACKEND_URL }}/api/health; then
+            if curl -f ${{ secrets.BACKEND_URL }}/health; then
               echo "✅ Backend is healthy!"
               break
             else
@@ -206,7 +177,7 @@ jobs:
 
       - name: Deployment Summary
         run: |
-          echo "🎉 Deployment completed successfully!"
+          echo "🎉 Blue-green deployment completed successfully!"
           echo "Backend: ${{ secrets.BACKEND_URL }}"
           echo "Frontend: ${{ secrets.FRONTEND_URL }}"
-          echo "Health Check: ${{ secrets.BACKEND_URL }}/api/health" 
+          echo "Health Check: ${{ secrets.BACKEND_URL }}/health" 
