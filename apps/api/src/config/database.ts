@@ -320,8 +320,7 @@ export async function initializeDatabase(): Promise<void> {
         INDEX idx_fiction_id (fiction_id),
         INDEX idx_genre (genre),
         INDEX idx_position (position),
-        INDEX idx_captured_at (captured_at),
-        UNIQUE KEY unique_rising_star (fiction_id, genre, captured_at)
+        INDEX idx_captured_at (captured_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
@@ -538,8 +537,7 @@ async function runMigrations(client: Client): Promise<void> {
           INDEX idx_fiction_id (fiction_id),
           INDEX idx_genre (genre),
           INDEX idx_position (position),
-          INDEX idx_captured_at (captured_at),
-          UNIQUE KEY unique_rising_star (fiction_id, genre, captured_at)
+          INDEX idx_captured_at (captured_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `
     },

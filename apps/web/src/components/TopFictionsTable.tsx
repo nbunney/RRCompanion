@@ -18,6 +18,7 @@ const TopFictionsTable: React.FC = () => {
   const [popularFictions, setPopularFictions] = useState<TopFiction[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [royalRoadDataTimestamp, setRoyalRoadDataTimestamp] = useState<Date | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,6 +29,14 @@ const TopFictionsTable: React.FC = () => {
         const risingStarsResponse = await risingStarsAPI.getTopRisingStars(5);
         if (risingStarsResponse.success && risingStarsResponse.data) {
           setTopRisingStars(risingStarsResponse.data);
+
+          // Extract the timestamp from the Rising Stars data
+          if (risingStarsResponse.data.length > 0) {
+            const capturedAt = risingStarsResponse.data[0].captured_at;
+            if (capturedAt) {
+              setRoyalRoadDataTimestamp(new Date(capturedAt));
+            }
+          }
         }
 
         // Fetch top 5 popular fictions
@@ -86,7 +95,7 @@ const TopFictionsTable: React.FC = () => {
         {/* Top 5 Rising Stars */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            ⭐ Top 5 Rising Stars
+            ⭐ Top 5 Rising Stars (Main Genre)
           </h3>
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -169,12 +178,19 @@ const TopFictionsTable: React.FC = () => {
       </div>
 
       {/* Last Updated Info */}
-      {lastUpdated && (
-        <div className="mt-4 text-center text-sm text-gray-500">
-          Last updated: {lastUpdated.toLocaleTimeString()} •
-          Data refreshes every 10 minutes
-        </div>
-      )}
+      <div className="mt-4 text-center text-sm text-gray-500 space-y-1">
+        {royalRoadDataTimestamp && (
+          <div>
+            As of: {royalRoadDataTimestamp.toLocaleString()} (local time)
+          </div>
+        )}
+        {lastUpdated && (
+          <div>
+            Frontend refreshed: {lastUpdated.toLocaleTimeString()} •
+            Data refreshes every 10 minutes
+          </div>
+        )}
+      </div>
     </div>
   );
 };

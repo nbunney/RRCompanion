@@ -77,6 +77,9 @@ export class FictionHistoryService {
     try {
       console.log(`\n💾 Saving ${risingStars.length} fiction history entries to database...`);
 
+      // Create a single timestamp for this collection run
+      const collectionTimestamp = new Date();
+
       // Track which fictions we've already processed to avoid duplicate API calls
       const processedFictionIds = new Set<string>();
 
@@ -101,7 +104,7 @@ export class FictionHistoryService {
                   fiction_id: fictionId,
                   genre: star.genre,
                   position: star.position,
-                  captured_at: new Date()
+                  captured_at: collectionTimestamp
                 };
                 await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
                 console.log(`✅ Saved rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
@@ -149,7 +152,7 @@ export class FictionHistoryService {
             character_score: star.stats?.character_score || 0,
             total_views: star.stats?.total_views || 0,
             average_views: star.stats?.average_views || 0,
-            captured_at: new Date()
+            captured_at: collectionTimestamp
           };
 
           // Save fiction history entry
@@ -162,7 +165,7 @@ export class FictionHistoryService {
               fiction_id: fictionId,
               genre: star.genre,
               position: star.position,
-              captured_at: new Date()
+              captured_at: collectionTimestamp
             };
             // Save immediately instead of batching
             await this.risingStarsService.saveRisingStarEntry(risingStarEntry);

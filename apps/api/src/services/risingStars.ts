@@ -18,9 +18,6 @@ export class RisingStarsService {
       const query = `
         INSERT INTO risingStars (fiction_id, genre, position, captured_at)
         VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-          position = VALUES(position),
-          captured_at = VALUES(captured_at)
       `;
 
       await this.dbClient.execute(query, [
@@ -138,23 +135,33 @@ export class RisingStarsService {
     }
   }
 
-  // Get the top 5 Rising Stars across all genres
+  // Get the top 5 Rising Stars from the main genre only
   async getTopRisingStars(limit: number = 5): Promise<any[]> {
     try {
+      // Get the most recent timestamp
+      const maxTimestampQuery = `SELECT MAX(captured_at) as max_timestamp FROM risingStars`;
+      const maxResult = await this.dbClient.query(maxTimestampQuery);
+      const maxTimestamp = maxResult[0]?.max_timestamp;
+
+      if (!maxTimestamp) {
+        console.log('❌ No Rising Stars data found in database');
+        return [];
+      }
+
+      // Get top 5 positions from main genre at the most recent timestamp
       const query = `
         SELECT rs.*, f.title, f.author_name, f.royalroad_id
         FROM risingStars rs
         JOIN fiction f ON rs.fiction_id = f.id
-        WHERE rs.captured_at = (
-          SELECT MAX(captured_at) 
-          FROM risingStars 
-          WHERE genre = rs.genre
-        )
+        WHERE rs.genre = 'main' 
+        AND rs.position <= 5 
+        AND rs.captured_at = ?
         ORDER BY rs.position ASC
         LIMIT ?
       `;
 
-      const result = await this.dbClient.query(query, [limit]);
+      const result = await this.dbClient.query(query, [maxTimestamp, limit]);
+      console.log('🔍 Debug - Top Rising Stars query result:', result);
       return result as any[];
     } catch (error) {
       console.error('❌ Error getting top rising stars:', error);
