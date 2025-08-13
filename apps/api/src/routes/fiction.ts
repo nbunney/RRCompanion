@@ -17,7 +17,8 @@ import { authMiddleware } from '../middleware/auth.ts';
 const router = new Router();
 
 // Public routes
-
+router.get('/fictions/popular', getPopularFictions);
+router.get('/fictions/top', getTopFictions);
 
 // Protected routes (require authentication)
 router.get('/fictions/:id', authMiddleware, getFictionByRoyalRoadId);
