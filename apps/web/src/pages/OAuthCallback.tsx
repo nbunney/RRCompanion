@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { userFictionAPI } from '@/services/api';
 import Footer from '@/components/Footer';
 
 const OAuthCallback: React.FC = () => {
@@ -13,6 +14,7 @@ const OAuthCallback: React.FC = () => {
     const token = searchParams.get('token');
     const userParam = searchParams.get('user');
     const errorParam = searchParams.get('error');
+    const fictionId = searchParams.get('fiction_id');
 
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
@@ -21,6 +23,7 @@ const OAuthCallback: React.FC = () => {
 
     if (token) {
       console.log('🔐 OAuth Callback - Token received:', token.substring(0, 20) + '...');
+      console.log('🔐 OAuth Callback - Fiction ID:', fictionId);
 
       // Store the token
       localStorage.setItem('token', token);
@@ -39,8 +42,27 @@ const OAuthCallback: React.FC = () => {
 
       // Check authentication status
       console.log('🔐 OAuth Callback - Calling checkAuth()...');
-      checkAuth().then(() => {
-        console.log('🔐 OAuth Callback - checkAuth() succeeded, navigating to dashboard');
+      checkAuth().then(async () => {
+        console.log('🔐 OAuth Callback - checkAuth() succeeded');
+        
+        // If there's a fiction ID, add it to the user's account
+        if (fictionId) {
+          try {
+            console.log('🔐 OAuth Callback - Adding fiction to user account:', fictionId);
+            await userFictionAPI.createUserFiction(parseInt(fictionId), 'plan_to_read');
+            console.log('🔐 OAuth Callback - Fiction added successfully');
+            
+            // Redirect back to the fiction page
+            navigate(`/fiction/${fictionId}`);
+            return;
+          } catch (error) {
+            console.error('🔐 OAuth Callback - Failed to add fiction:', error);
+            // Continue to dashboard even if adding fiction fails
+          }
+        }
+        
+        // Default redirect to dashboard
+        console.log('🔐 OAuth Callback - Navigating to dashboard');
         navigate('/dashboard');
       }).catch((error) => {
         console.error('🔐 OAuth Callback - checkAuth() failed:', error);

@@ -31,10 +31,10 @@ export const useOAuth = () => {
     }
   }, []);
 
-  const initiateOAuth = useCallback(async (provider: string) => {
+  const initiateOAuth = useCallback(async (provider: string, fictionId?: string) => {
     try {
       setIsLoading(true);
-      const response = await oauthAPI.initiateOAuth(provider);
+      const response = await oauthAPI.initiateOAuth(provider, fictionId);
       if (response.success && response.data) {
         // Redirect to OAuth provider
         window.location.href = response.data.authorizationUrl;

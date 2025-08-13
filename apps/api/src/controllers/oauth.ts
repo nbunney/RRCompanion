@@ -82,8 +82,9 @@ export async function getOAuthProviders(ctx: Context): Promise<void> {
 export async function initiateOAuth(ctx: Context): Promise<void> {
   try {
     const provider = (ctx as any).params?.provider;
+    const fictionId = ctx.request.url.searchParams.get('fiction_id');
 
-    console.log(`🔧 initiateOAuth called for provider: ${provider}`);
+    console.log(`🔧 initiateOAuth called for provider: ${provider}, fiction_id: ${fictionId}`);
     const discordConfig = getDiscordConfig();
     const googleConfig = getGoogleConfig();
     console.log(`🔧 DISCORD_CLIENT_ID: ${discordConfig.clientId ? 'SET' : 'NOT SET'}`);
@@ -106,6 +107,12 @@ export async function initiateOAuth(ctx: Context): Promise<void> {
       discordAuthUrl.searchParams.set('redirect_uri', discordConfig.redirectUri);
       discordAuthUrl.searchParams.set('response_type', 'code');
       discordAuthUrl.searchParams.set('scope', 'identify email');
+      
+      // Add state parameter with fiction ID if provided
+      if (fictionId) {
+        discordAuthUrl.searchParams.set('state', fictionId);
+        console.log(`🔧 Added fiction_id to Discord OAuth state: ${fictionId}`);
+      }
 
       console.log(`🔧 Generated Discord OAuth URL: ${discordAuthUrl.toString()}`);
 
@@ -133,6 +140,12 @@ export async function initiateOAuth(ctx: Context): Promise<void> {
       googleAuthUrl.searchParams.set('redirect_uri', googleConfig.redirectUri);
       googleAuthUrl.searchParams.set('response_type', 'code');
       googleAuthUrl.searchParams.set('scope', 'openid email profile');
+      
+      // Add state parameter with fiction ID if provided
+      if (fictionId) {
+        googleAuthUrl.searchParams.set('state', fictionId);
+        console.log(`🔧 Added fiction_id to Google OAuth state: ${fictionId}`);
+      }
 
       console.log(`🔧 Generated Google OAuth URL: ${googleAuthUrl.toString()}`);
 
@@ -176,10 +189,12 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
         return;
       }
 
-      // Get the authorization code from query parameters
+      // Get the authorization code and state from query parameters
       const url = new URL(ctx.request.url);
       const code = url.searchParams.get('code');
       const error = url.searchParams.get('error');
+      const state = url.searchParams.get('state');
+      const fictionId = state; // The state parameter contains the fiction ID
 
       if (error) {
         ctx.response.status = 400;
@@ -305,6 +320,9 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
         const frontendUrl = new URL('https://rrcompanion.com/oauth/callback');
         frontendUrl.searchParams.set('token', token);
         frontendUrl.searchParams.set('provider', 'discord');
+        if (fictionId) {
+          frontendUrl.searchParams.set('fiction_id', fictionId);
+        }
         frontendUrl.searchParams.set('user', JSON.stringify({
           id: user.id,
           email: user.email,
@@ -339,10 +357,12 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
         return;
       }
 
-      // Get the authorization code from query parameters
+      // Get the authorization code and state from query parameters
       const url = new URL(ctx.request.url);
       const code = url.searchParams.get('code');
       const error = url.searchParams.get('error');
+      const state = url.searchParams.get('state');
+      const fictionId = state; // The state parameter contains the fiction ID
 
       if (error) {
         ctx.response.status = 400;
@@ -468,6 +488,9 @@ export async function handleOAuthCallback(ctx: Context): Promise<void> {
         const frontendUrl = new URL('https://rrcompanion.com/oauth/callback');
         frontendUrl.searchParams.set('token', token);
         frontendUrl.searchParams.set('provider', 'google');
+        if (fictionId) {
+          frontendUrl.searchParams.set('fiction_id', fictionId);
+        }
         frontendUrl.searchParams.set('user', JSON.stringify({
           id: user.id,
           email: user.email,

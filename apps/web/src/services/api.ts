@@ -93,8 +93,11 @@ export const oauthAPI = {
     return response.data;
   },
 
-  initiateOAuth: async (provider: string): Promise<ApiResponse<OAuthInitiationResponse>> => {
-    const response = await api.get(`/oauth/${provider}/initiate`);
+  initiateOAuth: async (provider: string, fictionId?: string): Promise<ApiResponse<OAuthInitiationResponse>> => {
+    const url = fictionId 
+      ? `/oauth/${provider}/initiate?fiction_id=${fictionId}`
+      : `/oauth/${provider}/initiate`;
+    const response = await api.get(url);
     return response.data;
   },
 };
