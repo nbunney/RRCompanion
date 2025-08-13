@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fictionAPI, risingStarsAPI } from '@/services/api';
+import { createFictionSlug } from '@/utils';
 
 interface TopFiction {
   id: number;
   title: string;
   author_name: string;
   royalroad_id: string;
-  slug?: string;
   followers?: number;
   position?: number;
   genre?: string;
@@ -23,19 +23,19 @@ const TopFictionsTable: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch top 5 Rising Stars
         const risingStarsResponse = await risingStarsAPI.getTopRisingStars(5);
         if (risingStarsResponse.success && risingStarsResponse.data) {
           setTopRisingStars(risingStarsResponse.data);
         }
-        
+
         // Fetch top 5 popular fictions
         const popularResponse = await fictionAPI.getPopularFictions(5);
         if (popularResponse.success && popularResponse.data) {
           setPopularFictions(popularResponse.data);
         }
-        
+
         setLastUpdated(new Date());
       } catch (error) {
         console.error('Error fetching top fictions:', error);
@@ -45,10 +45,10 @@ const TopFictionsTable: React.FC = () => {
     };
 
     fetchData();
-    
+
     // Refresh data every 10 minutes (600,000 ms)
     const interval = setInterval(fetchData, 600000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -81,7 +81,7 @@ const TopFictionsTable: React.FC = () => {
       <h2 className="text-2xl font-semibold text-gray-900 mb-4">
         Top Fictions
       </h2>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top 5 Rising Stars */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -106,7 +106,7 @@ const TopFictionsTable: React.FC = () => {
                     </td>
                     <td className="py-2 px-2 text-sm">
                       <Link
-                        to={`/fiction/${fiction.royalroad_id}/${fiction.slug || ''}`}
+                        to={`/fiction/${fiction.royalroad_id}/${createFictionSlug(fiction.title)}`}
                         className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
                       >
                         {fiction.title}
@@ -148,7 +148,7 @@ const TopFictionsTable: React.FC = () => {
                     </td>
                     <td className="py-2 px-2 text-sm">
                       <Link
-                        to={`/fiction/${fiction.royalroad_id}/${fiction.slug || ''}`}
+                        to={`/fiction/${fiction.royalroad_id}/${createFictionSlug(fiction.title)}`}
                         className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
                       >
                         {fiction.title}
@@ -171,7 +171,7 @@ const TopFictionsTable: React.FC = () => {
       {/* Last Updated Info */}
       {lastUpdated && (
         <div className="mt-4 text-center text-sm text-gray-500">
-          Last updated: {lastUpdated.toLocaleTimeString()} • 
+          Last updated: {lastUpdated.toLocaleTimeString()} •
           Data refreshes every 10 minutes
         </div>
       )}

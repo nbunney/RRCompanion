@@ -142,7 +142,7 @@ export class RisingStarsService {
   async getTopRisingStars(limit: number = 5): Promise<any[]> {
     try {
       const query = `
-        SELECT rs.*, f.title, f.author_name, f.royalroad_id, f.slug
+        SELECT rs.*, f.title, f.author_name, f.royalroad_id
         FROM risingStars rs
         JOIN fiction f ON rs.fiction_id = f.id
         WHERE rs.captured_at = (
