@@ -19,6 +19,8 @@ const Dashboard: React.FC = () => {
   // Debug logging
   console.log('🔐 Dashboard - Component rendered');
   console.log('🔐 Dashboard - User state:', { user: user ? { id: user.id, email: user.email, admin: user.admin, adminType: typeof user.admin } : 'null' });
+  console.log('🔐 Dashboard - View mode:', viewMode);
+  console.log('🔐 Dashboard - Refresh key:', refreshKey);
 
   const handleFictionAdded = (fiction: RoyalRoadFiction) => {
     // Refresh the lists by incrementing the refresh key
@@ -67,7 +69,10 @@ const Dashboard: React.FC = () => {
                   <Button
                     variant={viewMode === 'favorites' ? 'primary' : 'outline'}
                     size="sm"
-                    onClick={() => setViewMode('favorites')}
+                    onClick={() => {
+                      console.log('🔄 Switching to Favorites view');
+                      setViewMode('favorites');
+                    }}
                     className="rounded-l-md"
                   >
                     Favorites
@@ -75,7 +80,10 @@ const Dashboard: React.FC = () => {
                   <Button
                     variant={viewMode === 'all' ? 'primary' : 'outline'}
                     size="sm"
-                    onClick={() => setViewMode('all')}
+                    onClick={() => {
+                      console.log('🔄 Switching to All Fictions view');
+                      setViewMode('all');
+                    }}
                     className="rounded-r-md"
                   >
                     All Fictions
