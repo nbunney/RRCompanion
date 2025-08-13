@@ -33,33 +33,18 @@ sudo systemctl daemon-reload
 echo "🔄 Systemd daemon reloaded"
 
 echo "🌐 Setting up frontend files..."
-# Check which dist directory is newer and create a symlink
-if [ -d "apps/web/dist-blue" ] && [ -d "apps/web/dist-green" ]; then
-    # Compare modification times and use the newer one
-    if [ "apps/web/dist-blue" -nt "apps/web/dist-green" ]; then
-        echo "📁 Using dist-blue (newer)"
-        cd apps/web
-        rm -f dist
-        ln -sf dist-blue dist
-        cd ../..
-    else
-        echo "📁 Using dist-green (newer)"
-        cd apps/web
-        rm -f dist
-        ln -sf dist-green dist
-        cd ../..
-    fi
-elif [ -d "apps/web/dist-blue" ]; then
-    echo "📁 Using dist-blue"
+# Simply use dist directory - no more blue-green complexity
+if [ -d "apps/web/dist-blue" ]; then
+    echo "📁 Copying dist-blue to dist"
     cd apps/web
-    rm -f dist
-    ln -sf dist-blue dist
+    rm -rf dist
+    cp -r dist-blue dist
     cd ../..
 elif [ -d "apps/web/dist-green" ]; then
-    echo "📁 Using dist-green"
+    echo "📁 Copying dist-green to dist"
     cd apps/web
-    rm -f dist
-    ln -sf dist-green dist
+    rm -rf dist
+    cp -r dist-green dist
     cd ../..
 else
     echo "⚠️  No frontend dist directories found"
