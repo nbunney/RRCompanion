@@ -33,17 +33,23 @@ export const useOAuth = () => {
 
   const initiateOAuth = useCallback(async (provider: string, fictionId?: string) => {
     try {
+      console.log('🔐 useOAuth.initiateOAuth called with:', { provider, fictionId });
       setIsLoading(true);
+
       const response = await oauthAPI.initiateOAuth(provider, fictionId);
+      console.log('🔐 OAuth API response:', response);
+
       if (response.success && response.data) {
+        console.log('🔐 OAuth authorization URL:', response.data.authorizationUrl);
         // Redirect to OAuth provider
         window.location.href = response.data.authorizationUrl;
       } else {
+        console.error('🔐 OAuth initiation failed:', response);
         // OAuth is disabled, show message
         alert(`OAuth is currently disabled for ${provider}`);
       }
     } catch (error) {
-      console.warn(`OAuth initiation not available for ${provider}:`, error);
+      console.error(`🔐 OAuth initiation error for ${provider}:`, error);
       alert(`OAuth is currently disabled for ${provider}`);
     } finally {
       setIsLoading(false);

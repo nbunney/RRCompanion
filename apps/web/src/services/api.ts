@@ -34,15 +34,15 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Only redirect if we're not already on auth pages or fiction pages
       const currentPath = window.location.pathname;
-      if (!currentPath.includes('/login') && 
-          !currentPath.includes('/register') && 
-          !currentPath.includes('/fiction/')) {
+      if (!currentPath.includes('/login') &&
+        !currentPath.includes('/register') &&
+        !currentPath.includes('/fiction/')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';
       }
     }
-    
+
     // Enhance error messages for better user experience
     if (error.response?.data?.error) {
       // Use the server-provided error message
@@ -58,7 +58,7 @@ api.interceptors.response.use(
     } else {
       error.userMessage = 'An error occurred. Please try again.';
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -94,10 +94,16 @@ export const oauthAPI = {
   },
 
   initiateOAuth: async (provider: string, fictionId?: string): Promise<ApiResponse<OAuthInitiationResponse>> => {
-    const url = fictionId 
+    const url = fictionId
       ? `/oauth/${provider}/initiate?fiction_id=${fictionId}`
       : `/oauth/${provider}/initiate`;
+
+    console.log('🔐 oauthAPI.initiateOAuth called with:', { provider, fictionId });
+    console.log('🔐 Request URL:', url);
+
     const response = await api.get(url);
+    console.log('🔐 Raw API response:', response);
+
     return response.data;
   },
 };

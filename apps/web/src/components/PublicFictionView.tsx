@@ -19,6 +19,10 @@ const PublicFictionView: React.FC<PublicFictionViewProps> = ({ fiction }) => {
 
   const handleOAuthLogin = async (providerName: string) => {
     try {
+      console.log('🔐 OAuth login initiated for provider:', providerName);
+      console.log('🔐 Fiction ID being passed:', fiction.id);
+      console.log('🔐 Current URL:', window.location.href);
+
       // Pass the fiction ID so it can be added to the user's account after login
       await initiateOAuth(providerName, fiction.id);
     } catch (err: any) {
