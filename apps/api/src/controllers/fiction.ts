@@ -105,19 +105,7 @@ export async function downloadFictionHistoryCSV(ctx: Context): Promise<void> {
       return;
     }
 
-    // Check if user has sponsored this fiction
-    const isSponsored = await checkUserSponsorship(fictionId, userId);
-    
-    if (!isSponsored) {
-      ctx.response.status = 403;
-      ctx.response.body = {
-        success: false,
-        error: 'Access denied. Only sponsors can download this data.',
-      } as ApiResponse;
-      return;
-    }
-
-    // Get fiction details for filename
+    // Check if fiction is sponsored (anyone can download data for sponsored fictions)
     const fiction = await FictionService.getFictionById(fictionId);
     if (!fiction) {
       ctx.response.status = 404;
@@ -128,22 +116,41 @@ export async function downloadFictionHistoryCSV(ctx: Context): Promise<void> {
       return;
     }
 
+    // Check if fiction is sponsored
+    if (!fiction.sponsored) {
+      ctx.response.status = 403;
+      ctx.response.body = {
+        success: false,
+        error: 'Access denied. Only sponsored fictions allow CSV download.',
+      } as ApiResponse;
+      return;
+    }
+
     // Get fiction history data
     const fictionHistoryService = new FictionHistoryService();
     const historyData = await fictionHistoryService.getFictionHistoryByFictionId(fictionId);
 
-    // Generate CSV content
-    const csvContent = generateFictionHistoryCSV(historyData, fiction.title);
+    // Get rising stars data for this fiction
+    const risingStarsData = await getRisingStarsData(fictionId);
 
-    // Set response headers for CSV download
-    const filename = `${fiction.title.replace(/[^a-zA-Z0-9]/g, '_')}_history_${new Date().toISOString().split('T')[0]}.csv`;
-    
-    ctx.response.headers.set('Content-Type', 'text/csv');
+    // Generate both CSV contents
+    const historyCSV = generateFictionHistoryCSV(historyData, fiction.title);
+    const risingStarsCSV = generateRisingStarsCSV(risingStarsData, fiction.title);
+
+    // Create ZIP file containing both CSVs
+    const zipContent = await createZipFile(historyCSV, risingStarsCSV, fiction.title);
+
+    // Set response headers for ZIP download
+    const now = new Date();
+    const dateTime = now.toISOString().replace(/[:.]/g, '-').slice(0, 19); // Format: YYYY-MM-DDTHH-MM-SS
+    const filename = `${fiction.title.replace(/[^a-zA-Z0-9]/g, '_')}_data_${dateTime}.zip`;
+
+    ctx.response.headers.set('Content-Type', 'application/zip');
     ctx.response.headers.set('Content-Disposition', `attachment; filename="${filename}"`);
     ctx.response.headers.set('Cache-Control', 'no-cache');
-    
+
     ctx.response.status = 200;
-    ctx.response.body = csvContent;
+    ctx.response.body = zipContent;
   } catch (error) {
     console.error('Download fiction history CSV error:', error);
     ctx.response.status = 500;
@@ -154,21 +161,75 @@ export async function downloadFictionHistoryCSV(ctx: Context): Promise<void> {
   }
 }
 
-// Helper function to check if user has sponsored a fiction
-async function checkUserSponsorship(fictionId: number, userId: number): Promise<boolean> {
+// Helper function to get rising stars data for a fiction
+async function getRisingStarsData(fictionId: number): Promise<any[]> {
   try {
-    // Check if there's a sponsorship record for this user and fiction
     const { client } = await import('../config/database.ts');
     const result = await client.query(`
-      SELECT COUNT(*) as count 
-      FROM sponsorship_logs 
-      WHERE fiction_id = ? AND user_id = ? AND status = 'completed'
-    `, [fictionId, userId]);
-    
-    return result[0]?.count > 0;
+      SELECT captured_at, genre, position 
+      FROM risingStars 
+      WHERE fiction_id = ? 
+      ORDER BY captured_at DESC
+    `, [fictionId]);
+
+    return result;
   } catch (error) {
-    console.error('Error checking user sponsorship:', error);
-    return false;
+    console.error('Error getting rising stars data:', error);
+    return [];
+  }
+}
+
+// Helper function to generate rising stars CSV content
+function generateRisingStarsCSV(risingStarsData: any[], fictionTitle: string): string {
+  if (!risingStarsData || risingStarsData.length === 0) {
+    return 'No rising stars data available';
+  }
+
+  // Define CSV headers
+  const headers = ['captured_at', 'genre', 'position'];
+
+  // Create CSV header row
+  let csv = headers.join(',') + '\n';
+
+  // Add data rows
+  risingStarsData.forEach(entry => {
+    const row = headers.map(header => {
+      let value = entry[header];
+
+      // Handle different data types
+      if (value === null || value === undefined) {
+        value = '';
+      } else if (typeof value === 'string' && value.includes(',')) {
+        // Escape strings containing commas
+        value = `"${value.replace(/"/g, '""')}"`;
+      }
+
+      return value;
+    });
+
+    csv += row.join(',') + '\n';
+  });
+
+  return csv;
+}
+
+// Helper function to create ZIP file containing both CSVs
+async function createZipFile(historyCSV: string, risingStarsCSV: string, fictionTitle: string): Promise<Uint8Array> {
+  try {
+    // Import JSZip for creating ZIP files
+    const JSZip = await import('https://esm.sh/jszip@3.10.1');
+    const zip = new JSZip.default();
+
+    // Add both CSV files to the ZIP
+    zip.file(`${fictionTitle.replace(/[^a-zA-Z0-9]/g, '_')}_fiction_history.csv`, historyCSV);
+    zip.file(`${fictionTitle.replace(/[^a-zA-Z0-9]/g, '_')}_rising_stars.csv`, risingStarsCSV);
+
+    // Generate ZIP file
+    const zipContent = await zip.generateAsync({ type: 'uint8array' });
+    return zipContent;
+  } catch (error) {
+    console.error('Error creating ZIP file:', error);
+    throw new Error('Failed to create ZIP file');
   }
 }
 
@@ -178,10 +239,14 @@ function generateFictionHistoryCSV(historyData: any[], fictionTitle: string): st
     return 'No data available';
   }
 
-  // Define CSV headers based on the first data entry
-  const headers = Object.keys(historyData[0]).filter(key => 
-    key !== 'id' && key !== 'fiction_id' // Exclude internal IDs
-  );
+  // Define CSV headers - exclude unwanted columns and put captured_at first
+  const excludedColumns = ['id', 'fiction_id', 'genre', 'views'];
+  const allHeaders = Object.keys(historyData[0]);
+
+  // Put captured_at first, then other columns (excluding unwanted ones)
+  const headers = ['captured_at', ...allHeaders.filter(key =>
+    !excludedColumns.includes(key) && key !== 'captured_at'
+  )];
 
   // Create CSV header row
   let csv = headers.join(',') + '\n';
@@ -190,7 +255,7 @@ function generateFictionHistoryCSV(historyData: any[], fictionTitle: string): st
   historyData.forEach(entry => {
     const row = headers.map(header => {
       let value = entry[header];
-      
+
       // Handle different data types
       if (value === null || value === undefined) {
         value = '';
@@ -201,10 +266,10 @@ function generateFictionHistoryCSV(historyData: any[], fictionTitle: string): st
         // Escape strings containing commas
         value = `"${value.replace(/"/g, '""')}"`;
       }
-      
+
       return value;
     });
-    
+
     csv += row.join(',') + '\n';
   });
 

@@ -386,18 +386,18 @@ const FictionDetail: React.FC = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${fictionWithHistory.title.replace(/[^a-zA-Z0-9]/g, '_')}_history.csv`;
+        a.download = `${fictionWithHistory.title.replace(/[^a-zA-Z0-9]/g, '_')}_data.zip`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        console.log('CSV downloaded successfully!');
+        console.log('ZIP file downloaded successfully!');
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Failed to download CSV');
+        setError(errorData.error || 'Failed to download data');
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to download CSV');
+      setError(err.message || 'Failed to download data');
     }
   };
 
@@ -505,14 +505,14 @@ const FictionDetail: React.FC = () => {
                             </svg>
                           </div>
                           <span className="text-sm text-gray-600">Sponsored</span>
-                          
-                          {/* CSV Download Button for Sponsored Fictions */}
+
+                          {/* ZIP Download Button for Sponsored Fictions */}
                           <Button
                             onClick={handleDownloadCSV}
                             variant="outline"
                             className="ml-2"
                           >
-                            📊 Download CSV
+                            📦 Download Data
                           </Button>
                         </div>
                       ) : (
@@ -532,8 +532,8 @@ const FictionDetail: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Last refresh time and countdown - inline with buttons */}
-                    {lastRefreshTime && (
+                    {/* Last refresh time and countdown - only show for non-sponsored fictions */}
+                    {lastRefreshTime && !fictionWithHistory?.sponsored && (
                       <div className="text-xs text-gray-500 mt-1">
                         <div>Last refreshed: {formatLocalDateTime(lastRefreshTime, undefined, { hour: '2-digit', minute: '2-digit' })}</div>
                         {!canRefresh && remainingHours !== null && (
@@ -547,6 +547,14 @@ const FictionDetail: React.FC = () => {
                             )}
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* For sponsored fictions, show a simple "Last updated" message */}
+                    {lastRefreshTime && fictionWithHistory?.sponsored && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        <div>Last updated: {formatLocalDateTime(lastRefreshTime, undefined, { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="text-green-600 font-medium">• Automatic updates enabled</div>
                       </div>
                     )}
                   </div>
