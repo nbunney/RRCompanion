@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -15,6 +15,18 @@ import Sponsor from '@/pages/Sponsor';
 import Admin from '@/pages/Admin';
 import AdminUsers from '@/pages/AdminUsers';
 import FictionDetail from '@/components/FictionDetail';
+
+// Route change tracker component
+const RouteTracker: React.FC = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    console.log('🛣️ Route changed to:', location.pathname);
+    console.log('🛣️ Route change time:', new Date().toISOString());
+  }, [location]);
+
+  return null;
+};
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -51,58 +63,61 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/oauth/callback" element={<OAuthCallback />} />
-      <Route path="/oauth/error" element={<OAuthError />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/about" element={<About />} />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <Admin />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/users"
-        element={
-          <ProtectedRoute>
-            <AdminUsers />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/sponsor/:id"
-        element={
-          <ProtectedRoute>
-            <Sponsor />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/fiction/:id/:slug?"
-        element={
-          <ProtectedRoute>
-            <FictionDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/royalroad" element={<RoyalRoad />} />
-      <Route path="/" element={<Home />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+    <>
+      <RouteTracker />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/oauth/callback" element={<OAuthCallback />} />
+        <Route path="/oauth/error" element={<OAuthError />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/about" element={<About />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sponsor/:id"
+          element={
+            <ProtectedRoute>
+              <Sponsor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/fiction/:id/:slug?"
+          element={
+            <ProtectedRoute>
+              <FictionDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/royalroad" element={<RoyalRoad />} />
+        <Route path="/" element={<Home />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </>
   );
 };
 
