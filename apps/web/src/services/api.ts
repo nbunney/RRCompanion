@@ -144,6 +144,17 @@ export const fictionAPI = {
     const response = await api.get(`/fictions/popular?limit=${limit}`);
     return response.data;
   },
+
+  // Get popular fictions by site users (most entries in userFiction table)
+  getPopularFictionsBySiteUsers: async (limit = 10): Promise<ApiResponse<Fiction[]>> => {
+    try {
+      const response = await api.get(`/fictions/popular-by-users?limit=${limit}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching popular fictions by site users:', error);
+      return { success: false, message: 'Failed to fetch popular fictions by site users' };
+    }
+  },
 };
 
 // UserFiction API

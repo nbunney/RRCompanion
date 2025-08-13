@@ -290,6 +290,24 @@ export class FictionService {
     return result.map((row: any) => this.mapDatabaseRowToFiction(row));
   }
 
+  // Get popular fictions by site users (how many users have added them to their lists)
+  static async getPopularFictionsBySiteUsers(limit: number = 10): Promise<any[]> {
+    const result = await client.query(`
+      SELECT f.id, f.royalroad_id, f.title, f.author_name, f.author_id, f.author_avatar, 
+             f.description, f.image_url, f.status, f.type, f.tags, f.warnings,
+             f.pages, f.ratings, f.followers, f.favorites, f.views, f.score,
+             f.sponsored, f.created_at, f.updated_at,
+             COUNT(uf.id) as user_count
+      FROM fiction f
+      LEFT JOIN userFiction uf ON f.id = uf.fiction_id
+      GROUP BY f.id
+      ORDER BY user_count DESC, f.score DESC
+      LIMIT ?
+    `, [limit]);
+
+    return result; // Return raw result to preserve user_count
+  }
+
   // Get sponsored fictions
   static async getSponsoredFictions(): Promise<Fiction[]> {
     const result = await client.query(

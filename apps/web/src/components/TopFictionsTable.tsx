@@ -9,8 +9,10 @@ interface TopFiction {
   author_name: string;
   royalroad_id: string;
   followers?: number;
+  user_count?: number;
   position?: number;
   genre?: string;
+  captured_at?: string; // Added for timestamp
 }
 
 const TopFictionsTable: React.FC = () => {
@@ -40,7 +42,7 @@ const TopFictionsTable: React.FC = () => {
         }
 
         // Fetch top 5 popular fictions
-        const popularResponse = await fictionAPI.getPopularFictions(5);
+        const popularResponse = await fictionAPI.getPopularFictionsBySiteUsers(5);
         if (popularResponse.success && popularResponse.data) {
           setPopularFictions(popularResponse.data);
         }
@@ -95,38 +97,32 @@ const TopFictionsTable: React.FC = () => {
         {/* Top 5 Rising Stars */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            ⭐ Top 5 Rising Stars (Main Genre)
+            ⭐ Top 5 Rising Stars
+            {royalRoadDataTimestamp && (
+              <span className="text-sm text-gray-500 font-normal ml-2">
+                (as of: {royalRoadDataTimestamp.toLocaleString()})
+              </span>
+            )}
           </h3>
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">Rank</th>
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">Title</th>
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">Author</th>
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">Genre</th>
+                  <th className="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                  <th className="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
                 </tr>
               </thead>
               <tbody>
                 {topRisingStars.map((fiction, index) => (
                   <tr key={fiction.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-2 text-sm text-gray-600 font-medium">
-                      #{fiction.position || index + 1}
-                    </td>
+                    <td className="py-2 px-2 text-sm text-gray-600 font-medium">#{fiction.position || index + 1}</td>
                     <td className="py-2 px-2 text-sm">
-                      <Link
-                        to={`/fiction/${fiction.royalroad_id}/${createFictionSlug(fiction.title)}`}
-                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
-                      >
+                      <Link to={`/fiction/${fiction.royalroad_id}/${createFictionSlug(fiction.title)}`} className="text-blue-600 hover:text-blue-800 font-medium hover:underline">
                         {fiction.title}
                       </Link>
                     </td>
-                    <td className="py-2 px-2 text-sm text-gray-600">
-                      {fiction.author_name}
-                    </td>
-                    <td className="py-2 px-2 text-sm text-gray-600 capitalize">
-                      {fiction.genre}
-                    </td>
+                    <td className="py-2 px-2 text-sm text-gray-600">{fiction.author_name}</td>
                   </tr>
                 ))}
               </tbody>
@@ -137,38 +133,27 @@ const TopFictionsTable: React.FC = () => {
         {/* Top 5 Popular Fictions */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            📚 Most Popular Fictions
+            📚 Most Popular on Site
           </h3>
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">Rank</th>
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">Title</th>
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">Author</th>
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">Followers</th>
+                  <th className="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                  <th className="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                  <th className="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
                 </tr>
               </thead>
               <tbody>
                 {popularFictions.map((fiction, index) => (
                   <tr key={fiction.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-2 text-sm text-gray-600 font-medium">
-                      #{index + 1}
-                    </td>
+                    <td className="py-2 px-2 text-sm text-gray-600 font-medium">#{index + 1}</td>
                     <td className="py-2 px-2 text-sm">
-                      <Link
-                        to={`/fiction/${fiction.royalroad_id}/${createFictionSlug(fiction.title)}`}
-                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
-                      >
+                      <Link to={`/fiction/${fiction.royalroad_id}/${createFictionSlug(fiction.title)}`} className="text-blue-600 hover:text-blue-800 font-medium hover:underline">
                         {fiction.title}
                       </Link>
                     </td>
-                    <td className="py-2 px-2 text-sm text-gray-600">
-                      {fiction.author_name}
-                    </td>
-                    <td className="py-2 px-2 text-sm text-gray-600">
-                      {fiction.followers ? formatNumber(fiction.followers) : 'N/A'}
-                    </td>
+                    <td className="py-2 px-2 text-sm text-gray-600">{fiction.author_name}</td>
                   </tr>
                 ))}
               </tbody>

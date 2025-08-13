@@ -485,14 +485,37 @@ export async function getPopularFictions(ctx: Context): Promise<void> {
     ctx.response.body = {
       success: true,
       data: fictions,
-    } as ApiResponse;
+    };
   } catch (error) {
     console.error('Get popular fictions error:', error);
     ctx.response.status = 500;
     ctx.response.body = {
       success: false,
-      error: 'Internal server error',
-    } as ApiResponse;
+      message: 'Failed to get popular fictions',
+    };
+  }
+}
+
+// Get popular fictions by site users (most entries in userFiction table)
+export async function getPopularFictionsBySiteUsers(ctx: Context): Promise<void> {
+  try {
+    const url = new URL(ctx.request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '10');
+
+    const fictions = await FictionService.getPopularFictionsBySiteUsers(limit);
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: fictions,
+    };
+  } catch (error) {
+    console.error('Get popular fictions by site users error:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      message: 'Failed to get popular fictions by site users',
+    };
   }
 }
 

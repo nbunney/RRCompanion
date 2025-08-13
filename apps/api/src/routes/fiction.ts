@@ -2,15 +2,16 @@ import { Router } from 'oak';
 import {
   getFictions,
   getFictionByRoyalRoadId,
+  searchFictions,
+  getFictionsByAuthor,
+  getTopFictions,
+  getPopularFictions,
+  getPopularFictionsBySiteUsers,
   createFiction,
   updateFiction,
   deleteFiction,
-  searchFictions,
-  getTopFictions,
-  getPopularFictions,
-  getFictionsByAuthor,
-  refreshFiction,
   downloadFictionHistoryCSV,
+  refreshFiction
 } from '../controllers/fiction.ts';
 import { authMiddleware } from '../middleware/auth.ts';
 
@@ -18,6 +19,7 @@ const router = new Router();
 
 // Public routes
 router.get('/fictions/popular', getPopularFictions);
+router.get('/fictions/popular-by-users', getPopularFictionsBySiteUsers);
 router.get('/fictions/top', getTopFictions);
 
 // Protected routes (require authentication)
