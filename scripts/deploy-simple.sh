@@ -49,6 +49,13 @@ sudo systemctl stop rrcompanion-api
 # Build frontend
 print_status "Building frontend..."
 cd apps/web
+
+# Install dependencies if needed
+if [ ! -d "node_modules" ]; then
+    print_info "Installing frontend dependencies..."
+    npm install
+fi
+
 npm run build
 
 # Copy frontend to web directory
