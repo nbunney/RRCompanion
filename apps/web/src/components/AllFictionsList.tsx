@@ -257,9 +257,9 @@ const AllFictionsList: React.FC = () => {
                         {userFiction.is_favorite ? '❤️ Favorited' : '🤍 Add to Favorites'}
                       </Button>
                       {!userFiction.is_favorite && (
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-gray-300 bg-transparent hover:bg-gray-50 focus-visible:ring-gray-500 h-8 px-3 text-xs"
                           onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                             console.log('🔘 Remove button onClick triggered');
                             console.log('🔘 Event target:', e.target);
@@ -286,7 +286,7 @@ const AllFictionsList: React.FC = () => {
                           disabled={isRemoving}
                         >
                           🗑️ Remove
-                        </Button>
+                        </button>
                       )}
                     </div>
                   </div>
