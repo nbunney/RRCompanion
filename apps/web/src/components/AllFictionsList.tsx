@@ -15,7 +15,6 @@ const AllFictionsList: React.FC = () => {
   const [fictionToRemove, setFictionToRemove] = useState<UserFiction | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
-  const [isButtonClicked, setIsButtonClicked] = useState(false);
 
   // Keep only essential logging for debugging remove button
   console.log('🚀 AllFictionsList component loaded!');
@@ -210,15 +209,14 @@ const AllFictionsList: React.FC = () => {
           <div
             key={userFiction.id}
             className="cursor-pointer"
-            onClick={(_e: React.MouseEvent<HTMLDivElement>) => {
-              console.log('🎯 Parent div clicked, isButtonClicked:', isButtonClicked);
-              if (isButtonClicked) {
-                console.log('🎯 Button was clicked, preventing navigation');
-                setIsButtonClicked(false);
-                return; // ← This should prevent handleFictionClick from being called
+            onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+              // Check if the click was on a button or inside a button
+              const target = e.target as HTMLElement;
+              if (target.closest('button') || target.tagName === 'BUTTON') {
+                console.log('🎯 Click was on a button, preventing navigation');
+                return;
               }
-              console.log('🎯 No button clicked, navigating to detail page');
-              // Only call handleFictionClick if no button was clicked
+              console.log('🎯 Click was not on a button, navigating to detail page');
               handleFictionClick(userFiction);
             }}
           >
@@ -256,7 +254,6 @@ const AllFictionsList: React.FC = () => {
                         variant={userFiction.is_favorite ? "outline" : "primary"}
                         size="sm"
                         onClick={() => {
-                          setIsButtonClicked(true);
                           handleToggleFavorite(userFiction);
                         }}
                         disabled={isUpdatingFavorite}
@@ -268,7 +265,6 @@ const AllFictionsList: React.FC = () => {
                           type="button"
                           className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-gray-300 bg-transparent hover:bg-gray-50 focus-visible:ring-gray-500 h-8 px-3 text-xs"
                           onClick={() => {
-                            setIsButtonClicked(true);
                             handleRemoveFiction(userFiction);
                           }}
                           disabled={isRemoving}
