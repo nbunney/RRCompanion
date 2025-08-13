@@ -15,6 +15,7 @@ const AllFictionsList: React.FC = () => {
   const [fictionToRemove, setFictionToRemove] = useState<UserFiction | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
+  const [isButtonClicked, setIsButtonClicked] = useState(false);
 
   console.log('🚀 AllFictionsList component loaded!');
   console.log('🚀 Current time:', new Date().toISOString());
@@ -211,6 +212,11 @@ const AllFictionsList: React.FC = () => {
             key={userFiction.id}
             className="cursor-pointer"
             onClick={(_e: React.MouseEvent<HTMLDivElement>) => {
+              if (isButtonClicked) {
+                console.log('🎯 Parent div click ignored - button was clicked');
+                setIsButtonClicked(false);
+                return;
+              }
               console.log('🎯 Parent div clicked for fiction:', userFiction.fiction?.title);
               console.log('🎯 This should NOT happen when clicking the remove button');
               handleFictionClick(userFiction);
@@ -249,8 +255,9 @@ const AllFictionsList: React.FC = () => {
                       <Button
                         variant={userFiction.is_favorite ? "outline" : "primary"}
                         size="sm"
-                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                          e.stopPropagation();
+                        onClick={() => {
+                          console.log('🔘 Favorite button clicked');
+                          setIsButtonClicked(true);
                           handleToggleFavorite(userFiction);
                         }}
                         disabled={isUpdatingFavorite}
@@ -261,36 +268,10 @@ const AllFictionsList: React.FC = () => {
                         <button
                           type="button"
                           className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-gray-300 bg-transparent hover:bg-gray-50 focus-visible:ring-gray-500 h-8 px-3 text-xs"
-                          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                          onClick={() => {
                             console.log('🔘 Remove button onClick triggered');
-                            console.log('🔘 Event target:', e.target);
-                            console.log('🔘 Event currentTarget:', e.currentTarget);
-                            console.log('🔘 Event type:', e.type);
-                            console.log('🔘 Event bubbles:', e.bubbles);
-                            console.log('🔘 Event defaultPrevented:', e.defaultPrevented);
-
-                            e.stopPropagation();
-                            (e.nativeEvent as any).stopImmediatePropagation();
-                            console.log('🛑 Event propagation stopped');
-                            console.log('🔘 About to call handleRemoveFiction with:', userFiction);
-
-                            // Prevent default behavior as well
-                            e.preventDefault();
-                            console.log('🛑 Event default prevented');
-
+                            setIsButtonClicked(true);
                             handleRemoveFiction(userFiction);
-                          }}
-                          onMouseDown={(e: React.MouseEvent<HTMLButtonElement>) => {
-                            console.log('🖱️ Remove button onMouseDown triggered');
-                            e.stopPropagation();
-                            (e.nativeEvent as any).stopImmediatePropagation();
-                            console.log('🛑 MouseDown propagation stopped');
-                          }}
-                          onMouseUp={(e: React.MouseEvent<HTMLButtonElement>) => {
-                            console.log('🖱️ Remove button onMouseUp triggered');
-                            e.stopPropagation();
-                            (e.nativeEvent as any).stopImmediatePropagation();
-                            console.log('🛑 MouseUp propagation stopped');
                           }}
                           disabled={isRemoving}
                         >
