@@ -60,8 +60,11 @@ npm run build
 
 # Copy frontend to web directory
 print_status "Deploying frontend..."
-sudo cp -r dist/* /var/www/rrcompanion/apps/web/dist/
-sudo chown -R ubuntu:ubuntu /var/www/rrcompanion/apps/web/dist/
+if [ -d "/var/www/rrcompanion/apps/web/dist" ]; then
+    sudo rm -rf /var/www/rrcompanion/apps/web/dist
+fi
+sudo cp -r dist /var/www/rrcompanion/apps/web/
+sudo chown -R ubuntu:ubuntu /var/www/rrcompanion/apps/web/dist
 
 # Update the service file to use the working template
 print_status "Updating service configuration..."
