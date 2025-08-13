@@ -18,12 +18,12 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=rrcompanion-api
 
-# Security settings
+# Security settings - adjusted to allow access to Deno
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/var/www/rrcompanion
+ProtectHome=false
+ReadWritePaths=/var/www/rrcompanion /home/ubuntu/.deno
 
 [Install]
 WantedBy=multi-user.target 
