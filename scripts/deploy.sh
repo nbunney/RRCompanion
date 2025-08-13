@@ -17,8 +17,20 @@ echo "⏹️  Stopping API service..."
 sudo systemctl stop rrcompanion-api || true
 
 echo "⚙️  Updating service configuration..."
+echo "📁 Current working directory: $(pwd)"
+echo "📄 Service template contents:"
+cat scripts/rrcompanion-api.service.template
+echo ""
+
 sudo cp scripts/rrcompanion-api.service.template /etc/systemd/system/rrcompanion-api.service
+echo "✅ Service file copied to /etc/systemd/system/rrcompanion-api.service"
+
+echo "📄 Installed service file contents:"
+cat /etc/systemd/system/rrcompanion-api.service
+echo ""
+
 sudo systemctl daemon-reload
+echo "🔄 Systemd daemon reloaded"
 
 echo "▶️  Starting API service..."
 sudo systemctl start rrcompanion-api
