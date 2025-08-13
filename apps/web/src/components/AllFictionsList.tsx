@@ -53,7 +53,7 @@ const AllFictionsList: React.FC = () => {
   const handleToggleFavorite = async (userFiction: UserFiction) => {
     try {
       setIsUpdatingFavorite(true);
-      const response = await userFictionAPI.toggleFavorite(userFiction.id);
+      const response = await userFictionAPI.toggleFavorite(userFiction.fiction_id);
       if (response.success) {
         // Update local state
         setAllFictions(prev => prev.map(f =>
@@ -86,7 +86,7 @@ const AllFictionsList: React.FC = () => {
 
     try {
       setIsRemoving(true);
-      const response = await userFictionAPI.removeFiction(fictionToRemove.id);
+      const response = await userFictionAPI.removeFiction(fictionToRemove.fiction_id);
       if (response.success) {
         // Remove from local state
         setAllFictions(prev => prev.filter(f => f.id !== fictionToRemove.id));
