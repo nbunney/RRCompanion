@@ -78,15 +78,6 @@ const TopFictionsTable: React.FC = () => {
     );
   }
 
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  };
-
   return (
     <div className="mb-8">
       <h2 className="text-2xl font-semibold text-gray-900 mb-4">
