@@ -211,10 +211,14 @@ const AllFictionsList: React.FC = () => {
             key={userFiction.id}
             className="cursor-pointer"
             onClick={(_e: React.MouseEvent<HTMLDivElement>) => {
+              console.log('🎯 Parent div clicked, isButtonClicked:', isButtonClicked);
               if (isButtonClicked) {
+                console.log('🎯 Button was clicked, preventing navigation');
                 setIsButtonClicked(false);
-                return;
+                return; // ← This should prevent handleFictionClick from being called
               }
+              console.log('🎯 No button clicked, navigating to detail page');
+              // Only call handleFictionClick if no button was clicked
               handleFictionClick(userFiction);
             }}
           >
