@@ -56,12 +56,12 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Only build if dist directory doesn't exist
-if [ ! -d "dist" ]; then
+# Check if dist directory exists in current directory
+if [ -d "dist" ]; then
+    print_info "Frontend already built, skipping build step"
+else
     print_info "Building frontend..."
     npm run build
-else
-    print_info "Frontend already built, skipping build step"
 fi
 
 # Copy frontend to web directory
@@ -69,8 +69,16 @@ print_status "Deploying frontend..."
 if [ -d "/var/www/rrcompanion/apps/web/dist" ]; then
     sudo rm -rf /var/www/rrcompanion/apps/web/dist
 fi
-sudo cp -r dist /var/www/rrcompanion/apps/web/
-sudo chown -R ubuntu:ubuntu /var/www/rrcompanion/apps/web/dist
+
+# Check if dist directory exists before copying
+if [ -d "dist" ]; then
+    sudo cp -r dist /var/www/rrcompanion/apps/web/
+    sudo chown -R ubuntu:ubuntu /var/www/rrcompanion/apps/web/dist
+    print_status "Frontend deployed successfully"
+else
+    print_error "Frontend dist directory not found. Build may have failed."
+    exit 1
+fi
 
 # Update the service file to use the working template
 print_status "Updating service configuration..."
