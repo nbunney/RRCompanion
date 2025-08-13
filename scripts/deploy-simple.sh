@@ -56,7 +56,13 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-npm run build
+# Only build if dist directory doesn't exist
+if [ ! -d "dist" ]; then
+    print_info "Building frontend..."
+    npm run build
+else
+    print_info "Frontend already built, skipping build step"
+fi
 
 # Copy frontend to web directory
 print_status "Deploying frontend..."
