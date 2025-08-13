@@ -9,20 +9,9 @@ cd /var/www/rrcompanion
 echo "📥 Pulling latest code..."
 git pull origin master
 
-echo "🔨 Building frontend..."
-cd apps/web
-
-# Clean and build directly to dist
-echo "🧹 Cleaning dist directory..."
-rm -rf dist
-
-echo "🔨 Building frontend..."
-npm run build
-
-echo "✅ Frontend built successfully!"
-
-# Go back to project root
-cd ../..
+echo "✅ Frontend files already copied by GitHub Actions"
+echo "📁 Checking dist directory..."
+ls -la apps/web/dist/assets/
 
 echo "⚙️  Updating API service configuration..."
 # Copy service file
