@@ -73,10 +73,13 @@ const AllFictionsList: React.FC = () => {
   };
 
   const handleRemoveFiction = (userFiction: UserFiction) => {
+    console.log('🗑️ Remove button clicked for:', userFiction);
     if (userFiction.is_favorite) {
+      console.log('❌ Cannot remove favorite fiction');
       setError('Cannot remove favorite fictions. Please remove from favorites first.');
       return;
     }
+    console.log('✅ Setting fiction to remove and showing confirmation dialog');
     setFictionToRemove(userFiction);
     setShowRemoveConfirm(true);
   };
@@ -159,7 +162,7 @@ const AllFictionsList: React.FC = () => {
           <div
             key={userFiction.id}
             className="cursor-pointer"
-            onClick={() => handleFictionClick(userFiction)}
+            onClick={(_e: React.MouseEvent<HTMLDivElement>) => handleFictionClick(userFiction)}
           >
             <Card className="p-4 hover:shadow-lg transition-shadow">
               <div className="flex space-x-4">
@@ -194,7 +197,8 @@ const AllFictionsList: React.FC = () => {
                       <Button
                         variant={userFiction.is_favorite ? "outline" : "primary"}
                         size="sm"
-                        onClick={() => {
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                          e.stopPropagation();
                           handleToggleFavorite(userFiction);
                         }}
                         disabled={isUpdatingFavorite}
@@ -205,7 +209,10 @@ const AllFictionsList: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
+                          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            console.log('🔘 Remove button onClick triggered');
+                            e.stopPropagation();
+                            console.log('🛑 Event propagation stopped');
                             handleRemoveFiction(userFiction);
                           }}
                           disabled={isRemoving}
