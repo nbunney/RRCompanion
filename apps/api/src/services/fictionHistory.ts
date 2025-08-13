@@ -604,7 +604,7 @@ export class FictionHistoryService {
 
       // Get all sponsored fictions from the database
       const sponsoredFictions = await FictionService.getSponsoredFictions();
-      
+
       if (sponsoredFictions.length === 0) {
         console.log('ℹ️ No sponsored fictions found');
         return;
@@ -615,7 +615,7 @@ export class FictionHistoryService {
       // Process each sponsored fiction
       for (let i = 0; i < sponsoredFictions.length; i++) {
         const fiction = sponsoredFictions[i];
-        
+
         try {
           console.log(`\n🔍 Processing sponsored fiction ${i + 1}/${sponsoredFictions.length}: ${fiction.royalroad_id} (${fiction.title})`);
 
@@ -716,7 +716,38 @@ export class FictionHistoryService {
   // Run nightly collection process
   async runNightlyCollection(): Promise<boolean> {
     try {
-      console.log('🌙 Starting nightly fiction history collection...');
+      console.log('🌙 Starting nightly fiction collection (Rising Stars + Sponsored)...');
+
+      // First, get current Rising Stars data to identify fictions that need updating
+      const risingStarsResponse = await this.royalroadService.getAllRisingStars();
+
+      if (risingStarsResponse.success && risingStarsResponse.data) {
+        console.log(`📊 Found ${risingStarsResponse.data.length} fictions currently on Rising Stars`);
+
+        // Save Rising Stars data to fiction history
+        await this.saveFictionHistoryData(risingStarsResponse.data);
+
+        // Update fiction details for all Rising Stars entries
+        await this.updateRisingStarsFictionDetails(risingStarsResponse.data);
+      } else {
+        console.error('❌ Failed to collect Rising Stars data for nightly update:', risingStarsResponse.message);
+      }
+
+      // Then process sponsored fictions (which may overlap with Rising Stars)
+      await this.processSponsoredFictions();
+
+      console.log('✅ Nightly fiction collection completed successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Error during nightly fiction collection:', error);
+      return false;
+    }
+  }
+
+  // Run Rising Stars collection only (for frequent updates)
+  async runRisingStarsCollection(): Promise<boolean> {
+    try {
+      console.log('⭐ Starting Rising Stars collection...');
 
       // Get all Rising Stars data
       const response = await this.royalroadService.getAllRisingStars();
@@ -724,21 +755,87 @@ export class FictionHistoryService {
       if (response.success && response.data) {
         console.log(`📊 Collected ${response.data.length} fiction entries from Rising Stars`);
 
-        // Save the data to fiction history
+        // Save the data to fiction history (Rising Stars only)
         await this.saveFictionHistoryData(response.data);
 
-        // Process sponsored fictions after rising stars
-        await this.processSponsoredFictions();
-
-        console.log('✅ Nightly fiction history collection completed successfully');
+        console.log('✅ Rising Stars collection completed successfully');
         return true;
       } else {
         console.error('❌ Failed to collect Rising Stars data:', response.message);
         return false;
       }
     } catch (error) {
-      console.error('❌ Error during nightly fiction history collection:', error);
+      console.error('❌ Error during Rising Stars collection:', error);
       return false;
+    }
+  }
+
+  // Update fiction details for all Rising Stars entries
+  private async updateRisingStarsFictionDetails(risingStarsData: any[]): Promise<void> {
+    try {
+      console.log('🔄 Updating fiction details for Rising Stars entries...');
+
+      // Get unique fiction IDs from Rising Stars data
+      const fictionIds = [...new Set(risingStarsData.map(entry => entry.fiction_id))];
+      console.log(`📝 Found ${fictionIds.length} unique fictions on Rising Stars to update`);
+
+      for (let i = 0; i < fictionIds.length; i++) {
+        const fictionId = fictionIds[i];
+
+        try {
+          // Get current fiction data from RoyalRoad
+          const fictionResponse = await this.royalroadService.getFiction(fictionId);
+
+          if (fictionResponse.success && fictionResponse.data) {
+            const freshData = fictionResponse.data;
+
+            // Update the fiction record with fresh data
+            await FictionService.updateFiction(fictionId, {
+              title: freshData.title,
+              author_name: freshData.author.name,
+              author_id: freshData.author.id,
+              author_avatar: freshData.author.avatar,
+              description: freshData.description,
+              image_url: freshData.image,
+              status: freshData.status,
+              type: freshData.type,
+              tags: freshData.tags,
+              warnings: freshData.warnings,
+              pages: freshData.stats?.pages,
+              ratings: freshData.stats?.ratings,
+              followers: freshData.stats?.followers,
+              favorites: freshData.stats?.favorites,
+              views: freshData.stats?.views,
+              score: freshData.stats?.score,
+              overall_score: freshData.stats?.overall_score,
+              style_score: freshData.stats?.style_score,
+              story_score: freshData.stats?.story_score,
+              grammar_score: freshData.stats?.grammar_score,
+              character_score: freshData.stats?.character_score,
+              total_views: freshData.stats?.total_views,
+              average_views: freshData.stats?.average_views,
+            });
+
+            console.log(`✅ Updated fiction details for Rising Stars entry ${i + 1}/${fictionIds.length}: ${freshData.title}`);
+          } else {
+            console.error(`❌ Failed to fetch data for Rising Stars fiction ${fictionId}: ${fictionResponse.message}`);
+          }
+
+          // Add delay between requests to be respectful to RoyalRoad
+          if (i < fictionIds.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+          }
+
+        } catch (error) {
+          console.error(`❌ Error updating Rising Stars fiction ${fictionId}:`, error);
+          continue; // Continue with next fiction even if one fails
+        }
+      }
+
+      console.log('✅ Rising Stars fiction details update completed');
+    } catch (error) {
+      console.error('❌ Error during Rising Stars fiction details update:', error);
+      throw error;
     }
   }
 } 

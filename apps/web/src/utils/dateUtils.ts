@@ -58,8 +58,21 @@ export function formatLocalDateTime(
 
   if (isNaN(dateObj.getTime())) return 'Invalid Date/Time';
 
-  const dateStr = dateObj.toLocaleDateString(undefined, dateOptions);
-  const timeStr = dateObj.toLocaleTimeString(undefined, timeOptions);
+  // Ensure we're working with the local timezone by using the user's locale
+  // This will automatically convert UTC timestamps to local time
+  const dateStr = dateObj.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    ...dateOptions
+  });
+
+  const timeStr = dateObj.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    ...timeOptions
+  });
 
   return `${dateStr} at ${timeStr}`;
 }

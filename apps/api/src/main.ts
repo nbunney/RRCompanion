@@ -158,12 +158,12 @@ try {
   // Initialize database tables
   await initializeDatabase();
 
-  // Start cron service for nightly Rising Stars collection only in production
+  // Start cron service for Rising Stars collection four times daily in production
   const nodeEnv = Deno.env.get('NODE_ENV') || 'development';
   if (nodeEnv === 'production') {
     const cronService = new CronService();
     cronService.start();
-    console.log(`🌙 Cron service started - nightly Rising Stars collection at 12:23am PST`);
+    console.log(`🌙 Cron service started - Rising Stars collection at 6:23am, 12:23pm, and 6:23pm PST`);
   } else {
     console.log(`🌙 Cron service skipped - NODE_ENV is '${nodeEnv}' (only runs in production)`);
   }

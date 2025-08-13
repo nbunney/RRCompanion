@@ -42,42 +42,61 @@ const Home: React.FC = () => {
           </Card>
 
           <Card className="p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Key Features
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <h3 className="text-lg font-medium text-gray-900">📚 Fiction Tracking</h3>
-                <p className="text-gray-700">
-                  Add your favorite RoyalRoad fiction to your personal library and track
-                  their progress.
-                </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              {/* Key Features - Left Side */}
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+                  Key Features
+                </h2>
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium text-gray-900">📚 Fiction Tracking</h3>
+                    <p className="text-gray-700">
+                      Add your favorite RoyalRoad fiction to your personal library and track
+                      their progress.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium text-gray-900">📊 Performance Analytics</h3>
+                    <p className="text-gray-700">
+                      View detailed statistics including page counts, follower growth, ratings,
+                      and view counts over time.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium text-gray-900">🌙 Automated Updates</h3>
+                    <p className="text-gray-700">
+                      Our system automatically updates sponsored fiction data daily, ensuring you always
+                      have the latest information. Unsponsored fiction must be manually updated.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium text-gray-900">📈 Rising Stars Monitoring</h3>
+                    <p className="text-gray-900">
+                      Any fiction on Rising Stars, whether sponsored or not, will be automatically updated daily.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium text-gray-900">📦 Downloadable Data</h3>
+                    <p className="text-gray-700">
+                      Export comprehensive data for sponsored fictions including historical metrics and Rising Stars rankings in organized ZIP files.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-3">
-                <h3 className="text-lg font-medium text-gray-900">📊 Performance Analytics</h3>
-                <p className="text-gray-700">
-                  View detailed statistics including page counts, follower growth, ratings,
-                  and view counts over time.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <h3 className="text-lg font-medium text-gray-900">🌙 Automated Updates</h3>
-                <p className="text-gray-700">
-                  Our system automatically updates sponsored fiction data daily, ensuring you always
-                  have the latest information. Unsponsored fiction must be manually updated.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <h3 className="text-lg font-medium text-gray-900">📈 Rising Stars Monitoring</h3>
-                <p className="text-gray-900">
-                  Any fiction on Rising Stars, whether sponsored or not, will be automatically updated daily.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <h3 className="text-lg font-medium text-gray-900">📦 Downloadable Data</h3>
-                <p className="text-gray-700">
-                  Export comprehensive data for sponsored fictions including historical metrics and Rising Stars rankings in organized ZIP files.
-                </p>
+
+              {/* Platform Showcase Image - Right Side */}
+              <div className="flex justify-center lg:justify-end">
+                <div className="max-w-md">
+                  <img
+                    src="/images/detail.png"
+                    alt="RRCompanion Fiction Details Page - Showing charts, stats, and analytics for 'Save Scumming' by RavensDagger"
+                    className="w-full h-auto rounded-lg shadow-lg border border-gray-200"
+                  />
+                  <p className="text-sm text-gray-600 text-center mt-3 italic">
+                    See the platform in action with detailed analytics and charts
+                  </p>
+                </div>
               </div>
             </div>
           </Card>
@@ -141,6 +160,36 @@ const Home: React.FC = () => {
                     Download organized ZIP files containing historical metrics and Rising Stars rankings for sponsored fictions.
                   </p>
                 </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              Data Update Schedule
+            </h2>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h3 className="text-lg font-medium text-gray-900">⭐ Rising Stars Rankings</h3>
+                  <p className="text-gray-700">
+                    Updated three times daily at 6:23am, 12:23pm, and 6:23pm PST to keep rankings current throughout the day.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <h3 className="text-lg font-medium text-gray-900">🌙 Comprehensive Updates</h3>
+                  <p className="text-gray-700">
+                    Complete fiction details and sponsored fiction metrics updated once daily at 12:23am PST for thorough data refresh.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 mb-2">📅 Timezone Information</h4>
+                <p className="text-blue-800 text-sm">
+                  All times are shown in Pacific Standard Time (PST). For your local timezone,
+                  add 3 hours for Eastern Time, 2 hours for Central Time, 1 hour for Mountain Time,
+                  or subtract 8 hours for UTC.
+                </p>
               </div>
             </div>
           </Card>
