@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { userFictionAPI } from '@/services/api';
+import { userFictionAPI, fictionAPI } from '@/services/api';
 import Footer from '@/components/Footer';
 
 const OAuthCallback: React.FC = () => {
@@ -14,7 +14,7 @@ const OAuthCallback: React.FC = () => {
     const token = searchParams.get('token');
     const userParam = searchParams.get('user');
     const errorParam = searchParams.get('error');
-    const fictionId = searchParams.get('fiction_id');
+    const fictionId = searchParams.get('fiction_id'); // Get fiction_id
 
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
@@ -48,13 +48,25 @@ const OAuthCallback: React.FC = () => {
         // If there's a fiction ID, add it to the user's account
         if (fictionId) {
           try {
-            console.log('🔐 OAuth Callback - Adding fiction to user account:', fictionId);
-            await userFictionAPI.createUserFiction(parseInt(fictionId), 'plan_to_read');
-            console.log('🔐 OAuth Callback - Fiction added successfully');
+            console.log('🔐 OAuth Callback - Looking up fiction by Royal Road ID:', fictionId);
             
-            // Redirect back to the fiction page
-            navigate(`/fiction/${fictionId}`);
-            return;
+            // First, look up the fiction by Royal Road ID to get the internal database ID
+            const fictionResponse = await fictionAPI.getFictionByRoyalRoadId(fictionId);
+            if (fictionResponse.success && fictionResponse.data) {
+              const internalFictionId = fictionResponse.data.id;
+              console.log('🔐 OAuth Callback - Found fiction in database, internal ID:', internalFictionId);
+              
+              // Now create the user-fiction relationship using the internal ID
+              await userFictionAPI.createUserFiction(internalFictionId, 'plan_to_read');
+              console.log('🔐 OAuth Callback - Fiction added successfully to user account');
+              
+              // Redirect back to the fiction page
+              navigate(`/fiction/${fictionId}`);
+              return;
+            } else {
+              console.error('🔐 OAuth Callback - Fiction not found in database:', fictionResponse.message);
+              // Continue to dashboard if fiction lookup fails
+            }
           } catch (error) {
             console.error('🔐 OAuth Callback - Failed to add fiction:', error);
             // Continue to dashboard even if adding fiction fails
