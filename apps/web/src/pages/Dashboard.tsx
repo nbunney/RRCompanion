@@ -37,6 +37,12 @@ const Dashboard: React.FC = () => {
 
       <main className="flex-1 max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
+          {/* NEW VERSION INDICATOR */}
+          <div className="mb-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-lg border-4 border-yellow-300 text-center">
+            <h1 className="text-2xl font-bold">🎉 NEW VERSION DEPLOYED! 🎉</h1>
+            <p className="text-lg">Remove button should work now!</p>
+          </div>
+
           {/* Quick Actions */}
           <div className="mb-8">
             <Card className="p-6">

@@ -198,8 +198,8 @@ const AllFictionsList: React.FC = () => {
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">
-          All Your Fictions ({allFictions.length})
+        <h2 className="text-xl font-semibold text-gray-900 bg-red-500 text-white p-2 rounded border-4 border-yellow-400">
+          🚨 NEW VERSION DEPLOYED! 🚨 All Your Fictions ({allFictions.length})
         </h2>
         <div className="text-sm text-gray-500">
           {allFictions.filter(f => f.is_favorite).length} favorites
