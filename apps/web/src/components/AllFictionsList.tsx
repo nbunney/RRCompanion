@@ -16,6 +16,22 @@ const AllFictionsList: React.FC = () => {
   const [isRemoving, setIsRemoving] = useState(false);
   const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
 
+  // Add logging to track state changes
+  useEffect(() => {
+    console.log('📊 AllFictionsList state update:');
+    console.log('📊 showRemoveConfirm:', showRemoveConfirm);
+    console.log('📊 fictionToRemove:', fictionToRemove);
+    console.log('📊 isRemoving:', isRemoving);
+    console.log('📊 allFictions length:', allFictions.length);
+    
+    // Log confirmation dialog props
+    console.log('🎭 Confirmation dialog props:', {
+      isOpen: showRemoveConfirm,
+      fictionToRemove,
+      isLoading: isRemoving
+    });
+  }, [showRemoveConfirm, fictionToRemove, isRemoving, allFictions.length]);
+
   useEffect(() => {
     loadAllFictions();
   }, []);
@@ -73,7 +89,11 @@ const AllFictionsList: React.FC = () => {
   };
 
   const handleRemoveFiction = (userFiction: UserFiction) => {
-    console.log('🗑️ Remove button clicked for:', userFiction);
+    console.log('🗑️ handleRemoveFiction called with:', userFiction);
+    console.log('🗑️ userFiction.id:', userFiction.id);
+    console.log('🗑️ userFiction.fiction_id:', userFiction.fiction_id);
+    console.log('🗑️ userFiction.is_favorite:', userFiction.is_favorite);
+
     if (userFiction.is_favorite) {
       console.log('❌ Cannot remove favorite fiction');
       setError('Cannot remove favorite fictions. Please remove from favorites first.');
@@ -82,26 +102,47 @@ const AllFictionsList: React.FC = () => {
     console.log('✅ Setting fiction to remove and showing confirmation dialog');
     setFictionToRemove(userFiction);
     setShowRemoveConfirm(true);
+    console.log('✅ showRemoveConfirm set to true');
   };
 
   const performRemoveFiction = async () => {
-    if (!fictionToRemove) return;
+    console.log('🚀 performRemoveFiction called');
+    console.log('🚀 fictionToRemove:', fictionToRemove);
+
+    if (!fictionToRemove) {
+      console.log('❌ No fiction to remove');
+      return;
+    }
 
     try {
+      console.log('🔄 Setting isRemoving to true');
       setIsRemoving(true);
+
+      console.log('📡 Calling API with fiction_id:', fictionToRemove.fiction_id);
       const response = await userFictionAPI.removeFiction(fictionToRemove.fiction_id);
+      console.log('📡 API response:', response);
+
       if (response.success) {
+        console.log('✅ API call successful, updating local state');
         // Remove from local state
-        setAllFictions(prev => prev.filter(f => f.id !== fictionToRemove.id));
+        setAllFictions(prev => {
+          console.log('🔄 Previous state length:', prev.length);
+          const filtered = prev.filter(f => f.id !== fictionToRemove.id);
+          console.log('🔄 Filtered state length:', filtered.length);
+          return filtered;
+        });
         setShowRemoveConfirm(false);
         setFictionToRemove(null);
+        console.log('✅ State updated, dialog closed');
       } else {
+        console.log('❌ API call failed:', response);
         setError('Failed to remove fiction');
       }
     } catch (err: any) {
-      console.error('Error removing fiction:', err);
+      console.error('💥 Error removing fiction:', err);
       setError('Failed to remove fiction');
     } finally {
+      console.log('🏁 Finally block - cleaning up state');
       setIsRemoving(false);
       setShowRemoveConfirm(false);
       setFictionToRemove(null);
@@ -211,8 +252,12 @@ const AllFictionsList: React.FC = () => {
                           size="sm"
                           onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                             console.log('🔘 Remove button onClick triggered');
+                            console.log('🔘 Event target:', e.target);
+                            console.log('🔘 Event currentTarget:', e.currentTarget);
+                            console.log('🔘 Event type:', e.type);
                             e.stopPropagation();
                             console.log('🛑 Event propagation stopped');
+                            console.log('🔘 About to call handleRemoveFiction with:', userFiction);
                             handleRemoveFiction(userFiction);
                           }}
                           disabled={isRemoving}
@@ -237,6 +282,7 @@ const AllFictionsList: React.FC = () => {
         confirmText="Remove"
         onConfirm={performRemoveFiction}
         onCancel={() => {
+          console.log('❌ Confirmation dialog cancelled');
           setShowRemoveConfirm(false);
           setFictionToRemove(null);
         }}
