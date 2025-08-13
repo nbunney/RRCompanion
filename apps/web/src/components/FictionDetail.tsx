@@ -12,11 +12,12 @@ import Tags from '@/components/Tags';
 import { RisingStarsChart, EngagementGrowthChart, PerceivedQualityChart, CurrentStats } from '@/components/charts';
 import { formatLocalDate, formatLocalDateTime } from '@/utils/dateUtils';
 import { useAuth } from '@/hooks/useAuth';
+import PublicFictionView from '@/components/PublicFictionView';
 
 const FictionDetail: React.FC = () => {
   const { id, slug } = useParams<{ id: string; slug?: string }>();
   const navigate = useNavigate();
-  const { checkAuth } = useAuth();
+  const { checkAuth, isAuthenticated } = useAuth();
   const [fiction, setFiction] = useState<RoyalRoadFiction | null>(null);
   const [fictionWithHistory, setFictionWithHistory] = useState<Fiction | null>(null);
   const [userFiction, setUserFiction] = useState<UserFiction | null>(null);
@@ -88,76 +89,87 @@ const FictionDetail: React.FC = () => {
   useEffect(() => {
     if (id) {
       loadFiction();
-      loadUserFiction();
+      // Only load user fiction data for authenticated users
+      if (isAuthenticated) {
+        loadUserFiction();
+      }
     }
-  }, [id]);
+  }, [id, isAuthenticated]);
 
   useEffect(() => {
-    if (fictionWithHistory?.id) {
+    if (fictionWithHistory?.id && isAuthenticated) {
       loadRisingStarsData();
     }
-  }, [fictionWithHistory?.id]);
+  }, [fictionWithHistory?.id, isAuthenticated]);
 
   const loadFiction = async () => {
     try {
       setIsLoading(true);
 
-      // First, try to load from our database
-      let fictionResponse = await fictionAPI.getFictionByRoyalRoadId(id!);
+      // First, try to load from our database (only for authenticated users)
+      if (isAuthenticated) {
+        try {
+          let fictionResponse = await fictionAPI.getFictionByRoyalRoadId(id!);
 
-      if (fictionResponse.success && fictionResponse.data) {
-        // Store the original response with history data
-        console.log('🔗 Fiction response:', fictionResponse.data);
-        setFictionWithHistory(fictionResponse.data);
+          if (fictionResponse.success && fictionResponse.data) {
+            // Store the original response with history data
+            console.log('🔗 Fiction response:', fictionResponse.data);
+            setFictionWithHistory(fictionResponse.data);
 
-        // Convert our Fiction type to RoyalRoadFiction type for display
-        const fiction: RoyalRoadFiction = {
-          id: fictionResponse.data.royalroad_id,
-          title: fictionResponse.data.title,
-          author: {
-            name: fictionResponse.data.author_name,
-            id: fictionResponse.data.author_id || '',
-            avatar: fictionResponse.data.author_avatar,
-          },
-          description: fictionResponse.data.description || '',
-          image: fictionResponse.data.image_url,
-          status: fictionResponse.data.status || '',
-          type: fictionResponse.data.type || '',
-          tags: fictionResponse.data.tags || [],
-          warnings: fictionResponse.data.warnings || [],
-          stats: {
-            pages: fictionResponse.data.pages || 0,
-            ratings: fictionResponse.data.ratings || 0,
-            followers: fictionResponse.data.followers || 0,
-            favorites: fictionResponse.data.favorites || 0,
-            views: fictionResponse.data.views || 0,
-            score: fictionResponse.data.overall_score || 0,
-          },
-          chapters: [],
-        };
-        setFiction(fiction);
+            // Convert our Fiction type to RoyalRoadFiction type for display
+            const fiction: RoyalRoadFiction = {
+              id: fictionResponse.data.royalroad_id,
+              title: fictionResponse.data.title,
+              author: {
+                name: fictionResponse.data.author_name,
+                id: fictionResponse.data.author_id || '',
+                avatar: fictionResponse.data.author_avatar,
+              },
+              description: fictionResponse.data.description || '',
+              image: fictionResponse.data.image_url,
+              status: fictionResponse.data.status || '',
+              type: fictionResponse.data.type || '',
+              tags: fictionResponse.data.tags || [],
+              warnings: fictionResponse.data.warnings || [],
+              stats: {
+                pages: fictionResponse.data.pages || 0,
+                ratings: fictionResponse.data.ratings || 0,
+                followers: fictionResponse.data.followers || 0,
+                favorites: fictionResponse.data.favorites || 0,
+                views: fictionResponse.data.views || 0,
+                score: fictionResponse.data.overall_score || 0,
+              },
+              chapters: [],
+            };
+            setFiction(fiction);
+
+            // Redirect to the proper URL with slug if not already there
+            const expectedSlug = createFictionUrl(fiction.title, fiction.id).split('/').pop();
+            if (slug !== expectedSlug) {
+              const properUrl = createFictionUrl(fiction.title, fiction.id);
+              navigate(properUrl, { replace: true });
+            }
+            return; // Successfully loaded from database
+          }
+        } catch (dbErr: any) {
+          // If database call fails (e.g., 401), fall back to Royal Road API
+          console.log('🔗 Database call failed, falling back to Royal Road API:', dbErr.message);
+        }
+      }
+
+      // Fall back to Royal Road API (for non-authenticated users or when database fails)
+      const royalroadResponse = await royalroadAPI.getFiction(id!);
+      if (royalroadResponse.success && royalroadResponse.data) {
+        setFiction(royalroadResponse.data);
 
         // Redirect to the proper URL with slug if not already there
-        const expectedSlug = createFictionUrl(fiction.title, fiction.id).split('/').pop();
+        const expectedSlug = createFictionUrl(royalroadResponse.data.title, royalroadResponse.data.id).split('/').pop();
         if (slug !== expectedSlug) {
-          const properUrl = createFictionUrl(fiction.title, fiction.id);
+          const properUrl = createFictionUrl(royalroadResponse.data.title, royalroadResponse.data.id);
           navigate(properUrl, { replace: true });
         }
       } else {
-        // If not in our database, try to load from Royal Road API
-        const royalroadResponse = await royalroadAPI.getFiction(id!);
-        if (royalroadResponse.success && royalroadResponse.data) {
-          setFiction(royalroadResponse.data);
-
-          // Redirect to the proper URL with slug if not already there
-          const expectedSlug = createFictionUrl(royalroadResponse.data.title, royalroadResponse.data.id).split('/').pop();
-          if (slug !== expectedSlug) {
-            const properUrl = createFictionUrl(royalroadResponse.data.title, royalroadResponse.data.id);
-            navigate(properUrl, { replace: true });
-          }
-        } else {
-          setError(royalroadResponse.message || 'Failed to load fiction');
-        }
+        setError(royalroadResponse.message || 'Failed to load fiction');
       }
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || 'Failed to load fiction');
@@ -433,14 +445,19 @@ const FictionDetail: React.FC = () => {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-600 mb-4">{error || 'Fiction not found'}</p>
-            <Button onClick={() => navigate('/dashboard')}>
-              Back to Dashboard
+            <Button onClick={() => navigate('/')}>
+              Back to Home
             </Button>
           </div>
         </div>
         <Footer />
       </div>
     );
+  }
+
+  // Show public view for non-authenticated users
+  if (!isAuthenticated) {
+    return <PublicFictionView fiction={fiction} />;
   }
 
   return (

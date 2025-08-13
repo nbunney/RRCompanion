@@ -32,9 +32,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Only redirect if we're not already on auth pages
+      // Only redirect if we're not already on auth pages or fiction pages
       const currentPath = window.location.pathname;
-      if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+      if (!currentPath.includes('/login') && 
+          !currentPath.includes('/register') && 
+          !currentPath.includes('/fiction/')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';
