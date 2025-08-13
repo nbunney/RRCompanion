@@ -11,7 +11,9 @@ Environment=PATH=/home/ubuntu/.deno/bin:/usr/local/bin:/usr/bin:/bin
 Environment=HOME=/home/ubuntu
 Environment=NODE_ENV=production
 Environment=PORT=8000
-ExecStart=/home/ubuntu/.deno/bin/deno run --allow-net --allow-env --allow-read --allow-write ./src/main.ts
+ExecStartPre=/bin/bash -c 'which deno || echo "Deno not found in PATH"'
+ExecStartPre=/bin/bash -c 'ls -la /home/ubuntu/.deno/bin/ || echo "Deno directory not found"'
+ExecStart=/usr/bin/env deno run --allow-net --allow-env --allow-read --allow-write ./src/main.ts
 Restart=always
 RestartSec=10
 StandardOutput=journal

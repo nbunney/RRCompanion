@@ -3,40 +3,45 @@
 # Simple RRCompanion Deployment
 # This script just works - no complexity
 
-set -e
+set -e  # Exit on any error
 
 echo "🚀 Starting simple deployment..."
 
-# Go to project directory
+# Navigate to project directory
 cd /var/www/rrcompanion
 
-# Pull latest code
 echo "📥 Pulling latest code..."
 git pull origin master
 
-# Stop the API service
 echo "⏹️  Stopping API service..."
-sudo systemctl stop rrcompanion-api
+sudo systemctl stop rrcompanion-api || true
 
-# Copy the working service template
 echo "⚙️  Updating service configuration..."
 sudo cp scripts/rrcompanion-api.service.template /etc/systemd/system/rrcompanion-api.service
-
-# Start the API service
-echo "▶️  Starting API service..."
 sudo systemctl daemon-reload
+
+echo "🔍 Checking Deno installation..."
+which deno || echo "Deno not found in PATH"
+ls -la /home/ubuntu/.deno/bin/ || echo "Deno directory not found"
+deno --version || echo "Deno version check failed"
+
+echo "▶️  Starting API service..."
 sudo systemctl start rrcompanion-api
 
-# Wait for service to be ready
 echo "⏳ Waiting for API to be ready..."
 sleep 5
 
-# Check if service is running
+# Check service status
 if sudo systemctl is-active --quiet rrcompanion-api; then
-    echo "✅ API service is running"
+    echo "✅ API service started successfully!"
+    echo "📊 Service Status:"
+    sudo systemctl status rrcompanion-api --no-pager
 else
     echo "❌ API service failed to start"
-    sudo systemctl status rrcompanion-api
+    echo "📋 Service Status:"
+    sudo systemctl status rrcompanion-api --no-pager
+    echo "📋 Recent logs:"
+    sudo journalctl -u rrcompanion-api -n 20 --no-pager
     exit 1
 fi
 
