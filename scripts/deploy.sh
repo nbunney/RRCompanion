@@ -91,21 +91,21 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Build to new directory
+# Build to default dist directory first
 print_info "Building frontend..."
 npm run build
 
-# Move build to new directory
-mv dist "$NEW_FRONTEND"
-print_status "Frontend built to $NEW_FRONTEND"
-
 # Check if build was successful
-if [ ! -d "$NEW_FRONTEND" ] || [ ! -f "$NEW_FRONTEND/index.html" ]; then
+if [ ! -d "dist" ] || [ ! -f "dist/index.html" ]; then
     print_error "Frontend build failed or incomplete"
     exit 1
 fi
 
-print_status "Frontend built successfully"
+# Move build to new directory
+print_info "Moving build to $NEW_FRONTEND..."
+cp -r dist "$NEW_FRONTEND"
+rm -rf dist
+print_status "Frontend built to $NEW_FRONTEND"
 
 # Create new service file for the new API instance
 print_status "Setting up new API instance on port $NEW_PORT..."
