@@ -18,6 +18,7 @@ const AllFictionsList: React.FC = () => {
 
   console.log('🚀 AllFictionsList component loaded!');
   console.log('🚀 Current time:', new Date().toISOString());
+  console.log('🚀 This is the NEW version with native button!');
 
   // Add logging to track state changes
   useEffect(() => {
