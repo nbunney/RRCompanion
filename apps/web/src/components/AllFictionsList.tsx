@@ -23,7 +23,7 @@ const AllFictionsList: React.FC = () => {
     console.log('📊 fictionToRemove:', fictionToRemove);
     console.log('📊 isRemoving:', isRemoving);
     console.log('📊 allFictions length:', allFictions.length);
-    
+
     // Log confirmation dialog props
     console.log('🎭 Confirmation dialog props:', {
       isOpen: showRemoveConfirm,
