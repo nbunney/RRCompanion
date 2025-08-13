@@ -56,11 +56,21 @@ const OAuthCallback: React.FC = () => {
               const internalFictionId = fictionResponse.data.id;
               console.log('🔐 OAuth Callback - Found fiction in database, internal ID:', internalFictionId);
               
-              // Now create the user-fiction relationship using the internal ID
-              await userFictionAPI.createUserFiction(internalFictionId, 'plan_to_read');
-              console.log('🔐 OAuth Callback - Fiction added successfully to user account');
+              try {
+                // Try to create the user-fiction relationship using the internal ID
+                await userFictionAPI.createUserFiction(internalFictionId, 'plan_to_read');
+                console.log('🔐 OAuth Callback - Fiction added successfully to user account');
+              } catch (addError: any) {
+                // Check if the error is because the fiction is already on the user's list
+                if (addError.response?.status === 409 || addError.response?.status === 400) {
+                  console.log('🔐 OAuth Callback - Fiction already exists on user list, continuing...');
+                } else {
+                  console.error('🔐 OAuth Callback - Unexpected error adding fiction:', addError);
+                }
+              }
               
-              // Redirect back to the fiction page
+              // Always redirect back to the fiction page, regardless of whether it was newly added or already existed
+              console.log('🔐 OAuth Callback - Redirecting to fiction page');
               navigate(`/fiction/${fictionId}`);
               return;
             } else {
@@ -68,8 +78,8 @@ const OAuthCallback: React.FC = () => {
               // Continue to dashboard if fiction lookup fails
             }
           } catch (error) {
-            console.error('🔐 OAuth Callback - Failed to add fiction:', error);
-            // Continue to dashboard even if adding fiction fails
+            console.error('🔐 OAuth Callback - Failed to process fiction:', error);
+            // Continue to dashboard even if fiction processing fails
           }
         }
         
