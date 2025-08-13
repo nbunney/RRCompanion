@@ -27,7 +27,7 @@ export class AdminService {
           COUNT(DISTINCT f.id) as new_fictions,
           COUNT(DISTINCT uf.user_id) as active_users
         FROM fiction f
-        LEFT JOIN userFictionOrder uf ON f.id = uf.fiction_id
+        LEFT JOIN userFiction uf ON f.id = uf.fiction_id
         WHERE f.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
         OR uf.updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
       `);
@@ -154,7 +154,7 @@ export class AdminService {
           COUNT(DISTINCT CASE WHEN uf.is_favorite = 1 THEN uf.id END) as favorites_count,
           COUNT(DISTINCT CASE WHEN f.sponsored = 1 THEN f.id END) as sponsored_count
         FROM users u
-        LEFT JOIN userFictionOrder uf ON u.id = uf.user_id
+        LEFT JOIN userFiction uf ON u.id = uf.user_id
         LEFT JOIN fiction f ON uf.fiction_id = f.id
         GROUP BY u.id, u.name, u.email, u.admin, u.created_at
         ORDER BY u.created_at DESC

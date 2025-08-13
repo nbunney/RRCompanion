@@ -33,19 +33,34 @@ const AdminUsers: React.FC = () => {
   const loadUsers = async () => {
     try {
       setIsLoading(true);
+      console.log('🔍 AdminUsers - Loading users...');
+      
       const response = await fetch('/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
 
+      console.log('🔍 AdminUsers - Response status:', response.status);
+      console.log('🔍 AdminUsers - Response ok:', response.ok);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 AdminUsers - Response data:', data);
+        
         if (data.success) {
+          console.log('✅ AdminUsers - Users loaded successfully:', data.data);
           setUsers(data.data);
+        } else {
+          console.error('❌ AdminUsers - API returned success: false:', data);
+          setError(data.error || 'Failed to load users');
         }
+      } else {
+        console.error('❌ AdminUsers - HTTP error:', response.status, response.statusText);
+        setError(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (err) {
+      console.error('❌ AdminUsers - Network error:', err);
       setError('Failed to load users');
     } finally {
       setIsLoading(false);
