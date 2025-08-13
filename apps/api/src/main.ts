@@ -52,13 +52,15 @@ const app = new Application();
 const router = new Router();
 
 // CORS middleware
-const corsOrigin = Deno.env.get('CORS_ORIGIN') || 'https://localhost';
+const corsOrigin = Deno.env.get('CORS_ORIGIN') || 'http://localhost:3000';
 const allowedOrigins = corsOrigin.split(',').map(origin => origin.trim());
 
 app.use(oakCors({
   origin: (origin) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return true;
+    // Allow localhost on any port for development
+    if (origin.includes('localhost')) return true;
     return allowedOrigins.includes(origin);
   },
   credentials: true,
@@ -87,6 +89,7 @@ app.use(async (ctx, next) => {
       success: false,
       error: 'Internal server error',
     };
+    // Don't call next() after setting response - this was causing the crash
   }
 });
 

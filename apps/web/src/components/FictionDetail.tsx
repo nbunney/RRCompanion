@@ -45,7 +45,7 @@ const FictionDetail: React.FC = () => {
 
     if (hoursDiff >= 24) {
       setCanRefresh(true);
-      setRemainingHours(0);
+      setRemainingHours(null); // Changed from 0 to null
     } else {
       setCanRefresh(false);
       // Calculate remaining time more precisely

@@ -13,7 +13,7 @@ let dbConfig: {
 // Initialize environment variables and database configuration
 async function initializeConfig() {
   // Load environment variables with force reload
-  config({ export: true, path: './.env' });
+  config({ export: true, path: './apps/api/.env' });
 
   dbConfig = {
     hostname: Deno.env.get('DB_HOST') || 'localhost',

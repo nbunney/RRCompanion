@@ -29,7 +29,7 @@ export async function authMiddleware(
         success: false,
         error: 'No token provided',
       };
-      return;
+      return; // Don't call next() after setting response
     }
 
     const payload = await verifyToken(token);
@@ -42,7 +42,7 @@ export async function authMiddleware(
         success: false,
         error: 'Invalid token',
       };
-      return;
+      return; // Don't call next() after setting response
     }
 
     // Check if token is expired
@@ -53,7 +53,7 @@ export async function authMiddleware(
         success: false,
         error: 'Token expired',
       };
-      return;
+      return; // Don't call next() after setting response
     }
 
     // Get user from database
@@ -62,14 +62,14 @@ export async function authMiddleware(
       [payload.userId]
     );
 
-    if (result.length === 0) {
+    if (!result.length) {
       console.log('🔐 Auth middleware - User not found in database, returning 401');
       ctx.response.status = 401;
       ctx.response.body = {
         success: false,
         error: 'User not found',
       };
-      return;
+      return; // Don't call next() after setting response
     }
 
     console.log('🔐 Auth middleware - Authentication successful for user:', result[0].email);
@@ -125,7 +125,7 @@ export function requireRole(role: string) {
         success: false,
         error: 'Authentication required',
       };
-      return;
+      return; // Don't call next() after setting response
     }
 
     // Add role checking logic here when you implement roles
