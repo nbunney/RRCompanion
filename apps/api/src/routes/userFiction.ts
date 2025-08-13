@@ -3,6 +3,7 @@ import {
   getUserFictions,
   getUserFictionsByStatus,
   getUserFavorites,
+  getAllUserFictions,
   createUserFiction,
   updateUserFiction,
   deleteUserFiction,
@@ -17,6 +18,7 @@ const router = new Router();
 
 // UserFiction routes - all require authentication
 router.get('/userFictions', authMiddleware, getUserFictions);
+router.get('/userFictions/all', authMiddleware, getAllUserFictions);
 router.get('/userFictions/status/:status', authMiddleware, getUserFictionsByStatus);
 router.get('/userFictions/favorites', authMiddleware, getUserFavorites);
 router.get('/userFictions/stats', authMiddleware, getUserReadingStats);

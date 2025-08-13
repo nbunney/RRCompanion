@@ -74,7 +74,7 @@ print_info "  - Frontend: $NEW_FRONTEND"
 # Pull latest changes
 print_status "Pulling latest changes..."
 cd /var/www/rrcompanion
-git pull origin main
+git pull origin master
 
 # Build frontend to new directory
 print_status "Building frontend to new directory..."

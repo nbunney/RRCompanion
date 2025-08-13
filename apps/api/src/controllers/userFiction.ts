@@ -44,6 +44,36 @@ export async function getUserFictions(ctx: Context): Promise<void> {
   }
 }
 
+// Get all userFictions for the authenticated user without pagination
+export async function getAllUserFictions(ctx: Context): Promise<void> {
+  try {
+    const user = ctx.state.user;
+    if (!user) {
+      ctx.response.status = 401;
+      ctx.response.body = {
+        success: false,
+        error: 'Authentication required',
+      } as ApiResponse;
+      return;
+    }
+
+    const userFictions = await UserFictionService.getAllUserFictionsByUser(user.id);
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: userFictions,
+    } as ApiResponse;
+  } catch (error) {
+    console.error('Get all userFictions error:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Internal server error',
+    } as ApiResponse;
+  }
+}
+
 // Get userFictions by status for the authenticated user
 export async function getUserFictionsByStatus(ctx: Context): Promise<void> {
   try {

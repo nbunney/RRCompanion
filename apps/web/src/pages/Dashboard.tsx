@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import FavoritesList from '@/components/FavoritesList';
+import AllFictionsList from '@/components/AllFictionsList';
 import AddFiction from '@/components/AddFiction';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
@@ -13,16 +14,19 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [showAddFiction, setShowAddFiction] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [viewMode, setViewMode] = useState<'favorites' | 'all'>('favorites');
 
   // Debug logging
   console.log('🔐 Dashboard - Component rendered');
   console.log('🔐 Dashboard - User state:', { user: user ? { id: user.id, email: user.email, admin: user.admin, adminType: typeof user.admin } : 'null' });
 
   const handleFictionAdded = (fiction: RoyalRoadFiction) => {
-    // Refresh the favorites list by incrementing the refresh key
+    // Refresh the lists by incrementing the refresh key
     console.log('Fiction added:', fiction);
     setRefreshKey(prev => prev + 1);
     setShowAddFiction(false);
+    // Switch to favorites view when a new fiction is added
+    setViewMode('favorites');
   };
 
   return (
@@ -55,12 +59,49 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Favorites Section */}
-          <div className="mb-8">
-            <Card className="p-6">
-              <FavoritesList key={refreshKey} />
+          {/* View Toggle */}
+          <div className="mb-6">
+            <Card className="p-4">
+              <div className="flex justify-center">
+                <div className="bg-gray-100 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'favorites' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode('favorites')}
+                    className="rounded-l-md"
+                  >
+                    Favorites
+                  </Button>
+                  <Button
+                    variant={viewMode === 'all' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode('all')}
+                    className="rounded-r-md"
+                  >
+                    All Fictions
+                  </Button>
+                </div>
+              </div>
             </Card>
           </div>
+
+          {/* Favorites Section */}
+          {viewMode === 'favorites' && (
+            <div className="mb-8">
+              <Card className="p-6">
+                <FavoritesList key={refreshKey} />
+              </Card>
+            </div>
+          )}
+
+          {/* All Fictions Section */}
+          {viewMode === 'all' && (
+            <div className="mb-8">
+              <Card className="p-6">
+                <AllFictionsList key={refreshKey} />
+              </Card>
+            </div>
+          )}
 
           {/* Profile Information */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -103,7 +144,9 @@ const Dashboard: React.FC = () => {
                 <p className="text-sm text-gray-500">
                   • Add fictions to your favorites for easy access
                 </p>
-
+                <p className="text-sm text-gray-500">
+                  • Toggle between favorites and all fictions using the buttons above
+                </p>
               </div>
             </Card>
           </div>

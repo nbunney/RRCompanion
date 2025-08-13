@@ -87,6 +87,20 @@ export class UserFictionService {
     return { userFictions, total, totalPages };
   }
 
+  // Get all userFictions for a user without pagination
+  static async getAllUserFictionsByUser(userId: number): Promise<UserFiction[]> {
+    const result = await client.query(`
+      SELECT uf.*, f.*, u.email, u.name as user_name
+      FROM userFiction uf
+      LEFT JOIN fiction f ON uf.fiction_id = f.id
+      LEFT JOIN users u ON uf.user_id = u.id
+      WHERE uf.user_id = ?
+      ORDER BY uf.is_favorite DESC, uf.created_at DESC
+    `, [userId]);
+
+    return result.map((row: any) => this.mapDatabaseRowToUserFictionWithJoins(row));
+  }
+
   // Get userFictions by status
   static async getUserFictionsByStatus(userId: number, status: UserFictionStatus, page: number = 1, limit: number = 20): Promise<{ userFictions: UserFiction[]; total: number; totalPages: number }> {
     const offset = (page - 1) * limit;

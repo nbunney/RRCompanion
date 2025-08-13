@@ -131,6 +131,11 @@ export const userFictionAPI = {
     return response.data;
   },
 
+  getAllUserFictions: async (): Promise<ApiResponse<UserFiction[]>> => {
+    const response = await api.get('/userFictions/all');
+    return response.data;
+  },
+
   getUserReadingStats: async (): Promise<ApiResponse<{ totalFictions: number; reading: number; completed: number; onHold: number; dropped: number; planToRead: number; favorites: number }>> => {
     const response = await api.get('/userFictions/stats');
     return response.data;
@@ -153,6 +158,11 @@ export const userFictionAPI = {
 
   toggleFavorite: async (fictionId: number): Promise<ApiResponse<UserFiction>> => {
     const response = await api.post(`/userFictions/${fictionId}/favorite`);
+    return response.data;
+  },
+
+  removeFiction: async (fictionId: number): Promise<ApiResponse> => {
+    const response = await api.delete(`/userFictions/${fictionId}`);
     return response.data;
   },
 
