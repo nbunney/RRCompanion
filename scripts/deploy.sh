@@ -32,6 +32,39 @@ echo ""
 sudo systemctl daemon-reload
 echo "🔄 Systemd daemon reloaded"
 
+echo "🌐 Setting up frontend files..."
+# Check which dist directory is newer and create a symlink
+if [ -d "apps/web/dist-blue" ] && [ -d "apps/web/dist-green" ]; then
+    # Compare modification times and use the newer one
+    if [ "apps/web/dist-blue" -nt "apps/web/dist-green" ]; then
+        echo "📁 Using dist-blue (newer)"
+        cd apps/web
+        rm -f dist
+        ln -sf dist-blue dist
+        cd ../..
+    else
+        echo "📁 Using dist-green (newer)"
+        cd apps/web
+        rm -f dist
+        ln -sf dist-green dist
+        cd ../..
+    fi
+elif [ -d "apps/web/dist-blue" ]; then
+    echo "📁 Using dist-blue"
+    cd apps/web
+    rm -f dist
+    ln -sf dist-blue dist
+    cd ../..
+elif [ -d "apps/web/dist-green" ]; then
+    echo "📁 Using dist-green"
+    cd apps/web
+    rm -f dist
+    ln -sf dist-green dist
+    cd ../..
+else
+    echo "⚠️  No frontend dist directories found"
+fi
+
 echo "▶️  Starting API service..."
 sudo systemctl start rrcompanion-api
 
