@@ -154,8 +154,7 @@ const About: React.FC = () => {
               Ready to Get Started?
             </h2>
             <p className="text-gray-700 mb-6">
-              Join thousands of RoyalRoad readers who are already using RRCompanion
-              to track their favorite fiction.
+              Join those of us using RRCompanion to track their favorite fiction.
             </p>
             <div className="space-x-4">
               {isAuthenticated ? (

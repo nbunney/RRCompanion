@@ -99,6 +99,15 @@ router.get('/api/health', (ctx) => {
   };
 });
 
+// Root health check for deployment script
+router.get('/health', (ctx) => {
+  ctx.response.body = {
+    success: true,
+    message: 'API is running',
+    timestamp: new Date().toISOString(),
+  };
+});
+
 // API routes - mount under /api prefix
 router.use('/api/auth', authRoutes.routes(), authRoutes.allowedMethods());
 router.use('/api/oauth', oauthRoutes.routes(), oauthRoutes.allowedMethods());
