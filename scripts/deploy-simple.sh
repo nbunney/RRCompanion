@@ -71,9 +71,6 @@ print_status "Updating service configuration..."
 cd /var/www/rrcompanion
 sudo cp scripts/rrcompanion-api.service.template /etc/systemd/system/rrcompanion-api.service
 
-# Edit the service file to set PORT=8000
-sudo sed -i 's/Environment=PORT=\$NEW_PORT/Environment=PORT=8000/g' /etc/systemd/system/rrcompanion-api.service
-
 # Reload systemd and start the service
 print_status "Starting API service..."
 sudo systemctl daemon-reload

@@ -8,10 +8,10 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/var/www/rrcompanion/apps/api
 Environment=PATH=/home/ubuntu/.deno/bin:/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/home/ubuntu
 Environment=NODE_ENV=production
-Environment=PORT=$NEW_PORT
-ExecStart=/var/www/rrcompanion/apps/api/start-api.sh
-ExecReload=/bin/kill -HUP $MAINPID
+Environment=PORT=8000
+ExecStart=/home/ubuntu/.deno/bin/deno run --allow-net --allow-env --allow-read --allow-write ./src/main.ts
 Restart=always
 RestartSec=10
 StandardOutput=journal
