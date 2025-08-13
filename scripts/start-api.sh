@@ -10,14 +10,13 @@ cd /var/www/rrcompanion/apps/api
 
 # Set environment variables
 export HOME=/home/ubuntu
-export PATH=/home/ubuntu/.deno/bin:$PATH
 export NODE_ENV=production
 
 # Debug: Print current state
 echo "Starting RRCompanion API..."
 echo "Working directory: $(pwd)"
-echo "Deno path: $(which deno)"
-echo "Deno version: $(deno --version)"
+echo "Deno path: /home/ubuntu/.deno/bin/deno"
+echo "Deno version: $(/home/ubuntu/.deno/bin/deno --version)"
 
 # Start the Deno API server with absolute paths
 exec /home/ubuntu/.deno/bin/deno run --allow-net --allow-env --allow-read --allow-write /var/www/rrcompanion/apps/api/src/main.ts
