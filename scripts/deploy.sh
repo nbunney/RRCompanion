@@ -20,11 +20,6 @@ echo "⚙️  Updating service configuration..."
 sudo cp scripts/rrcompanion-api.service.template /etc/systemd/system/rrcompanion-api.service
 sudo systemctl daemon-reload
 
-echo "🔍 Checking Deno installation..."
-which deno || echo "Deno not found in PATH"
-ls -la /home/ubuntu/.deno/bin/ || echo "Deno directory not found"
-deno --version || echo "Deno version check failed"
-
 echo "▶️  Starting API service..."
 sudo systemctl start rrcompanion-api
 
@@ -44,19 +39,3 @@ else
     sudo journalctl -u rrcompanion-api -n 20 --no-pager
     exit 1
 fi
-
-# Test the API
-echo "🧪 Testing API..."
-if curl -s -f "http://localhost:8000/health" > /dev/null; then
-    echo "✅ API health check passed"
-else
-    echo "❌ API health check failed"
-    exit 1
-fi
-
-# Reload Nginx
-echo "🔄 Reloading Nginx..."
-sudo systemctl reload nginx
-
-echo "🎉 Deployment completed successfully!"
-echo "🌐 Your site should now be working at https://rrcompanion.com"
