@@ -17,9 +17,8 @@ const AllFictionsList: React.FC = () => {
   const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
   const [isButtonClicked, setIsButtonClicked] = useState(false);
 
+  // Keep only essential logging for debugging remove button
   console.log('🚀 AllFictionsList component loaded!');
-  console.log('🚀 Current time:', new Date().toISOString());
-  console.log('🚀 This is the NEW version with native button!');
 
   // Add logging to track state changes
   useEffect(() => {
@@ -198,8 +197,8 @@ const AllFictionsList: React.FC = () => {
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900 bg-red-500 text-white p-2 rounded border-4 border-yellow-400">
-          🚨 NEW VERSION DEPLOYED! 🚨 All Your Fictions ({allFictions.length})
+        <h2 className="text-xl font-semibold text-gray-900">
+          All Your Fictions ({allFictions.length})
         </h2>
         <div className="text-sm text-gray-500">
           {allFictions.filter(f => f.is_favorite).length} favorites
@@ -213,12 +212,9 @@ const AllFictionsList: React.FC = () => {
             className="cursor-pointer"
             onClick={(_e: React.MouseEvent<HTMLDivElement>) => {
               if (isButtonClicked) {
-                console.log('🎯 Parent div click ignored - button was clicked');
                 setIsButtonClicked(false);
                 return;
               }
-              console.log('🎯 Parent div clicked for fiction:', userFiction.fiction?.title);
-              console.log('🎯 This should NOT happen when clicking the remove button');
               handleFictionClick(userFiction);
             }}
           >
@@ -256,7 +252,6 @@ const AllFictionsList: React.FC = () => {
                         variant={userFiction.is_favorite ? "outline" : "primary"}
                         size="sm"
                         onClick={() => {
-                          console.log('🔘 Favorite button clicked');
                           setIsButtonClicked(true);
                           handleToggleFavorite(userFiction);
                         }}
@@ -269,7 +264,6 @@ const AllFictionsList: React.FC = () => {
                           type="button"
                           className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-gray-300 bg-transparent hover:bg-gray-50 focus-visible:ring-gray-500 h-8 px-3 text-xs"
                           onClick={() => {
-                            console.log('🔘 Remove button onClick triggered');
                             setIsButtonClicked(true);
                             handleRemoveFiction(userFiction);
                           }}
