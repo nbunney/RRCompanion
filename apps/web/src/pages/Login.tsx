@@ -27,7 +27,8 @@ const Login: React.FC = () => {
       await login(formData);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Login failed');
+      // Use enhanced error message if available, fallback to original logic
+      setError(err.userMessage || err.response?.data?.error || err.message || 'Login failed');
     }
   };
 
@@ -46,7 +47,7 @@ const Login: React.FC = () => {
     try {
       await initiateOAuth(provider);
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'OAuth login failed');
+      setError(err.userMessage || err.response?.data?.error || err.message || 'OAuth login failed');
     }
   };
 

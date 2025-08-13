@@ -32,10 +32,31 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Only redirect if we're not already on auth pages
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
+    
+    // Enhance error messages for better user experience
+    if (error.response?.data?.error) {
+      // Use the server-provided error message
+      error.userMessage = error.response.data.error;
+    } else if (error.response?.status === 503) {
+      error.userMessage = 'Service temporarily unavailable. Please try again later.';
+    } else if (error.response?.status === 500) {
+      error.userMessage = 'An unexpected error occurred. Please try again later.';
+    } else if (error.response?.status === 429) {
+      error.userMessage = 'Too many requests. Please wait a moment and try again.';
+    } else if (error.response?.status === 0 || error.code === 'NETWORK_ERROR') {
+      error.userMessage = 'Network error. Please check your connection and try again.';
+    } else {
+      error.userMessage = 'An error occurred. Please try again.';
+    }
+    
     return Promise.reject(error);
   }
 );

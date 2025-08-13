@@ -126,62 +126,83 @@ export async function login(ctx: Context): Promise<void> {
       return;
     }
 
-    try {
-      // Get user with password hash
-      const result = await client.query(
-        'SELECT id, email, password_hash, name, created_at, updated_at, admin FROM users WHERE email = ?',
-        [email]
-      );
+    // Get user with password hash
+    const result = await client.query(
+      'SELECT id, email, password_hash, name, created_at, updated_at, admin FROM users WHERE email = ?',
+      [email]
+    );
 
-      if (result.length === 0) {
-        ctx.response.status = 401;
-        ctx.response.body = {
-          success: false,
-          error: 'Invalid credentials',
-        } as ApiResponse;
-        return;
-      }
-
-      const user = result[0] as any;
-      const isValid = await comparePassword(password, user.password_hash);
-
-      if (!isValid) {
-        ctx.response.status = 401;
-        ctx.response.body = {
-          success: false,
-          error: 'Invalid credentials',
-        } as ApiResponse;
-        return;
-      }
-
-      const token = await generateToken(user);
-
-      ctx.response.status = 200;
+    if (result.length === 0) {
+      ctx.response.status = 401;
       ctx.response.body = {
-        success: true,
-        data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            created_at: user.created_at.toISOString(),
-            updated_at: user.updated_at.toISOString(),
-            admin: Boolean(user.admin),
-          } as UserResponse,
-          token,
-        },
-        message: 'Login successful',
+        success: false,
+        error: 'Invalid credentials',
       } as ApiResponse;
-    } catch (error) {
-      console.error('Database error during login:', error);
-      throw error;
+      return;
     }
+
+    const user = result[0] as any;
+    
+    // Verify password
+    const isValid = await comparePassword(password, user.password_hash);
+
+    if (!isValid) {
+      ctx.response.status = 401;
+      ctx.response.body = {
+        success: false,
+        error: 'Invalid credentials',
+      } as ApiResponse;
+      return;
+    }
+
+    // Generate token
+    const token = await generateToken(user);
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          created_at: user.created_at.toISOString(),
+          updated_at: user.updated_at.toISOString(),
+          admin: Boolean(user.admin),
+        } as UserResponse,
+        token,
+      },
+      message: 'Login successful',
+    } as ApiResponse;
+
   } catch (error) {
     console.error('Login error:', error);
+    
+    // Handle specific database connection errors
+    if (error instanceof Error && (error.message?.includes('ECONNREFUSED') || error.message?.includes('ENOTFOUND'))) {
+      ctx.response.status = 503;
+      ctx.response.body = {
+        success: false,
+        error: 'Service temporarily unavailable. Please try again later.',
+      } as ApiResponse;
+      return;
+    }
+    
+    // Handle database query errors
+    if (error instanceof Error && (error.message?.includes('ER_ACCESS_DENIED') || error.message?.includes('ER_BAD_DB_ERROR'))) {
+      ctx.response.status = 503;
+      ctx.response.body = {
+        success: false,
+        error: 'Service temporarily unavailable. Please try again later.',
+      } as ApiResponse;
+      return;
+    }
+    
+    // For any other unexpected errors, return a generic error
     ctx.response.status = 500;
     ctx.response.body = {
       success: false,
-      error: 'Internal server error',
+      error: 'An unexpected error occurred. Please try again later.',
     } as ApiResponse;
   }
 }

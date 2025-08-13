@@ -220,9 +220,16 @@ async function createZipFile(historyCSV: string, risingStarsCSV: string, fiction
     const JSZip = await import('https://esm.sh/jszip@3.10.1');
     const zip = new JSZip.default();
 
-    // Add both CSV files to the ZIP
-    zip.file(`${fictionTitle.replace(/[^a-zA-Z0-9]/g, '_')}_fiction_history.csv`, historyCSV);
-    zip.file(`${fictionTitle.replace(/[^a-zA-Z0-9]/g, '_')}_rising_stars.csv`, risingStarsCSV);
+    // Generate timestamp for filenames
+    const now = new Date();
+    const dateTime = now.toISOString().replace(/[:.]/g, '-').slice(0, 19); // Format: YYYY-MM-DDTHH-MM-SS
+
+    // Sanitize fiction title for filenames
+    const sanitizedTitle = fictionTitle.replace(/[^a-zA-Z0-9]/g, '_');
+
+    // Add both CSV files to the ZIP with timestamps
+    zip.file(`${sanitizedTitle}_fiction_history_${dateTime}.csv`, historyCSV);
+    zip.file(`${sanitizedTitle}_rising_stars_${dateTime}.csv`, risingStarsCSV);
 
     // Generate ZIP file
     const zipContent = await zip.generateAsync({ type: 'uint8array' });

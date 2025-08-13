@@ -386,7 +386,19 @@ const FictionDetail: React.FC = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${fictionWithHistory.title.replace(/[^a-zA-Z0-9]/g, '_')}_data.zip`;
+
+        // Get filename from server's Content-Disposition header, fallback to default if not available
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `${fictionWithHistory.title.replace(/[^a-zA-Z0-9]/g, '_')}_data.zip`; // Default fallback
+
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+          if (filenameMatch) {
+            filename = filenameMatch[1];
+          }
+        }
+
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -484,11 +496,11 @@ const FictionDetail: React.FC = () => {
                         </Button>
                       )}
                       <Button
-                        onClick={handleRefresh}
-                        disabled={isRefreshing || !canRefresh}
+                        onClick={fictionWithHistory?.sponsored ? handleDownloadCSV : handleRefresh}
+                        disabled={fictionWithHistory?.sponsored ? false : (isRefreshing || !canRefresh)}
                         variant="outline"
                       >
-                        {isRefreshing ? 'Refreshing...' : '🔄 Refresh'}
+                        {fictionWithHistory?.sponsored ? '📦 Data' : (isRefreshing ? 'Refreshing...' : '🔄 Refresh')}
                       </Button>
                     </div>
 
@@ -505,15 +517,6 @@ const FictionDetail: React.FC = () => {
                             </svg>
                           </div>
                           <span className="text-sm text-gray-600">Sponsored</span>
-
-                          {/* ZIP Download Button for Sponsored Fictions */}
-                          <Button
-                            onClick={handleDownloadCSV}
-                            variant="outline"
-                            className="ml-2"
-                          >
-                            📦 Download Data
-                          </Button>
                         </div>
                       ) : (
                         <button

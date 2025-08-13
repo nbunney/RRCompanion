@@ -28,7 +28,7 @@ const Register: React.FC = () => {
       await register(formData);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Registration failed');
+      setError(err.userMessage || err.response?.data?.error || err.message || 'Registration failed');
     }
   };
 
@@ -47,7 +47,7 @@ const Register: React.FC = () => {
     try {
       await initiateOAuth(provider);
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'OAuth registration failed');
+      setError(err.userMessage || err.response?.data?.error || err.message || 'OAuth registration failed');
     }
   };
 
