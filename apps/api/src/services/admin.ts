@@ -61,7 +61,7 @@ export class AdminService {
   }
 
   // Generate coupon codes
-  async generateCouponCodes(count: number = 1, expiresInDays: number = 30) {
+  async generateCouponCodes(count: number = 1, expiresInDays: number = 30, maxUses: number = 1) {
     try {
       const coupons = [];
       const expirationDate = new Date();
@@ -73,14 +73,16 @@ export class AdminService {
 
         // Insert coupon into database - always 100% discount for free sponsorship
         await client.execute(
-          'INSERT INTO coupon_codes (code, discount_percent, expires_at, created_at) VALUES (?, ?, ?, NOW())',
-          [code, 100, expirationDate.toISOString().slice(0, 19).replace('T', ' ')]
+          'INSERT INTO coupon_codes (code, discount_percent, expires_at, max_uses, current_uses, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+          [code, 100, expirationDate.toISOString().slice(0, 19).replace('T', ' '), maxUses, 0]
         );
 
         coupons.push({
           code,
           discount_percent: 100,
-          expires_at: expiresAt
+          expires_at: expiresAt,
+          max_uses: maxUses,
+          current_uses: 0
         });
       }
 
@@ -111,6 +113,8 @@ export class AdminService {
           discount_percent, 
           expires_at, 
           created_at,
+          max_uses,
+          current_uses,
           used,
           used_by_user_id,
           used_for_fiction_id,
@@ -119,6 +123,7 @@ export class AdminService {
         FROM coupon_codes 
         ORDER BY created_at DESC
       `);
+
       return result;
     } catch (error) {
       console.error('❌ Error getting coupon codes:', error);

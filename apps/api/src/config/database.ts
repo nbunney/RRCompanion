@@ -657,6 +657,24 @@ async function runMigrations(client: Client): Promise<void> {
     {
       name: '016_ensure_userFiction_favorite_column',
       conditional: true
+    },
+    {
+      name: '017_add_multi_use_coupon_support',
+      sql: `
+        ALTER TABLE coupon_codes 
+        ADD COLUMN max_uses INT DEFAULT 1,
+        ADD COLUMN current_uses INT DEFAULT 0,
+        ADD INDEX idx_max_uses (max_uses),
+        ADD INDEX idx_current_uses (current_uses)
+      `
+    },
+    {
+      name: '018_populate_existing_coupon_usage_fields',
+      sql: `
+        UPDATE coupon_codes 
+        SET max_uses = 1, current_uses = CASE WHEN used = 1 THEN 1 ELSE 0 END
+        WHERE max_uses IS NULL OR current_uses IS NULL
+      `
     }
   ];
 

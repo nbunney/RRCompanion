@@ -45,7 +45,7 @@ export async function getAllUsers(ctx: Context): Promise<void> {
 export async function generateCouponCodes(ctx: Context) {
   try {
     const body = await ctx.request.body.json();
-    const { count = 1, expiresInDays = 30 } = body;
+    const { count = 1, expiresInDays = 30, maxUses = 1 } = body;
 
     // Validate inputs
     if (count < 1 || count > 100) {
@@ -66,13 +66,22 @@ export async function generateCouponCodes(ctx: Context) {
       return;
     }
 
-    const coupons = await adminService.generateCouponCodes(count, expiresInDays);
+    if (maxUses < 1 || maxUses > 1000) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: 'Max uses must be between 1 and 1000'
+      };
+      return;
+    }
+
+    const coupons = await adminService.generateCouponCodes(count, expiresInDays, maxUses);
 
     ctx.response.status = 200;
     ctx.response.body = {
       success: true,
       data: {
-        message: `Generated ${count} coupon code(s)`,
+        message: `Generated ${count} coupon code(s) with ${maxUses} use(s) each`,
         coupons
       }
     };
@@ -101,6 +110,27 @@ export async function getCouponCodes(ctx: Context) {
     ctx.response.body = {
       success: false,
       error: 'Failed to get coupon codes'
+    };
+  }
+}
+
+// Get coupon statistics
+export async function getCouponStats(ctx: Context) {
+  try {
+    const { couponService } = await import('../services/coupon.ts');
+    const stats = await couponService.getCouponStats();
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: stats
+    };
+  } catch (error) {
+    console.error('❌ Error getting coupon stats:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Failed to get coupon statistics'
     };
   }
 }

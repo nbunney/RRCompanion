@@ -1,27 +1,24 @@
 import { Router } from 'oak';
-import { adminMiddleware } from '../middleware/admin.ts';
 import {
   getSiteStatistics,
+  getAllUsers,
   generateCouponCodes,
   getCouponCodes,
-  deactivateCouponCode,
-  getAllUsers,
+  getCouponStats,
+  deactivateCouponCode
 } from '../controllers/admin.ts';
+import { adminMiddleware } from '../middleware/admin.ts';
 
 const router = new Router();
 
 // All admin routes require admin authentication
 router.use(adminMiddleware);
 
-// Site statistics
 router.get('/statistics', getSiteStatistics);
-
-// Coupon management
+router.get('/users', getAllUsers);
 router.post('/coupons/generate', generateCouponCodes);
 router.get('/coupons', getCouponCodes);
-router.post('/coupons/deactivate', deactivateCouponCode);
-
-// User management
-router.get('/users', getAllUsers);
+router.get('/coupons/stats', getCouponStats);
+router.put('/coupons/:id/deactivate', deactivateCouponCode);
 
 export default router;

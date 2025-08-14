@@ -38,6 +38,8 @@ interface CouponCode {
   used_for_fiction_id?: number;
   used_at?: string;
   is_active: boolean;
+  max_uses: number;
+  current_uses: number;
 }
 
 const Admin: React.FC = () => {
@@ -46,23 +48,18 @@ const Admin: React.FC = () => {
   const [coupons, setCoupons] = useState<CouponCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [generatingCoupons, setGeneratingCoupons] = useState(false);
+  const [showAllCoupons, setShowAllCoupons] = useState(false);
   const [couponForm, setCouponForm] = useState({
     count: 1,
-    expiresInDays: 30
+    expiresInDays: 30,
+    maxUses: 1
   });
   const navigate = useNavigate();
 
-  console.log('🔐 Admin component - Auth state:', { isAuthenticated, user: user ? { id: user.id, email: user.email, admin: user.admin } : 'null' });
-
   // Redirect if not admin
   if (!isAuthenticated || !user?.admin) {
-    console.log('❌ Admin component - Access denied, redirecting to dashboard');
-    console.log('❌ Admin component - isAuthenticated:', isAuthenticated);
-    console.log('❌ Admin component - user.admin:', user?.admin);
     return <Navigate to="/dashboard" replace />;
   }
-
-  console.log('✅ Admin component - Access granted, rendering admin page');
 
   useEffect(() => {
     loadData();
@@ -92,12 +89,8 @@ const Admin: React.FC = () => {
       });
       const couponsData = await couponsResponse.json();
 
-      console.log('🔍 Coupons API response:', couponsData);
-      console.log('🔍 Coupons data:', couponsData.data);
-
       if (couponsData.success) {
         setCoupons(couponsData.data);
-        console.log('✅ Coupons set to state:', couponsData.data);
       } else {
         console.error('❌ Failed to load coupons:', couponsData.error);
       }
@@ -120,7 +113,8 @@ const Admin: React.FC = () => {
         },
         body: JSON.stringify({
           count: couponForm.count,
-          expiresInDays: couponForm.expiresInDays
+          expiresInDays: couponForm.expiresInDays,
+          maxUses: couponForm.maxUses
         })
       });
 
@@ -200,7 +194,7 @@ const Admin: React.FC = () => {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Site Statistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="p-6">
-                <h3 
+                <h3
                   className="text-lg font-medium text-gray-900 mb-2 cursor-pointer hover:text-blue-600 transition-colors"
                   onClick={() => navigate('/admin/users')}
                   title="Click to manage users"
@@ -239,7 +233,7 @@ const Admin: React.FC = () => {
           {/* Generate Coupons Form */}
           <Card className="p-6 mb-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Generate New Coupon Codes</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Count</label>
                 <input
@@ -262,6 +256,17 @@ const Admin: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={couponForm.maxUses}
+                  onChange={(e) => setCouponForm(prev => ({ ...prev, maxUses: parseInt(e.target.value) || 1 }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
             <Button
               onClick={generateCoupons}
@@ -274,24 +279,92 @@ const Admin: React.FC = () => {
 
           {/* Existing Coupons */}
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Existing Coupon Codes</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Existing Coupon Codes</h3>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowAllCoupons(!showAllCoupons)}
+                  variant="outline"
+                  size="sm"
+                  className="text-sm"
+                >
+                  {showAllCoupons ? '👁️ Show Active Only' : '👁️ Show All'}
+                </Button>
+                <Button
+                  onClick={loadData}
+                  variant="outline"
+                  size="sm"
+                  className="text-sm"
+                >
+                  🔄 Refresh
+                </Button>
+              </div>
+            </div>
+
+            {/* Summary Row */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-wrap gap-4 text-sm">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                  <span className="text-gray-700">
+                    {coupons.filter(c => c.is_active && (c.current_uses || 0) < (c.max_uses || 1) && new Date(c.expires_at) > new Date()).length} Active
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                  <span className="text-gray-700">
+                    {coupons.filter(c => (c.current_uses || 0) >= (c.max_uses || 1)).length} Fully Used
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-orange-500 rounded-full mr-2"></span>
+                  <span className="text-gray-700">
+                    {coupons.filter(c => new Date(c.expires_at) <= new Date()).length} Expired
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
+                  <span className="text-gray-700">
+                    {coupons.filter(c => !c.is_active).length} Deactivated
+                  </span>
+                </div>
+                {!showAllCoupons && (
+                  <div className="flex items-center ml-auto">
+                    <span className="text-gray-600 font-medium">
+                      Toggle to see all {coupons.length} coupons
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {coupons.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No coupon codes found</p>
             ) : (
               <div className="overflow-x-auto">
+                <div className="mb-3 text-sm text-gray-600">
+                  {showAllCoupons
+                    ? `Showing all ${coupons.length} coupons`
+                    : `Showing ${coupons.filter(c => c.is_active && (c.current_uses || 0) < (c.max_uses || 1) && new Date(c.expires_at) > new Date()).length} active coupons (${coupons.length} total)`
+                  }
+                </div>
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Used</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {coupons.map((coupon) => (
+                    {(showAllCoupons ? coupons : coupons.filter(c =>
+                      c.is_active &&
+                      (c.current_uses || 0) < (c.max_uses || 1) &&
+                      new Date(c.expires_at) > new Date()
+                    )).map((coupon) => (
                       <tr key={coupon.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">{coupon.code}</code>
@@ -299,21 +372,55 @@ const Admin: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {coupon.discount_percent}%
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="flex flex-col">
+                            <span className={`font-medium ${(coupon.current_uses || 0) >= (coupon.max_uses || 1)
+                              ? 'text-red-600'
+                              : 'text-gray-900'
+                              }`}>
+                              {(coupon.current_uses || 0)} / {(coupon.max_uses || 1)}
+                            </span>
+                            {(coupon.max_uses || 1) > 1 && (
+                              <span className={`text-xs ${(coupon.current_uses || 0) >= (coupon.max_uses || 1)
+                                ? 'text-red-500'
+                                : 'text-gray-500'
+                                }`}>
+                                {(coupon.max_uses || 1) - (coupon.current_uses || 0)} remaining
+                              </span>
+                            )}
+                            {(coupon.current_uses || 0) >= (coupon.max_uses || 1) && (
+                              <span className="text-xs text-red-500 font-medium">Fully Used</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {new Date(coupon.expires_at).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {coupon.used ? (
-                            <span className="text-red-600 font-medium">Used</span>
-                          ) : (
-                            <span className="text-green-600 font-medium">Available</span>
-                          )}
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${coupon.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
-                            {coupon.is_active ? 'Active' : 'Inactive'}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${coupon.is_active &&
+                              (coupon.current_uses || 0) < (coupon.max_uses || 1) &&
+                              new Date(coupon.expires_at) > new Date()
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                              }`}>
+                              {coupon.is_active &&
+                                (coupon.current_uses || 0) < (coupon.max_uses || 1) &&
+                                new Date(coupon.expires_at) > new Date()
+                                ? 'Active'
+                                : 'Inactive'
+                              }
+                            </span>
+                            {!coupon.is_active && (
+                              <span className="text-xs text-gray-500 mt-1">Deactivated</span>
+                            )}
+                            {coupon.is_active && (coupon.current_uses || 0) >= (coupon.max_uses || 1) && (
+                              <span className="text-xs text-gray-500 mt-1">Fully Used</span>
+                            )}
+                            {coupon.is_active && new Date(coupon.expires_at) <= new Date() && (
+                              <span className="text-xs text-gray-500 mt-1">Expired</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           {coupon.is_active && (
@@ -332,6 +439,35 @@ const Admin: React.FC = () => {
                 </table>
               </div>
             )}
+          </Card>
+
+          {/* Coupon Statistics */}
+          <Card className="p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Coupon Statistics</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{coupons.length}</div>
+                <div className="text-sm text-gray-500">Total Coupons</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {coupons.filter(c => c.is_active && (c.current_uses || 0) < (c.max_uses || 1) && new Date(c.expires_at) > new Date()).length}
+                </div>
+                <div className="text-sm text-gray-500">Active</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {coupons.filter(c => new Date(c.expires_at) <= new Date()).length}
+                </div>
+                <div className="text-sm text-gray-500">Expired</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {coupons.filter(c => (c.current_uses || 0) >= (c.max_uses || 1)).length}
+                </div>
+                <div className="text-sm text-gray-500">Fully Used</div>
+              </div>
+            </div>
           </Card>
         </div>
       </main>

@@ -198,12 +198,40 @@ export interface ApiResponse<T = any> {
 
 export interface PaginatedResponse<T> {
   data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Coupon types
+export interface CouponCode {
+  id: number;
+  code: string;
+  discount_percent: number;
+  expires_at: string;
+  created_at: string;
+  max_uses: number;
+  current_uses: number;
+  used: boolean;
+  used_by_user_id?: number;
+  used_for_fiction_id?: number;
+  used_at?: string;
+  is_active: boolean;
+}
+
+export interface CreateCouponRequest {
+  code?: string;
+  discount_percent: number;
+  expires_in_days: number;
+  max_uses: number;
+}
+
+export interface UpdateCouponRequest {
+  discount_percent?: number;
+  expires_at?: string;
+  max_uses?: number;
+  is_active?: boolean;
 }
 
 // Request context types
