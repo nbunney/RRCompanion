@@ -42,12 +42,12 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
     const dataPoint: any = {
       date: date // Keep date in UTC format (YYYY-MM-DD)
     };
-    
+
     // Find all entries for this date and handle multiple entries per day
-    const entriesForDate = risingStarsData.filter(entry => 
+    const entriesForDate = risingStarsData.filter(entry =>
       entry.captured_at.startsWith(date)
     );
-    
+
     // Group entries by genre and take the latest entry for each genre per day
     const genreMap = new Map<string, RisingStarEntry>();
     entriesForDate.forEach(entry => {
@@ -56,12 +56,12 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
         genreMap.set(entry.genre, entry);
       }
     });
-    
+
     // Add the latest position for each genre to the data point
     genreMap.forEach((entry, genre) => {
       dataPoint[genre] = entry.position;
     });
-    
+
     return dataPoint;
   });
 
@@ -107,7 +107,7 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
             {/* Create a line for each genre (only if visible) */}
             {genres.map((genre, index) => {
               if (!visibleLines.has(genre)) return null;
-              
+
               const color = colors[index % colors.length];
               return (
                 <Line
@@ -131,15 +131,15 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
         {genres.map((genre, index) => {
           const color = colors[index % colors.length];
           const latestEntry = risingStarsData
-            .filter(entry => entry.genre === genre)[0];
+            .filter(entry => entry.genre === genre)
+            .sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime())[0];
           const isVisible = visibleLines.has(genre);
 
           return (
-            <div 
-              key={genre} 
-              className={`flex items-center space-x-2 cursor-pointer transition-opacity duration-200 ${
-                isVisible ? 'opacity-100' : 'opacity-40'
-              }`}
+            <div
+              key={genre}
+              className={`flex items-center space-x-2 cursor-pointer transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-40'
+                }`}
               onClick={() => handleLegendClick(genre)}
               title={`Click to ${isVisible ? 'hide' : 'show'} ${genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}`}
             >

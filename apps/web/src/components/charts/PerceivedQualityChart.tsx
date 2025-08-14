@@ -51,7 +51,7 @@ const PerceivedQualityChart: React.FC<PerceivedQualityChartProps> = ({ history }
     .reduce((acc: any[], entry) => {
       const date = entry.captured_at!.split('T')[0];
       const existingDataPoint = acc.find(dp => dp.date === date);
-      
+
       if (existingDataPoint) {
         // Update existing data point with latest values for this date
         existingDataPoint.overallScore = entry.overall_score;
@@ -70,7 +70,7 @@ const PerceivedQualityChart: React.FC<PerceivedQualityChartProps> = ({ history }
           characterScore: entry.character_score,
         });
       }
-      
+
       return acc;
     }, []);
 
@@ -95,18 +95,18 @@ const PerceivedQualityChart: React.FC<PerceivedQualityChartProps> = ({ history }
               ticks={[0, 1, 2, 3, 4, 5]}
             />
             <Tooltip />
-            
+
             {/* Create lines only for visible metrics */}
             {lineConfigs.map(config => {
               if (!visibleLines.has(config.key)) return null;
-              
+
               return (
-                <Line 
+                <Line
                   key={config.key}
-                  type="monotone" 
-                  dataKey={config.key} 
-                  stroke={config.stroke} 
-                  name={config.name} 
+                  type="monotone"
+                  dataKey={config.key}
+                  stroke={config.stroke}
+                  name={config.name}
                 />
               );
             })}
@@ -118,13 +118,13 @@ const PerceivedQualityChart: React.FC<PerceivedQualityChartProps> = ({ history }
       <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
         {lineConfigs.map(config => {
           const isVisible = visibleLines.has(config.key);
-          
+          const latestValue = chartData.length > 0 ? chartData[chartData.length - 1][config.key] : null;
+
           return (
-            <div 
+            <div
               key={config.key}
-              className={`flex items-center space-x-2 cursor-pointer transition-opacity duration-200 ${
-                isVisible ? 'opacity-100' : 'opacity-40'
-              }`}
+              className={`flex items-center space-x-2 cursor-pointer transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-40'
+                }`}
               onClick={() => handleLegendClick(config.key)}
               title={`Click to ${isVisible ? 'hide' : 'show'} ${config.name}`}
             >
@@ -132,7 +132,15 @@ const PerceivedQualityChart: React.FC<PerceivedQualityChartProps> = ({ history }
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: config.stroke }}
               />
-              <span className="font-medium">{config.name}</span>
+              <span className="font-medium">{config.name}:</span>
+              <span className="text-gray-600">
+                {latestValue !== null && latestValue !== undefined
+                  ? typeof latestValue === 'number'
+                    ? latestValue.toFixed(1)
+                    : latestValue
+                  : 'N/A'
+                }
+              </span>
             </div>
           );
         })}
