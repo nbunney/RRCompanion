@@ -12,14 +12,10 @@ export class AdminService {
       const fictionCountResult = await client.query('SELECT COUNT(*) as count FROM fiction');
       const fictionCount = fictionCountResult[0]?.count || 0;
 
-      // Get sponsored fiction count
-      const sponsoredCountResult = await client.query('SELECT COUNT(*) as count FROM fiction WHERE sponsored = 1');
-      const sponsoredCount = sponsoredCountResult[0]?.count || 0;
-
-      // Get total sponsorship payments
-      const sponsorshipResult = await client.query('SELECT COUNT(*) as count, SUM(amount) as total FROM sponsorship_logs WHERE status = "completed"');
-      const sponsorshipCount = sponsorshipResult[0]?.count || 0;
-      const sponsorshipTotal = sponsorshipResult[0]?.total || 0;
+      // Get total coffee donations
+      const coffeeResult = await client.query('SELECT COUNT(*) as count, SUM(amount) as total FROM coffee_logs WHERE status = "completed"');
+      const coffeeCount = coffeeResult[0]?.count || 0;
+      const coffeeTotal = coffeeResult[0]?.total || 0;
 
       // Get recent activity (last 7 days)
       const recentActivityResult = await client.query(`
@@ -40,14 +36,12 @@ export class AdminService {
           active: activeUsers
         },
         fiction: {
-          total: fictionCount,
-          sponsored: sponsoredCount,
-          unsponsored: fictionCount - sponsoredCount
+          total: fictionCount
         },
-        sponsorships: {
-          count: sponsorshipCount,
-          total_revenue: sponsorshipTotal / 100, // Convert from cents to dollars
-          average_per_day: sponsorshipCount / 30 // Rough average over 30 days
+        coffee_donations: {
+          count: coffeeCount,
+          total_revenue: coffeeTotal / 100, // Convert from cents to dollars
+          average_per_day: coffeeCount / 30 // Rough average over 30 days
         },
         recent_activity: {
           new_fictions: newFictions,
@@ -71,7 +65,7 @@ export class AdminService {
         const code = this.generateRandomCode();
         const expiresAt = expirationDate.toISOString();
 
-        // Insert coupon into database - always 100% discount for free sponsorship
+        // Insert coupon into database - always 100% discount for free coffee
         await client.execute(
           'INSERT INTO coupon_codes (code, discount_percent, expires_at, max_uses, current_uses, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
           [code, 100, expirationDate.toISOString().slice(0, 19).replace('T', ' '), maxUses, 0]
@@ -157,7 +151,7 @@ export class AdminService {
           u.created_at,
           COUNT(DISTINCT uf.id) as fiction_count,
           COUNT(DISTINCT CASE WHEN uf.is_favorite = 1 THEN uf.id END) as favorites_count,
-          COUNT(DISTINCT CASE WHEN f.sponsored = 1 THEN f.id END) as sponsored_count
+
         FROM users u
         LEFT JOIN userFiction uf ON u.id = uf.user_id
         LEFT JOIN fiction f ON uf.fiction_id = f.id
@@ -173,7 +167,7 @@ export class AdminService {
         created_at: row.created_at,
         fiction_count: parseInt(row.fiction_count) || 0,
         favorites_count: parseInt(row.favorites_count) || 0,
-        sponsored_count: parseInt(row.sponsored_count) || 0,
+
       }));
     } catch (error) {
       console.error('❌ Error getting all users:', error);

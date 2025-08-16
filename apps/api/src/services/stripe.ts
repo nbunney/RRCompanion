@@ -105,74 +105,9 @@ export class StripeService {
     }
   }
 
-  // Handle successful payment
-  async handleSuccessfulPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    try {
-      console.log('🔔 Starting to handle successful payment...');
-      console.log('🔔 Payment intent metadata:', paymentIntent.metadata);
 
-      const { fiction_id, user_id } = paymentIntent.metadata;
 
-      if (!fiction_id || !user_id) {
-        throw new Error('Missing metadata in payment intent');
-      }
 
-      console.log(`🔔 Updating fiction ${fiction_id} to sponsored for user ${user_id}`);
-
-      // Update fiction to sponsored
-      const updateResult = await client.execute(
-        'UPDATE fiction SET sponsored = 1 WHERE id = ?',
-        [parseInt(fiction_id)]
-      );
-      console.log('🔔 Fiction update result:', updateResult);
-
-      // Log the sponsorship
-      const logResult = await client.execute(
-        'INSERT INTO sponsorship_logs (fiction_id, user_id, stripe_payment_intent_id, amount, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-        [
-          parseInt(fiction_id),
-          parseInt(user_id),
-          paymentIntent.id,
-          paymentIntent.amount,
-          'completed'
-        ]
-      );
-      console.log('🔔 Sponsorship log result:', logResult);
-
-      console.log(`✅ Fiction ${fiction_id} sponsored by user ${user_id}`);
-    } catch (error) {
-      console.error('❌ Error handling successful payment:', error);
-      if (error instanceof Error) {
-        console.error('❌ Error details:', error.message);
-        console.error('❌ Error stack:', error.stack);
-      }
-      throw error;
-    }
-  }
-
-  // Handle failed payment
-  async handleFailedPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    try {
-      console.log('❌ Handling failed payment:', paymentIntent.id);
-
-      // Log the failed payment
-      await client.execute(
-        'INSERT INTO sponsorship_logs (fiction_id, user_id, stripe_payment_intent_id, amount, status, created_at) VALUES (?, ?, ?, ?, NOW())',
-        [
-          parseInt(paymentIntent.metadata.fiction_id || '0'),
-          parseInt(paymentIntent.metadata.user_id || '0'),
-          paymentIntent.id,
-          paymentIntent.amount,
-          'failed'
-        ]
-      );
-
-      console.log('✅ Failed payment logged successfully');
-    } catch (error) {
-      console.error('❌ Error handling failed payment:', error);
-      throw error;
-    }
-  }
 
   // Handle successful charge
   async handleSuccessfulCharge(charge: Stripe.Charge): Promise<void> {

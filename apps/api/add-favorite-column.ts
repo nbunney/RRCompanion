@@ -64,7 +64,7 @@ async function testUpdatedQuery() {
         u.created_at,
         COUNT(DISTINCT uf.id) as fiction_count,
         COUNT(DISTINCT CASE WHEN uf.is_favorite = 1 THEN uf.id END) as favorites_count,
-        COUNT(DISTINCT CASE WHEN f.sponsored = 1 THEN f.id END) as sponsored_count
+
       FROM users u
       LEFT JOIN userFiction uf ON u.id = uf.user_id
       LEFT JOIN fiction f ON uf.fiction_id = f.id
@@ -77,7 +77,7 @@ async function testUpdatedQuery() {
     console.log('📊 Sample results:');
     result.forEach((user: any, index: number) => {
       console.log(`  ${index + 1}. ${user.name} (${user.email})`);
-      console.log(`     Fictions: ${user.fiction_count}, Favorites: ${user.favorites_count}, Sponsored: ${user.sponsored_count}`);
+      console.log(`     Fictions: ${user.fiction_count}, Favorites: ${user.favorites_count}`);
     });
 
   } catch (error) {

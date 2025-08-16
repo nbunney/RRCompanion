@@ -104,19 +104,18 @@ export async function handleStripeWebhook(ctx: Context) {
         console.log('🔔 Payment intent ID:', paymentIntent.id);
         console.log('🔔 Payment intent metadata:', paymentIntent.metadata);
 
-        // Check if this is a coffee payment or sponsorship
+        // Handle coffee payment
         if (paymentIntent.metadata.type === 'coffee') {
           await stripeService.handleSuccessfulCoffeePayment(paymentIntent);
           console.log('✅ Coffee payment processed successfully');
         } else {
-          await stripeService.handleSuccessfulPayment(paymentIntent);
-          console.log('✅ Sponsorship processed successfully');
+          console.log('ℹ️ Unknown payment type, skipping');
         }
         break;
 
       case 'payment_intent.payment_failed':
         console.log('❌ Payment failed:', event.data.object.id);
-        await stripeService.handleFailedPayment(event.data.object as any);
+        // Log failed payment but no special handling needed
         break;
 
       case 'charge.succeeded':

@@ -7,19 +7,19 @@ config({ export: true });
 
 async function testFullNightlyCollection() {
   try {
-    console.log('🧪 Testing full nightly collection with sponsored fictions...');
+    console.log('🧪 Testing full nightly collection...');
 
     // Initialize database connection
     await initializeDatabase();
 
-    // Set up a test sponsored fiction
-    console.log('\n📊 Setting up test sponsored fiction...');
+          // Set up a test fiction
+      console.log('\n📊 Setting up test fiction...');
     const testFiction = await FictionService.getFictionByRoyalRoadId('110569');
     if (testFiction) {
       await FictionService.updateFiction(testFiction.royalroad_id, {
-        sponsored: 1
+  
       });
-      console.log(`✅ Set fiction ${testFiction.royalroad_id} as sponsored`);
+              console.log(`✅ Updated fiction ${testFiction.royalroad_id}`);
     }
 
     const fictionHistoryService = new FictionHistoryService();

@@ -77,13 +77,13 @@ const Home: React.FC = () => {
                   <div className="space-y-3">
                     <h3 className="text-lg font-medium text-gray-900">📈 Rising Stars Monitoring</h3>
                     <p className="text-gray-900">
-                      Any fiction on Rising Stars, whether sponsored or not, will be automatically updated four times daily.
+                      Any fiction on Rising Stars will be automatically updated four times daily.
                     </p>
                   </div>
                   <div className="space-y-3">
                     <h3 className="text-lg font-medium text-gray-900">📦 Downloadable Data</h3>
                     <p className="text-gray-700">
-                      Export comprehensive data for sponsored fictions including historical metrics and Rising Stars rankings in organized ZIP files.
+                      Export comprehensive data for all fictions including historical metrics and Rising Stars rankings in organized ZIP files.
                     </p>
                   </div>
                 </div>
@@ -161,7 +161,7 @@ const Home: React.FC = () => {
                 <div>
                   <h3 className="font-medium text-gray-900">Download Comprehensive Data</h3>
                   <p className="text-gray-700">
-                    Download organized ZIP files containing historical metrics and Rising Stars rankings for sponsored fictions.
+                    Download organized ZIP files containing historical metrics and Rising Stars rankings for all fictions.
                   </p>
                 </div>
               </div>

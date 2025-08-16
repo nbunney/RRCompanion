@@ -13,10 +13,8 @@ interface SiteStatistics {
   };
   fiction: {
     total: number;
-    sponsored: number;
-    unsponsored: number;
   };
-  sponsorships: {
+  coffee_donations: {
     count: number;
     total_revenue: number;
     average_per_day: number;
@@ -208,13 +206,13 @@ const Admin: React.FC = () => {
               <Card className="p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Fiction</h3>
                 <div className="text-3xl font-bold text-green-600">{stats.fiction.total.toLocaleString()}</div>
-                <p className="text-sm text-gray-500">Sponsored: {stats.fiction.sponsored.toLocaleString()}</p>
+                <p className="text-sm text-gray-500">Total fictions</p>
               </Card>
 
               <Card className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Revenue</h3>
-                <div className="text-3xl font-bold text-purple-600">${stats.sponsorships.total_revenue.toFixed(2)}</div>
-                <p className="text-sm text-gray-500">{stats.sponsorships.count} sponsorships</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Coffee Donations</h3>
+                <div className="text-3xl font-bold text-purple-600">${stats.coffee_donations.total_revenue.toFixed(2)}</div>
+                <p className="text-sm text-gray-500">{stats.coffee_donations.count} donations</p>
               </Card>
 
               <Card className="p-6">

@@ -81,7 +81,7 @@ export interface Fiction {
   favorites: number;
   views: number;
   score: number;
-  sponsored: number;
+
   created_at: Date;
   updated_at: Date;
 }
@@ -137,7 +137,7 @@ export interface UpdateFictionRequest {
   character_score?: number;
   total_views?: number;
   average_views?: number;
-  sponsored?: number;
+
 }
 
 // UserFiction types

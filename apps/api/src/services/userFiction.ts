@@ -367,7 +367,7 @@ export class UserFictionService {
         favorites: row.favorites,
         views: row.views,
         score: row.score,
-        sponsored: row.sponsored,
+
         created_at: row.fiction_created_at,
         updated_at: row.fiction_updated_at,
       };

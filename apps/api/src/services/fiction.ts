@@ -305,7 +305,7 @@ export class FictionService {
       SELECT f.id, f.royalroad_id, f.title, f.author_name, f.author_id, f.author_avatar, 
              f.description, f.image_url, f.status, f.type, f.tags, f.warnings,
              f.pages, f.ratings, f.followers, f.favorites, f.views, f.score,
-             f.sponsored, f.created_at, f.updated_at,
+             f.created_at, f.updated_at,
              COUNT(uf.id) as user_count
       FROM fiction f
       LEFT JOIN userFiction uf ON f.id = uf.fiction_id
@@ -320,15 +320,7 @@ export class FictionService {
     return result; // Return raw result to preserve user_count
   }
 
-  // Get sponsored fictions
-  static async getSponsoredFictions(): Promise<Fiction[]> {
-    const result = await client.query(
-      'SELECT * FROM fiction WHERE sponsored = 1 ORDER BY created_at DESC',
-      []
-    );
 
-    return result.map((row: any) => this.mapDatabaseRowToFiction(row));
-  }
 
   // Helper method to map database row to Fiction object
   private static mapDatabaseRowToFiction(row: any): Fiction {
@@ -351,7 +343,7 @@ export class FictionService {
       favorites: row.favorites,
       views: row.views,
       score: row.score,
-      sponsored: row.sponsored,
+
       created_at: row.created_at,
       updated_at: row.updated_at,
     };

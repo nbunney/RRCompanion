@@ -39,22 +39,8 @@ export class CouponService {
         return { success: false, error: 'Coupon code has expired' };
       }
 
-      // Check if fiction is already sponsored
-      const fictionResult = await client.query(
-        'SELECT sponsored FROM fiction WHERE id = ?',
-        [fictionId]
-      );
-      console.log('🔐 CouponService.useCoupon - Fiction query result:', fictionResult);
 
-      if (fictionResult.length === 0) {
-        console.log('❌ CouponService.useCoupon - Fiction not found with ID:', fictionId);
-        return { success: false, error: 'Fiction not found' };
-      }
 
-      if (fictionResult[0].sponsored === 1) {
-        console.log('❌ CouponService.useCoupon - Fiction already sponsored');
-        return { success: false, error: 'Fiction is already sponsored' };
-      }
 
       console.log('🔐 CouponService.useCoupon - All checks passed, proceeding with coupon usage...');
 
@@ -71,25 +57,6 @@ export class CouponService {
              used_at = NOW() 
          WHERE id = ?`,
         [newCurrentUses, isFullyUsed ? 1 : 0, userId, fictionId, coupon.id]
-      );
-
-      // Mark fiction as sponsored
-      await client.execute(
-        'UPDATE fiction SET sponsored = 1 WHERE id = ?',
-        [fictionId]
-      );
-
-      // Log the sponsorship (similar to Stripe payment)
-      await client.execute(
-        'INSERT INTO sponsorship_logs (fiction_id, user_id, coupon_code_id, amount, status, stripe_payment_intent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-        [
-          fictionId,
-          userId,
-          coupon.id,
-          0, // $0 since it's free
-          'completed',
-          null // No Stripe payment intent for coupon usage
-        ]
       );
 
       console.log('✅ CouponService.useCoupon - Coupon used successfully');

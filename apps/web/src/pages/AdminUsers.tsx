@@ -14,7 +14,7 @@ interface UserStats {
   created_at: string;
   fiction_count: number;
   favorites_count: number;
-  sponsored_count: number;
+
 }
 
 const AdminUsers: React.FC = () => {
@@ -34,7 +34,7 @@ const AdminUsers: React.FC = () => {
     try {
       setIsLoading(true);
       console.log('🔍 AdminUsers - Loading users...');
-      
+
       const response = await fetch('/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -47,7 +47,7 @@ const AdminUsers: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('🔍 AdminUsers - Response data:', data);
-        
+
         if (data.success) {
           console.log('✅ AdminUsers - Users loaded successfully:', data.data);
           setUsers(data.data);
@@ -140,7 +140,7 @@ const AdminUsers: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Admin</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fictions</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Favorites</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sponsored</th>
+
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Member Since</th>
                   </tr>
                 </thead>
@@ -164,7 +164,7 @@ const AdminUsers: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">{userStats.fiction_count}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">{userStats.favorites_count}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{userStats.sponsored_count}</td>
+
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {new Date(userStats.created_at).toLocaleDateString()}
                       </td>

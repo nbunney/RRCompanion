@@ -81,7 +81,7 @@ export async function getFictionByRoyalRoadId(ctx: Context): Promise<void> {
   }
 }
 
-// Download CSV data for sponsored fiction
+    // Download CSV data for fiction
 export async function downloadFictionHistoryCSV(ctx: Context): Promise<void> {
   try {
     const fictionId = parseInt((ctx as any).params?.id);
@@ -105,7 +105,7 @@ export async function downloadFictionHistoryCSV(ctx: Context): Promise<void> {
       return;
     }
 
-    // Check if fiction is sponsored (anyone can download data for sponsored fictions)
+    // Anyone can download data for any fiction
     const fiction = await FictionService.getFictionById(fictionId);
     if (!fiction) {
       ctx.response.status = 404;

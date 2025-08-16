@@ -178,7 +178,7 @@ export async function initializeDatabase(): Promise<void> {
         character_score DECIMAL(3,2) DEFAULT 0.00,
         total_views INT DEFAULT 0,
         average_views INT DEFAULT 0,
-        sponsored TINYINT(1) DEFAULT 0,
+
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_royalroad_id (royalroad_id),
@@ -241,12 +241,7 @@ export async function initializeDatabase(): Promise<void> {
       console.log('ℹ️ average_views column already exists in fiction table');
     }
 
-    try {
-      await client.execute(`ALTER TABLE fiction ADD COLUMN sponsored TINYINT(1) DEFAULT 0`);
-      console.log('✅ Added sponsored column to fiction table');
-    } catch (error) {
-      console.log('ℹ️ sponsored column already exists in fiction table');
-    }
+
 
     // Create userFiction table to join users and fictions
     await client.execute(`
@@ -737,6 +732,12 @@ async function runMigrations(client: Client): Promise<void> {
           INDEX idx_status (status),
           INDEX idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: '016_remove_sponsored_column',
+      sql: `
+        ALTER TABLE fiction DROP COLUMN IF EXISTS sponsored
       `
     }
   ];

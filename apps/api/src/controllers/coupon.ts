@@ -36,7 +36,7 @@ export async function useCoupon(ctx: Context) {
         // Validate coupon object before sending in response
         const responseData = {
           success: true,
-          message: 'Coupon used successfully! Fiction is now sponsored.',
+          message: 'Coupon used successfully!',
           data: {
             coupon: result.coupon ? {
               id: result.coupon.id,
