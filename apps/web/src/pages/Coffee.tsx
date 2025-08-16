@@ -12,7 +12,11 @@ import Modal from '../components/Modal';
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Payment form component
-const PaymentForm: React.FC<{ onSuccess: (paymentIntentId: string) => void; onCancel: () => void }> = ({ onSuccess, onCancel }) => {
+const PaymentForm: React.FC<{
+  paymentType: 'basic' | 'fancy' | 'monthly';
+  onSuccess: (paymentIntentId: string) => void;
+  onCancel: () => void
+}> = ({ paymentType, onSuccess, onCancel }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -30,7 +34,7 @@ const PaymentForm: React.FC<{ onSuccess: (paymentIntentId: string) => void; onCa
 
     try {
       // Create payment intent for coffee
-      const paymentResponse = await stripeAPI.createCoffeePayment();
+      const paymentResponse = await stripeAPI.createCoffeePayment(paymentType);
       if (!paymentResponse.success || !paymentResponse.data) {
         throw new Error('Failed to create payment intent');
       }
@@ -92,7 +96,7 @@ const PaymentForm: React.FC<{ onSuccess: (paymentIntentId: string) => void; onCa
           className="flex-1"
           disabled={!stripe || isProcessing}
         >
-          {isProcessing ? 'Processing Payment...' : 'Buy Nate Coffee - $5'}
+          {isProcessing ? 'Processing Donation...' : `Donate ${paymentType === 'basic' ? '$5 for Basic Coffee' : paymentType === 'fancy' ? '$10 for Fancy Coffee' : '$50 for Monthly Coffee Pods'}`}
         </Button>
         <Button
           type="button"
@@ -110,6 +114,7 @@ const PaymentForm: React.FC<{ onSuccess: (paymentIntentId: string) => void; onCa
 const Coffee: React.FC = () => {
 
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [selectedPaymentType, setSelectedPaymentType] = useState<'basic' | 'fancy' | 'monthly'>('basic');
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success'>('idle');
 
   const handlePaymentSuccess = async (_paymentIntentId: string) => {
@@ -118,10 +123,21 @@ const Coffee: React.FC = () => {
     console.log('✅ Coffee payment successful!');
   };
 
+  const getPaymentTypeInfo = (type: 'basic' | 'fancy' | 'monthly') => {
+    switch (type) {
+      case 'basic':
+        return { title: 'Basic Coffee', price: '$5', description: 'A simple coffee to keep Nate going', emoji: '☕' };
+      case 'fancy':
+        return { title: 'Fancy Coffee', price: '$10', description: 'A premium coffee for Nate\'s special moments', emoji: '☕✨' };
+      case 'monthly':
+        return { title: 'Monthly Coffee Pods', price: '$50', description: 'A month\'s supply of coffee pods', emoji: '☕📦' };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header
-        title="Buy Nate Coffee"
+        title="Donate Coffee to Nate"
         showBackButton={true}
         backUrl="/dashboard"
         showUserInfo={true}
@@ -136,13 +152,13 @@ const Coffee: React.FC = () => {
             <Card>
               <div className="p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  ☕ Support Nate with Coffee
+                  ☕ Support Nate with Coffee Donations
                 </h2>
 
                 <div className="space-y-4">
                   <div className="text-center mb-6">
                     <div className="text-6xl mb-4">☕</div>
-                    <h3 className="text-2xl font-bold text-gray-900">Buy Nate Coffee</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">Donate Coffee to Nate</h3>
                     <p className="text-gray-600">Help keep RRCompanion running smoothly!</p>
                   </div>
 
@@ -151,7 +167,7 @@ const Coffee: React.FC = () => {
                       Why Buy Nate Coffee?
                     </h3>
                     <p className="text-blue-800 text-sm leading-relaxed">
-                      RRCompanion is a free service that helps authors and readers track fiction performance. 
+                      RRCompanion is a free service that helps authors and readers track fiction performance.
                       Your coffee purchase helps cover server costs and keeps the service running for everyone.
                     </p>
                   </div>
@@ -172,7 +188,7 @@ const Coffee: React.FC = () => {
                       How It Works
                     </h3>
                     <p className="text-yellow-800 text-sm leading-relaxed">
-                      A one-time payment of $5 buys Nate a coffee. Simple as that! 
+                      Choose your donation amount and Nate gets coffee! Simple as that!
                       We use Stripe for secure and trusted payments.
                     </p>
                   </div>
@@ -186,7 +202,7 @@ const Coffee: React.FC = () => {
             <Card>
               <div className="p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  ☕ Buy Coffee
+                  ☕ Make a Donation
                 </h2>
 
                 <div className="space-y-4">
@@ -204,18 +220,72 @@ const Coffee: React.FC = () => {
                     <div className="space-y-4">
                       <div className="text-center p-4 bg-gray-50 border border-gray-200 rounded-lg">
                         <p className="text-gray-600 text-sm font-medium mb-2">
-                          Ready to buy Nate coffee?
+                          Choose your coffee donation level
                         </p>
                         <p className="text-gray-500 text-xs">
-                          Your $5 will help keep RRCompanion running
+                          Every donation helps keep RRCompanion running
                         </p>
                       </div>
-                      
+
+                      {/* Payment Tiers */}
+                      <div className="grid grid-cols-1 gap-3">
+                        {/* Basic Coffee */}
+                        <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPaymentType === 'basic'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`} onClick={() => setSelectedPaymentType('basic')}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="text-2xl">☕</div>
+                              <div>
+                                <div className="font-medium text-gray-900">Basic Coffee</div>
+                                <div className="text-sm text-gray-600">A simple coffee to keep Nate going</div>
+                              </div>
+                            </div>
+                            <div className="text-xl font-bold text-blue-600">$5</div>
+                          </div>
+                        </div>
+
+                        {/* Fancy Coffee */}
+                        <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPaymentType === 'fancy'
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`} onClick={() => setSelectedPaymentType('fancy')}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="text-2xl">☕✨</div>
+                              <div>
+                                <div className="font-medium text-gray-900">Fancy Coffee</div>
+                                <div className="text-sm text-gray-600">A premium coffee for Nate's special moments</div>
+                              </div>
+                            </div>
+                            <div className="text-xl font-bold text-purple-600">$10</div>
+                          </div>
+                        </div>
+
+                        {/* Monthly Coffee Pods */}
+                        <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPaymentType === 'monthly'
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`} onClick={() => setSelectedPaymentType('monthly')}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="text-2xl">☕📦</div>
+                              <div>
+                                <div className="font-medium text-gray-900">Monthly Coffee Pods</div>
+                                <div className="text-sm text-gray-600">A month's supply of coffee pods</div>
+                              </div>
+                            </div>
+                            <div className="text-xl font-bold text-green-600">$50</div>
+                          </div>
+                        </div>
+                      </div>
+
                       <Button
                         className="w-full"
                         onClick={() => setShowPaymentForm(true)}
                       >
-                        ☕ Buy Nate Coffee - $5
+                        {`Donate ${getPaymentTypeInfo(selectedPaymentType).price} for ${getPaymentTypeInfo(selectedPaymentType).title}`}
                       </Button>
 
                       <div className="text-center text-xs text-gray-500">
@@ -234,19 +304,20 @@ const Coffee: React.FC = () => {
       <Modal
         isOpen={showPaymentForm}
         onClose={() => setShowPaymentForm(false)}
-        title="Buy Nate Coffee"
+        title={`Donate for ${getPaymentTypeInfo(selectedPaymentType).title}`}
         size="lg"
       >
         <div className="space-y-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-lg font-medium text-blue-900 mb-2">Payment Details</h3>
+            <h3 className="text-lg font-medium text-blue-900 mb-2">Donation Details</h3>
             <p className="text-blue-800 text-sm">
-              You're about to buy Nate a coffee for $5. This helps support RRCompanion and keeps it running for everyone.
+              You're about to donate {getPaymentTypeInfo(selectedPaymentType).price} to Nate for {getPaymentTypeInfo(selectedPaymentType).description.toLowerCase()}. This helps support RRCompanion and keeps it running for everyone.
             </p>
           </div>
 
           <Elements stripe={stripePromise}>
             <PaymentForm
+              paymentType={selectedPaymentType}
               onSuccess={handlePaymentSuccess}
               onCancel={() => setShowPaymentForm(false)}
             />

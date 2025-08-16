@@ -277,8 +277,8 @@ export const stripeAPI = {
     return response.data;
   },
 
-  createCoffeePayment: async (): Promise<ApiResponse<{ clientSecret: string; paymentIntentId: string }>> => {
-    const response = await api.post('/stripe/create-coffee-payment', {});
+  createCoffeePayment: async (paymentType: 'basic' | 'fancy' | 'monthly'): Promise<ApiResponse<{ clientSecret: string; paymentIntentId: string }>> => {
+    const response = await api.post('/stripe/create-coffee-payment', { paymentType });
     return response.data;
   },
 

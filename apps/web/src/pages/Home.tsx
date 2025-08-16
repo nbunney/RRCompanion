@@ -36,7 +36,7 @@ const Home: React.FC = () => {
             </p>
             <p className="text-gray-700 leading-relaxed">
               Our platform automatically collects and analyzes data from RoyalRoad, including page counts,
-              follower numbers, ratings, Rising Stars rankings, and more. With automated daily updates for sponsored fiction
+                              follower numbers, ratings, Rising Stars rankings, and more. With automated daily updates for all fiction
               and Rising Stars entries, you get real-time performance tracking and the ability to export comprehensive datasets
               for further analysis or record-keeping.
             </p>

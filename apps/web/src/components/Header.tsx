@@ -80,6 +80,22 @@ const Header: React.FC<HeaderProps> = ({
               </Link>
             )}
 
+            {user && (
+              <Link
+                to="/dashboard"
+                className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Dashboard
+              </Link>
+            )}
+
+            <Link
+              to="/coffee"
+              className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              ☕ Coffee
+            </Link>
+
             {user?.admin && (
               <Link
                 to="/admin"
