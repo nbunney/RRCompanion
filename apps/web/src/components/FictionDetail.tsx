@@ -283,6 +283,11 @@ const FictionDetail: React.FC = () => {
 
 
 
+  const getRoyalRoadUrl = () => {
+    if (!fiction) return '#';
+    return `https://www.royalroad.com/fiction/${fiction.id}`;
+  };
+
   const handleDownloadCSV = async () => {
     if (!fictionWithHistory) return;
 
@@ -374,11 +379,18 @@ const FictionDetail: React.FC = () => {
               {/* Fiction Image */}
               {fiction.image && (
                 <div className="flex-shrink-0">
-                  <img
-                    src={fiction.image}
-                    alt={fiction.title}
-                    className="w-48 h-72 object-cover rounded-lg shadow-md"
-                  />
+                  <a
+                    href={getRoyalRoadUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block cursor-pointer hover:opacity-80 transition-opacity"
+                  >
+                    <img
+                      src={fiction.image}
+                      alt={fiction.title}
+                      className="w-48 h-72 object-cover rounded-lg shadow-md"
+                    />
+                  </a>
                 </div>
               )}
 
@@ -386,8 +398,27 @@ const FictionDetail: React.FC = () => {
               <div className="flex-1">
                 <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-4">
                   <div className="flex-1">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{fiction.title}</h1>
-                    <p className="text-lg text-gray-600 mb-3">by {fiction.author.name}</p>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                      <a
+                        href={getRoyalRoadUrl()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+                      >
+                        {fiction.title}
+                      </a>
+                    </h1>
+                    <p className="text-lg text-gray-600 mb-3">
+                      by{' '}
+                      <a
+                        href={`https://www.royalroad.com/profile/${fiction.author.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
+                      >
+                        {fiction.author.name}
+                      </a>
+                    </p>
 
                   </div>
                   <div className="flex flex-col space-y-2">
