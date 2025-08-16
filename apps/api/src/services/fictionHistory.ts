@@ -600,7 +600,124 @@ export class FictionHistoryService {
     }
   }
 
-  // Process sponsored fictions
+  // Process all fictions (not just sponsored ones)
+  async processAllFictions(): Promise<void> {
+    try {
+      console.log('🎯 Processing all fictions in the database...');
+
+      // Get all fictions from the database
+      const allFictionsResult = await FictionService.getFictions();
+      const allFictions = allFictionsResult.fictions;
+
+      if (allFictions.length === 0) {
+        console.log('ℹ️ No fictions found in database');
+        return;
+      }
+
+      console.log(`📊 Found ${allFictions.length} fictions to process`);
+
+      // Process each fiction
+      for (let i = 0; i < allFictions.length; i++) {
+        const fiction = allFictions[i];
+
+        try {
+          console.log(`\n🔍 Processing fiction ${i + 1}/${allFictions.length}: ${fiction.royalroad_id} (${fiction.title})`);
+
+          // Check if we already have a history entry for today
+          const hasHistoryToday = await this.hasFictionHistoryEntryToday(fiction.id);
+          if (hasHistoryToday) {
+            console.log(`⏭️ Fiction ${fiction.royalroad_id} already has a history entry for today, skipping`);
+            continue;
+          }
+
+          // Fetch fresh data from Royal Road API
+          console.log(`📡 Fetching fresh data for fiction ${fiction.royalroad_id} from Royal Road API...`);
+          const fictionResponse = await this.royalroadService.getFiction(fiction.royalroad_id);
+
+          if (fictionResponse.success && fictionResponse.data) {
+            const freshData = fictionResponse.data;
+
+            // Create fiction history entry
+            const fictionHistoryEntry: FictionHistoryEntry = {
+              fiction_id: fiction.id,
+              royalroad_id: fiction.royalroad_id,
+              description: freshData.description || undefined,
+              status: freshData.status || undefined,
+              type: freshData.type || undefined,
+              tags: freshData.tags ? JSON.stringify(freshData.tags) : undefined,
+              warnings: freshData.warnings ? JSON.stringify(freshData.warnings) : undefined,
+              pages: freshData.stats?.pages || 0,
+              ratings: freshData.stats?.ratings || 0,
+              followers: freshData.stats?.followers || 0,
+              favorites: freshData.stats?.favorites || 0,
+              views: freshData.stats?.views || 0,
+              score: freshData.stats?.score || 0,
+              overall_score: freshData.stats?.overall_score || 0,
+              style_score: freshData.stats?.style_score || 0,
+              story_score: freshData.stats?.story_score || 0,
+              grammar_score: freshData.stats?.grammar_score || 0,
+              character_score: freshData.stats?.character_score || 0,
+              total_views: freshData.stats?.total_views || 0,
+              average_views: freshData.stats?.average_views || 0,
+              captured_at: new Date()
+            };
+
+            // Save fiction history entry
+            await this.saveFictionHistoryEntry(fictionHistoryEntry);
+            console.log(`✅ Created fiction history entry for fiction ${fiction.royalroad_id} (ID: ${fiction.id})`);
+
+            // Update the fiction record with fresh data
+            await FictionService.updateFiction(fiction.royalroad_id, {
+              title: freshData.title,
+              author_name: freshData.author.name,
+              author_id: freshData.author.id,
+              author_avatar: freshData.author.avatar,
+              description: freshData.description,
+              image_url: freshData.image,
+              status: freshData.status,
+              type: freshData.type,
+              tags: freshData.tags,
+              warnings: freshData.warnings,
+              pages: freshData.stats?.pages,
+              ratings: freshData.stats?.ratings,
+              followers: freshData.stats?.followers,
+              favorites: freshData.stats?.favorites,
+              views: freshData.stats?.views,
+              score: freshData.stats?.score,
+              overall_score: freshData.stats?.overall_score,
+              style_score: freshData.stats?.style_score,
+              story_score: freshData.stats?.story_score,
+              grammar_score: freshData.stats?.grammar_score,
+              character_score: freshData.stats?.character_score,
+              total_views: freshData.stats?.total_views,
+              average_views: freshData.stats?.average_views,
+            });
+
+          } else {
+            console.error(`❌ Failed to fetch data for fiction ${fiction.royalroad_id}: ${fictionResponse.message}`);
+          }
+
+          // Add delay between requests to be respectful to Royal Road
+          if (i < allFictions.length - 1) {
+            console.log('⏳ Waiting 1 second before processing next fiction...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+
+        } catch (error) {
+          console.error(`❌ Error processing fiction ${fiction.royalroad_id}:`, error);
+          continue;
+        }
+      }
+
+      console.log('✅ All fictions processing completed');
+
+    } catch (error) {
+      console.error('❌ Error during all fictions processing:', error);
+      throw error;
+    }
+  }
+
+  // Process sponsored fictions (kept for backward compatibility)
   async processSponsoredFictions(): Promise<void> {
     try {
       console.log('🎯 Processing sponsored fictions...');
@@ -719,7 +836,7 @@ export class FictionHistoryService {
   // Run nightly collection process
   async runNightlyCollection(): Promise<boolean> {
     try {
-      console.log('🌙 Starting nightly fiction collection (Rising Stars + Sponsored)...');
+      console.log('🌙 Starting nightly fiction collection (Rising Stars + All Fictions)...');
 
       // First, get current Rising Stars data to identify fictions that need updating
       const risingStarsResponse = await this.royalroadService.getAllRisingStars();
@@ -736,10 +853,10 @@ export class FictionHistoryService {
         console.error('❌ Failed to collect Rising Stars data for nightly update:', risingStarsResponse.message);
       }
 
-      // Then process sponsored fictions (which may overlap with Rising Stars)
-      await this.processSponsoredFictions();
+      // Then process all fictions in the database (not just sponsored ones)
+      await this.processAllFictions();
 
-      console.log('✅ Nightly fiction collection completed successfully');
+      console.log('✅ Nightly fiction collection (Rising Stars + All Fictions) completed successfully');
       return true;
     } catch (error) {
       console.error('❌ Error during nightly fiction collection:', error);

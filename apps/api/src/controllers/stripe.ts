@@ -2,6 +2,41 @@ import { Context } from 'oak';
 import { stripeService } from '../services/stripe.ts';
 import { getUserFromContext } from '../utils/auth.ts';
 
+export async function createCoffeePayment(ctx: Context) {
+  try {
+    // Coffee payments don't require authentication - anyone can buy coffee
+    const body = await ctx.request.body.json();
+    let userId: number | undefined;
+
+    // Try to get user if they're authenticated
+    try {
+      const user = await getUserFromContext(ctx);
+      if (user) {
+        userId = user.id;
+      }
+    } catch (error) {
+      // User not authenticated, that's fine for coffee
+      console.log('ℹ️ Anonymous coffee purchase');
+    }
+
+    // Create payment intent
+    const paymentIntent = await stripeService.createCoffeePaymentIntent(userId);
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+      },
+    };
+  } catch (error) {
+    console.error('❌ Error creating coffee payment:', error);
+    ctx.response.status = 500;
+    ctx.response.body = { success: false, error: 'Failed to create payment' };
+  }
+}
+
 export async function createSponsorshipPayment(ctx: Context) {
   try {
     const user = await getUserFromContext(ctx);
@@ -64,13 +99,19 @@ export async function handleStripeWebhook(ctx: Context) {
     // Handle different event types
     switch (event.type) {
       case 'payment_intent.succeeded':
-        console.log('🎉 Payment succeeded, processing sponsorship...');
+        console.log('🎉 Payment succeeded, processing...');
         const paymentIntent = event.data.object as any;
         console.log('🔔 Payment intent ID:', paymentIntent.id);
         console.log('🔔 Payment intent metadata:', paymentIntent.metadata);
 
-        await stripeService.handleSuccessfulPayment(paymentIntent);
-        console.log('✅ Sponsorship processed successfully');
+        // Check if this is a coffee payment or sponsorship
+        if (paymentIntent.metadata.type === 'coffee') {
+          await stripeService.handleSuccessfulCoffeePayment(paymentIntent);
+          console.log('✅ Coffee payment processed successfully');
+        } else {
+          await stripeService.handleSuccessfulPayment(paymentIntent);
+          console.log('✅ Sponsorship processed successfully');
+        }
         break;
 
       case 'payment_intent.payment_failed':

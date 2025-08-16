@@ -70,14 +70,14 @@ const Home: React.FC = () => {
                   <div className="space-y-3">
                     <h3 className="text-lg font-medium text-gray-900">🌙 Automated Updates</h3>
                     <p className="text-gray-700">
-                      Our system automatically updates sponsored fiction data daily, ensuring you always
-                      have the latest information. Unsponsored fiction must be manually updated.
+                      Our system automatically updates ALL fiction data daily, ensuring you always
+                      have the latest information for every fiction in your library.
                     </p>
                   </div>
                   <div className="space-y-3">
                     <h3 className="text-lg font-medium text-gray-900">📈 Rising Stars Monitoring</h3>
                     <p className="text-gray-900">
-                      Any fiction on Rising Stars, whether sponsored or not, will be automatically updated daily.
+                      Any fiction on Rising Stars, whether sponsored or not, will be automatically updated four times daily.
                     </p>
                   </div>
                   <div className="space-y-3">
@@ -137,9 +137,9 @@ const Home: React.FC = () => {
                   <span className="text-blue-600 font-semibold">3</span>
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">Sponsor Your Fiction or Update Daily</h3>
+                  <h3 className="font-medium text-gray-900">Add Your Fiction</h3>
                   <p className="text-gray-700">
-                    Either sponsor your fiction (one time fee of $5) or update it every 24 hours to keep your data current.
+                    Simply add RoyalRoad fictions to your tracking list. All fictions are automatically updated daily at 12:24am PST.
                   </p>
                 </div>
               </div>
@@ -177,13 +177,13 @@ const Home: React.FC = () => {
                 <div className="space-y-3">
                   <h3 className="text-lg font-medium text-gray-900">⭐ Rising Stars Rankings</h3>
                   <p className="text-gray-700">
-                    Updated three times daily at 6:23am, 12:23pm, and 6:23pm PST to keep rankings current throughout the day.
+                    Updated four times daily at 12:24am, 6:24am, 12:24pm, and 6:24pm PST to keep rankings current throughout the day and night.
                   </p>
                 </div>
                 <div className="space-y-3">
                   <h3 className="text-lg font-medium text-gray-900">🌙 Comprehensive Updates</h3>
                   <p className="text-gray-700">
-                    Complete fiction details and sponsored fiction metrics updated once daily at 12:23am PST for thorough data refresh.
+                    Complete fiction details and metrics for ALL fictions updated once daily at 12:24am PST for thorough data refresh.
                   </p>
                 </div>
               </div>

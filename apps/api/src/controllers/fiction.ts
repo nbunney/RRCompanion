@@ -116,15 +116,7 @@ export async function downloadFictionHistoryCSV(ctx: Context): Promise<void> {
       return;
     }
 
-    // Check if fiction is sponsored
-    if (!fiction.sponsored) {
-      ctx.response.status = 403;
-      ctx.response.body = {
-        success: false,
-        error: 'Access denied. Only sponsored fictions allow CSV download.',
-      } as ApiResponse;
-      return;
-    }
+
 
     // Get fiction history data
     const fictionHistoryService = new FictionHistoryService();

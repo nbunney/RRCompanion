@@ -441,13 +441,7 @@ const Sponsor: React.FC = () => {
                     </p>
                   </div>
 
-                  {fiction?.sponsored === 1 ? (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-green-800 text-sm font-medium">
-                        ✅ This fiction is already sponsored!
-                      </p>
-                    </div>
-                  ) : paymentStatus === 'success' ? (
+                  {paymentStatus === 'success' ? (
                     <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                       <p className="text-green-800 text-sm font-medium">
                         ✅ Payment successful! This fiction is now sponsored.

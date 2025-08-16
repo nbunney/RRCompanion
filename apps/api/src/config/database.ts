@@ -675,6 +675,69 @@ async function runMigrations(client: Client): Promise<void> {
         SET max_uses = 1, current_uses = CASE WHEN used = 1 THEN 1 ELSE 0 END
         WHERE max_uses IS NULL OR current_uses IS NULL
       `
+    },
+    {
+      name: '019_create_popular_fictions_table',
+      sql: `
+        CREATE TABLE IF NOT EXISTS popular_fictions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          fiction_id INT NOT NULL,
+          royalroad_id VARCHAR(255) NOT NULL,
+          title VARCHAR(500) NOT NULL,
+          author_name VARCHAR(255) NOT NULL,
+          author_id VARCHAR(255),
+          author_avatar TEXT,
+          description TEXT,
+          image_url TEXT,
+          status VARCHAR(100),
+          type VARCHAR(100),
+          tags JSON,
+          warnings JSON,
+          pages INT DEFAULT 0,
+          ratings INT DEFAULT 0,
+          followers INT DEFAULT 0,
+          favorites INT DEFAULT 0,
+          views INT DEFAULT 0,
+          score DECIMAL(3,2) DEFAULT 0.00,
+          overall_score DECIMAL(3,2) DEFAULT 0.00,
+          style_score DECIMAL(3,2) DEFAULT 0.00,
+          story_score DECIMAL(3,2) DEFAULT 0.00,
+          grammar_score DECIMAL(3,2) DEFAULT 0.00,
+          character_score DECIMAL(3,2) DEFAULT 0.00,
+          total_views INT DEFAULT 0,
+          average_views INT DEFAULT 0,
+          captured_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          
+          FOREIGN KEY (fiction_id) REFERENCES fiction(id) ON DELETE CASCADE,
+          
+          INDEX idx_fiction_id (fiction_id),
+          INDEX idx_royalroad_id (royalroad_id),
+          INDEX idx_captured_at (captured_at),
+          INDEX idx_score (score),
+          INDEX idx_followers (followers),
+          INDEX idx_views (views),
+          
+          UNIQUE KEY unique_fiction_snapshot (fiction_id, captured_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: '015_create_coffee_logs_table',
+      sql: `
+        CREATE TABLE IF NOT EXISTS coffee_logs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NULL,
+          stripe_payment_intent_id VARCHAR(255) NOT NULL,
+          amount INT NOT NULL,
+          status ENUM('pending', 'completed', 'failed') NOT NULL DEFAULT 'pending',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_user_id (user_id),
+          INDEX idx_stripe_payment_intent_id (stripe_payment_intent_id),
+          INDEX idx_status (status),
+          INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
     }
   ];
 

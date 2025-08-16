@@ -12,6 +12,7 @@ import Terms from '@/pages/Terms';
 import About from '@/pages/About';
 import Home from '@/pages/Home';
 import Sponsor from '@/pages/Sponsor';
+import Coffee from '@/pages/Coffee';
 import Admin from '@/pages/Admin';
 import AdminUsers from '@/pages/AdminUsers';
 import FictionDetail from '@/components/FictionDetail';
@@ -97,6 +98,7 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/coffee" element={<Coffee />} />
         <Route
           path="/fiction/:id/:slug?"
           element={<FictionDetail />}

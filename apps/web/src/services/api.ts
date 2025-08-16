@@ -277,6 +277,11 @@ export const stripeAPI = {
     return response.data;
   },
 
+  createCoffeePayment: async (): Promise<ApiResponse<{ clientSecret: string; paymentIntentId: string }>> => {
+    const response = await api.post('/stripe/create-coffee-payment', {});
+    return response.data;
+  },
+
   getPaymentStatus: async (paymentIntentId: string): Promise<ApiResponse<any>> => {
     const response = await api.get(`/stripe/payment-status?paymentIntentId=${paymentIntentId}`);
     return response.data;

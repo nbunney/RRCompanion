@@ -58,7 +58,7 @@ export interface Fiction {
   views: number;
   score: number;
   overall_score: number;
-  sponsored: number;
+
   created_at: string;
   updated_at: string;
   history?: FictionHistoryEntry[];

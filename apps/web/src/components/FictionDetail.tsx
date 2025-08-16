@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createFictionUrl } from '@/utils';
 import { royalroadAPI, userFictionAPI, fictionAPI, risingStarsAPI } from '@/services/api';
@@ -10,9 +10,9 @@ import Header from '@/components/Header';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import Tags from '@/components/Tags';
 import { RisingStarsChart, EngagementGrowthChart, PerceivedQualityChart, CurrentStats } from '@/components/charts';
-import { formatLocalDate, formatLocalDateTime } from '@/utils/dateUtils';
+import { formatLocalDate } from '@/utils/dateUtils';
 import { useAuth } from '@/hooks/useAuth';
-import PublicFictionView from '@/components/PublicFictionView';
+
 
 const FictionDetail: React.FC = () => {
   const { id, slug } = useParams<{ id: string; slug?: string }>();
@@ -24,62 +24,17 @@ const FictionDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isAddingToFavorites, setIsAddingToFavorites] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
-  const [canRefresh, setCanRefresh] = useState(true);
-  const [remainingHours, setRemainingHours] = useState<number | null>(null);
+
   const [showUnfavoriteConfirm, setShowUnfavoriteConfirm] = useState(false);
   const [risingStarsData, setRisingStarsData] = useState<any[]>([]);
 
 
-  // Check refresh status every minute
-  const checkRefreshStatus = useCallback(() => {
-    if (!lastRefreshTime) {
-      setCanRefresh(true);
-      setRemainingHours(null);
-      return;
-    }
 
-    const now = new Date();
-    const timeDiff = now.getTime() - lastRefreshTime.getTime();
-    const hoursDiff = timeDiff / (1000 * 60 * 60);
-
-    if (hoursDiff >= 24) {
-      setCanRefresh(true);
-      setRemainingHours(null); // Changed from 0 to null
-    } else {
-      setCanRefresh(false);
-      // Calculate remaining time more precisely
-      const remainingTime = 24 - hoursDiff;
-      setRemainingHours(remainingTime);
-    }
-  }, [lastRefreshTime]);
 
   // Initialize lastRefreshTime from the most recent fictionHistory entry
-  useEffect(() => {
-    if (fictionWithHistory?.history && fictionWithHistory.history.length > 0) {
-      // Find the most recent entry by comparing dates
-      const mostRecentEntry = fictionWithHistory.history.reduce((latest, current) => {
-        if (!latest.captured_at) return current;
-        if (!current.captured_at) return latest;
-        return new Date(current.captured_at) > new Date(latest.captured_at) ? current : latest;
-      });
-      if (mostRecentEntry.captured_at) {
-        setLastRefreshTime(new Date(mostRecentEntry.captured_at));
-      }
-    }
-  }, [fictionWithHistory?.history]);
 
-  // Set up interval to check refresh status every minute
-  useEffect(() => {
-    const interval = setInterval(checkRefreshStatus, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, [checkRefreshStatus]);
 
-  // Initial check when component mounts
-  useEffect(() => {
-    checkRefreshStatus();
-  }, [checkRefreshStatus]);
+
 
   // Check authentication when component mounts
   useEffect(() => {
@@ -326,62 +281,7 @@ const FictionDetail: React.FC = () => {
     }
   };
 
-  const handleRefresh = async () => {
-    try {
-      setIsRefreshing(true);
-      setError('');
-      const response = await fictionAPI.refreshFiction(id!);
-      if (response.success && response.data) {
-        // Update the fiction with fresh data
-        const updatedFiction: RoyalRoadFiction = {
-          id: response.data.royalroad_id,
-          title: response.data.title,
-          author: {
-            name: response.data.author_name,
-            id: response.data.author_id || '',
-            avatar: response.data.author_avatar,
-          },
-          description: response.data.description || '',
-          image: response.data.image_url,
-          status: response.data.status || '',
-          type: response.data.type || '',
-          tags: response.data.tags || [],
-          warnings: response.data.warnings || [],
-          stats: {
-            pages: response.data.pages || 0,
-            ratings: response.data.ratings || 0,
-            followers: response.data.followers || 0,
-            favorites: response.data.favorites || 0,
-            views: response.data.views || 0,
-            score: response.data.overall_score || 0,
-          },
-          chapters: [],
-        };
-        // Store the original response with history data
-        setFictionWithHistory(response.data);
-        setFiction(updatedFiction);
 
-        // Update refresh status - use the most recent history entry time
-        if (response.data.history && response.data.history.length > 0) {
-          // Find the most recent entry by comparing dates
-          const mostRecentEntry = response.data.history.reduce((latest, current) => {
-            if (!latest.captured_at) return current;
-            if (!current.captured_at) return latest;
-            return new Date(current.captured_at) > new Date(latest.captured_at) ? current : latest;
-          });
-          if (mostRecentEntry.captured_at) {
-            setLastRefreshTime(new Date(mostRecentEntry.captured_at));
-          }
-        }
-      } else {
-        setError(response.message || 'Failed to refresh fiction');
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Failed to refresh fiction');
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   const handleDownloadCSV = async () => {
     if (!fictionWithHistory) return;
@@ -455,10 +355,7 @@ const FictionDetail: React.FC = () => {
     );
   }
 
-  // Show public view for non-authenticated users
-  if (!isAuthenticated) {
-    return <PublicFictionView fiction={fiction} />;
-  }
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -513,70 +410,25 @@ const FictionDetail: React.FC = () => {
                         </Button>
                       )}
                       <Button
-                        onClick={fictionWithHistory?.sponsored ? handleDownloadCSV : handleRefresh}
-                        disabled={fictionWithHistory?.sponsored ? false : (isRefreshing || !canRefresh)}
+                        onClick={handleDownloadCSV}
+                        disabled={false}
                         variant="outline"
                       >
-                        {fictionWithHistory?.sponsored ? '📦 Data' : (isRefreshing ? 'Refreshing...' : '🔄 Refresh')}
+                        📦 Data
                       </Button>
                     </div>
 
-                    {/* Sponsored Indicator */}
-                    <div className="flex items-center space-x-2 mt-2">
-                      {fictionWithHistory?.sponsored ? (
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className="w-4 h-4 border-2 border-green-500 bg-green-500 rounded flex items-center justify-center cursor-help"
-                            title="This fiction has been sponsored."
-                          >
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <span className="text-sm text-gray-600">Sponsored</span>
-                        </div>
-                      ) : (
-                        <button
-                          className="flex items-center space-x-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-medium transition-colors cursor-pointer shadow-md hover:shadow-lg"
-                          title="Click to sponsor this fiction and enable automatic updates"
-                          onClick={() => {
-                            console.log('🔗 Navigating to sponsor page for fiction:', fictionWithHistory?.royalroad_id);
-                            console.log('🔗 Current URL before navigation:', window.location.pathname);
-                            navigate(`/sponsor/${fictionWithHistory?.royalroad_id}`);
-                            console.log('🔗 Navigation called, new URL should be:', `/sponsor/${fictionWithHistory?.royalroad_id}`);
-                          }}
-                        >
-                          <span className="w-5 h-5 bg-white text-red-500 rounded-full flex items-center justify-center text-sm font-bold">S</span>
-                          <span>Sponsor?</span>
-                        </button>
-                      )}
+                    {/* Buy Nate Coffee Button */}
+                    <div className="mt-2">
+                      <Button
+                        onClick={() => navigate('/coffee')}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        ☕ Buy Nate Coffee
+                      </Button>
                     </div>
 
-                    {/* Last refresh time and countdown - only show for non-sponsored fictions */}
-                    {lastRefreshTime && !fictionWithHistory?.sponsored && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        <div>Last refreshed: {formatLocalDateTime(lastRefreshTime, undefined, { hour: '2-digit', minute: '2-digit' })}</div>
-                        {!canRefresh && remainingHours !== null && (
-                          <div className="mt-1">
-                            {remainingHours <= 0 ? (
-                              <span className="text-green-600 font-medium">• Can refresh now!</span>
-                            ) : remainingHours < 1 ? (
-                              <span>• Can refresh in {Math.ceil(remainingHours * 60)} minutes</span>
-                            ) : (
-                              <span>• Can refresh in {Math.floor(remainingHours)} hours {Math.ceil((remainingHours % 1) * 60)} minutes</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* For sponsored fictions, show a simple "Last updated" message */}
-                    {lastRefreshTime && fictionWithHistory?.sponsored && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        <div>Last updated: {formatLocalDateTime(lastRefreshTime, undefined, { hour: '2-digit', minute: '2-digit' })}</div>
-                        <div className="text-green-600 font-medium">• Automatic updates enabled</div>
-                      </div>
-                    )}
                   </div>
                 </div>
 

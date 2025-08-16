@@ -18,6 +18,27 @@ function getStripeClient(): Stripe {
 }
 
 export class StripeService {
+  // Create a payment intent for buying coffee
+  async createCoffeePaymentIntent(userId?: number): Promise<Stripe.PaymentIntent> {
+    try {
+      // Create payment intent for coffee
+      const paymentIntent = await getStripeClient().paymentIntents.create({
+        amount: 500, // $5.00 in cents
+        currency: 'usd',
+        metadata: {
+          type: 'coffee',
+          user_id: userId?.toString() || 'anonymous',
+        },
+        description: 'Buy Nate Coffee - Support RRCompanion',
+      });
+
+      return paymentIntent;
+    } catch (error) {
+      console.error('❌ Error creating coffee payment intent:', error);
+      throw error;
+    }
+  }
+
   // Create a payment intent for sponsoring a fiction
   async createSponsorshipPaymentIntent(fictionId: number, userId: number): Promise<Stripe.PaymentIntent> {
     try {
@@ -49,6 +70,37 @@ export class StripeService {
       return paymentIntent;
     } catch (error) {
       console.error('❌ Error creating payment intent:', error);
+      throw error;
+    }
+  }
+
+  // Handle successful coffee payment
+  async handleSuccessfulCoffeePayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+    try {
+      console.log('☕ Starting to handle successful coffee payment...');
+      console.log('☕ Payment intent metadata:', paymentIntent.metadata);
+
+      const { user_id } = paymentIntent.metadata;
+
+      // Log the coffee purchase
+      const logResult = await client.execute(
+        'INSERT INTO coffee_logs (user_id, stripe_payment_intent_id, amount, status, created_at) VALUES (?, ?, ?, ?, NOW())',
+        [
+          user_id === 'anonymous' ? null : parseInt(user_id),
+          paymentIntent.id,
+          paymentIntent.amount,
+          'completed'
+        ]
+      );
+      console.log('☕ Coffee purchase log result:', logResult);
+
+      console.log(`✅ Coffee purchased by user ${user_id}`);
+    } catch (error) {
+      console.error('❌ Error handling successful coffee payment:', error);
+      if (error instanceof Error) {
+        console.error('❌ Error details:', error.message);
+        console.error('❌ Error stack:', error.stack);
+      }
       throw error;
     }
   }
