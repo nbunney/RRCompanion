@@ -290,24 +290,24 @@ const RisingStarsAnimation: React.FC = () => {
     animationIntervalRef.current = setInterval(() => {
       setCurrentDayIndex(prev => {
         if (prev >= dailyRankings.length - 1) {
-          // Animation complete
+          // Animation complete - stay on the last day
           setIsPlaying(false);
           setAnimationPhase('end');
           if (animationIntervalRef.current) {
             clearInterval(animationIntervalRef.current);
           }
-          return 0;
+          return dailyRankings.length - 1; // Stay on the last day (day 10)
         }
-
+        
         // Start sliding animation
         setAnimationPhase('sliding');
-
+        
         // After sliding animation completes, move to next day
         setTimeout(() => {
           setAnimationPhase('start');
           setCurrentDayIndex(prev + 1);
         }, 1000); // 1 second sliding animation
-
+        
         return prev; // Stay on current day during sliding
       });
     }, animationSpeed);
