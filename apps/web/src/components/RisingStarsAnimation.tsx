@@ -283,7 +283,20 @@ const RisingStarsAnimation: React.FC = () => {
     if (dailyRankings.length === 0) return;
 
     setIsPlaying(true);
-    setCurrentDayIndex(0);
+    
+    // If we have a followed fiction, find the first day it appears
+    let startDayIndex = 0;
+    if (followedFiction) {
+      for (let i = 0; i < dailyRankings.length; i++) {
+        const day = dailyRankings[i];
+        if (day.rankings.find(r => r.fiction_id === followedFiction)) {
+          startDayIndex = i;
+          break;
+        }
+      }
+    }
+    
+    setCurrentDayIndex(startDayIndex);
     setAnimationPhase('start');
 
     // Start the animation loop
