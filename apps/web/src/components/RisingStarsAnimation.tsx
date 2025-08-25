@@ -34,15 +34,14 @@ interface FictionMovement {
 const RisingStarsAnimation: React.FC = () => {
   const [dailyRankings, setDailyRankings] = useState<DailyRanking[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentDayIndex, setCurrentDayIndex] = useState(0);
+  const [currentDayIndex, setCurrentDayIndex] = useState(-1); // Start at -1, will be set to last day after loading
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [animationSpeed, setAnimationSpeed] = useState(5000); // 5 seconds default
   const animationIntervalRef = useRef<number | null>(null);
   const [followedFiction, setFollowedFiction] = useState<number | null>(null); // Track which fiction to follow
   const [selectedGenre, setSelectedGenre] = useState<string>('main'); // Default to main genre
-  const [isMoving, setIsMoving] = useState(false); // Track if we're in movement phase
-  const [movementData, setMovementData] = useState<FictionMovement[]>([]); // Store movement data
+  const [animationPhase, setAnimationPhase] = useState<'start' | 'sliding' | 'end'>('start');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -91,6 +90,7 @@ const RisingStarsAnimation: React.FC = () => {
         // Group data by date and get top 20 for each day
         const groupedData = groupDataByDate(response.data);
         setDailyRankings(groupedData);
+        setCurrentDayIndex(groupedData.length - 1); // Set to the last day after loading
       } else {
         setError('Failed to load Rising Stars data');
       }
@@ -203,11 +203,11 @@ const RisingStarsAnimation: React.FC = () => {
 
   const getFictionMovement = (currentRankings: RisingStarsEntry[], previousRankings?: RisingStarsEntry[]): FictionMovement[] => {
     if (!previousRankings) {
-      // First day - all fictions are new
+      // First day - all fictions are green but not marked as new
       return currentRankings.map(entry => ({
         ...entry,
         currentPosition: entry.position,
-        isNew: true,
+        isNew: false, // Don't show NEW badge on first day
         isDropped: false
       }));
     }
@@ -219,7 +219,7 @@ const RisingStarsAnimation: React.FC = () => {
     currentRankings.forEach(entry => {
       const previous = previousMap.get(entry.fiction_id);
       if (previous) {
-        // Fiction was in previous rankings
+        // Fiction was in previous rankings - calculate position change
         movements.push({
           ...entry,
           currentPosition: entry.position,
@@ -244,6 +244,7 @@ const RisingStarsAnimation: React.FC = () => {
       movements.push({
         ...entry,
         currentPosition: 0,
+        previousPosition: entry.position,
         isNew: false,
         isDropped: true
       });
@@ -257,48 +258,25 @@ const RisingStarsAnimation: React.FC = () => {
     });
   };
 
-  // Calculate movement path for followed fiction
-  const getMovementPath = (currentDayIndex: number): FictionMovement[] => {
-    if (!followedFiction || currentDayIndex >= dailyRankings.length - 1) return [];
-    
+  // Calculate the sliding offset for smooth animations between days
+  const calculateSlidingOffset = (entry: FictionMovement): number => {
+    if (animationPhase !== 'sliding' || currentDayIndex >= dailyRankings.length - 1) return 0;
+
     const currentDay = dailyRankings[currentDayIndex];
     const nextDay = dailyRankings[currentDayIndex + 1];
-    
-    if (!currentDay || !nextDay) return [];
-    
-    const currentEntry = currentDay.rankings.find(r => r.fiction_id === followedFiction);
-    const nextEntry = nextDay.rankings.find(r => r.fiction_id === followedFiction);
-    
-    if (!currentEntry || !nextEntry) return [];
-    
-    // Create a list that shows the followed fiction moving to its new position
-    const movements: FictionMovement[] = [];
-    
-    // Add current rankings
-    currentDay.rankings.forEach(entry => {
-      if (entry.fiction_id === followedFiction) {
-        // This is the followed fiction - mark it for movement
-        movements.push({
-          ...entry,
-          currentPosition: entry.position,
-          previousPosition: entry.position,
-          isNew: false,
-          isDropped: false
-        });
-      } else {
-        // Regular entry
-        movements.push({
-          ...entry,
-          currentPosition: entry.position,
-          previousPosition: entry.position,
-          isNew: false,
-          isDropped: false
-        });
-      }
-    });
-    
-    // Sort by current position
-    return movements.sort((a, b) => a.currentPosition - b.currentPosition);
+
+    if (!currentDay || !nextDay) return 0;
+
+    const nextEntry = nextDay.rankings.find(r => r.fiction_id === entry.fiction_id);
+    if (!nextEntry) return 0; // Fiction dropped from rankings
+
+    // Calculate how many positions the fiction will move
+    const positionChange = nextEntry.position - entry.currentPosition;
+
+    // Each position is approximately 60px (based on the height of each entry + spacing)
+    const pixelOffset = positionChange * 60;
+
+    return pixelOffset;
   };
 
   const startAnimation = () => {
@@ -306,7 +284,7 @@ const RisingStarsAnimation: React.FC = () => {
 
     setIsPlaying(true);
     setCurrentDayIndex(0);
-    setIsMoving(false);
+    setAnimationPhase('start');
 
     // Start the animation loop
     animationIntervalRef.current = setInterval(() => {
@@ -314,39 +292,23 @@ const RisingStarsAnimation: React.FC = () => {
         if (prev >= dailyRankings.length - 1) {
           // Animation complete
           setIsPlaying(false);
+          setAnimationPhase('end');
           if (animationIntervalRef.current) {
             clearInterval(animationIntervalRef.current);
           }
           return 0;
         }
 
-        // Check if we need to show movement animation for followed fiction
-        if (followedFiction && prev < dailyRankings.length - 1) {
-          const currentDay = dailyRankings[prev];
-          const nextDay = dailyRankings[prev + 1];
-          
-          if (currentDay && nextDay) {
-            const currentEntry = currentDay.rankings.find(r => r.fiction_id === followedFiction);
-            const nextEntry = nextDay.rankings.find(r => r.fiction_id === followedFiction);
-            
-            if (currentEntry && nextEntry && currentEntry.position !== nextEntry.position) {
-              // Show movement animation
-              setIsMoving(true);
-              const movementPath = getMovementPath(prev);
-              setMovementData(movementPath);
-              
-              // After movement animation, continue to next day
-              setTimeout(() => {
-                setIsMoving(false);
-                setCurrentDayIndex(prev + 1);
-              }, 2000); // 2 second movement animation
-              
-              return prev; // Stay on current day during movement
-            }
-          }
-        }
+        // Start sliding animation
+        setAnimationPhase('sliding');
 
-        return prev + 1;
+        // After sliding animation completes, move to next day
+        setTimeout(() => {
+          setAnimationPhase('start');
+          setCurrentDayIndex(prev + 1);
+        }, 1000); // 1 second sliding animation
+
+        return prev; // Stay on current day during sliding
       });
     }, animationSpeed);
   };
@@ -404,7 +366,7 @@ const RisingStarsAnimation: React.FC = () => {
   const visibleRankings = getVisibleRankings(currentDayIndex);
 
   // If we're showing movement animation, use movement data
-  const displayRankings = isMoving ? movementData : visibleRankings;
+  const displayRankings = visibleRankings;
 
   return (
     <div className="space-y-6">
@@ -468,7 +430,7 @@ const RisingStarsAnimation: React.FC = () => {
       </div>
 
       {/* Movement Animation Indicator */}
-      {isMoving && (
+      {false && ( // isMoving is removed, so this will always be false
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800 text-center">
             🎬 <strong>Movement Animation:</strong> Watch your followed fiction move to its new position...
@@ -493,7 +455,7 @@ const RisingStarsAnimation: React.FC = () => {
       </div>
 
       {/* Focused View Indicator */}
-      {followedFiction && !isMoving && (
+      {followedFiction && (
         <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
             📍 <strong>Focused View:</strong> Showing fictions centered on your followed fiction.
@@ -509,7 +471,7 @@ const RisingStarsAnimation: React.FC = () => {
 
       {/* Rankings Display */}
       <Card className="p-6">
-        <div className="space-y-2 w-full max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="space-y-1 w-full max-w-4xl mx-auto px-4 sm:px-6">
           {(() => {
             return displayRankings.map((entry) => {
               const isFollowed = followedFiction === entry.fiction_id;
@@ -520,14 +482,24 @@ const RisingStarsAnimation: React.FC = () => {
               return (
                 <div
                   key={`${entry.fiction_id}-${currentDayIndex}`}
-                  className={`flex items-center p-3 rounded-lg border transition-all duration-500 ease-out min-w-[800px] ${entry.isNew
-                    ? 'bg-green-50 border-green-200'
-                    : isRising
+                  className={`flex items-center p-2 rounded-lg border transition-all duration-1000 ease-out min-w-[800px] ${isFollowed
+                    ? 'bg-yellow-100 border-yellow-300 shadow-lg'
+                    : entry.isNew
                       ? 'bg-green-50 border-green-200'
-                      : isFalling
-                        ? 'bg-yellow-50 border-yellow-200'
-                        : 'bg-gray-50 border-gray-200'
+                      : isRising
+                        ? 'bg-green-50 border-green-200'
+                        : isFalling
+                          ? 'bg-yellow-50 border-yellow-200'
+                          : 'bg-gray-50 border-gray-200'
                     }`}
+                  style={{
+                    transform: animationPhase === 'sliding'
+                      ? `translateY(${calculateSlidingOffset(entry)}px)`
+                      : 'translateY(0px)',
+                    transition: animationPhase === 'sliding'
+                      ? 'transform 1s ease-in-out'
+                      : 'all 0.5s ease-out'
+                  }}
                 >
                   {/* Position with change indicator */}
                   <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mr-4 relative">
@@ -556,23 +528,12 @@ const RisingStarsAnimation: React.FC = () => {
 
                   {/* Fiction Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">
+                    <h3 className="text-base font-semibold text-gray-900 truncate">
                       {entry.title}
                     </h3>
                     <p className="text-sm text-gray-600">
                       by {entry.author_name}
                     </p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {entry.genre}
-                      </span>
-                      {!entry.isNew && positionChange !== 0 && (
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isRising ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                          {isRising ? '↗' : '↘'} {Math.abs(positionChange)} positions
-                        </span>
-                      )}
-                    </div>
                   </div>
 
                   {/* Follow Button */}
@@ -590,18 +551,6 @@ const RisingStarsAnimation: React.FC = () => {
                     >
                       {isFollowed ? '⭐ Following' : '👁️ Follow'}
                     </button>
-                  </div>
-
-                  {/* Royal Road Link */}
-                  <div className="flex-shrink-0 ml-4">
-                    <a
-                      href={`https://www.royalroad.com/fiction/${entry.royalroad_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      View on RR →
-                    </a>
                   </div>
                 </div>
               );
