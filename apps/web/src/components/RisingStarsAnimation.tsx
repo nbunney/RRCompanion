@@ -36,14 +36,22 @@ const RisingStarsAnimation: React.FC = () => {
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [animationSpeed, setAnimationSpeed] = useState(2000);
+  const [animationSpeed, setAnimationSpeed] = useState(5000); // 5 seconds default
   const animationIntervalRef = useRef<number | null>(null);
   const [followedFiction, setFollowedFiction] = useState<number | null>(null); // Track which fiction to follow
+  const [selectedGenre, setSelectedGenre] = useState<string>('main'); // Default to main genre
 
   // Load Rising Stars data for the last 10 days
   useEffect(() => {
     loadRisingStarsData();
   }, []);
+
+  // Reload data when genre changes
+  useEffect(() => {
+    if (dailyRankings.length > 0) {
+      loadRisingStarsData();
+    }
+  }, [selectedGenre]);
 
   const loadRisingStarsData = async () => {
     try {
@@ -57,7 +65,7 @@ const RisingStarsAnimation: React.FC = () => {
 
       // Get Rising Stars data for the last 10 days
       const response = await risingStarsAPI.getRisingStars(
-        undefined, // no genre filter
+        selectedGenre, // Use selected genre instead of undefined
         startDate.toISOString().split('T')[0],
         endDate.toISOString().split('T')[0]
       );
@@ -89,7 +97,7 @@ const RisingStarsAnimation: React.FC = () => {
       // Filter data for this date and get top 20
       const dayData = data.filter(entry => {
         const entryDate = new Date(entry.captured_at).toISOString().split('T')[0];
-        return entryDate === dateStr;
+        return entryDate === dateStr && entry.genre === selectedGenre;
       });
 
       // Sort by position and take top 20
@@ -233,11 +241,6 @@ const RisingStarsAnimation: React.FC = () => {
     }
   };
 
-  const resetAnimation = () => {
-    stopAnimation();
-    setCurrentDayIndex(0);
-  };
-
   // Cleanup interval on unmount
   useEffect(() => {
     return () => {
@@ -284,55 +287,51 @@ const RisingStarsAnimation: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-        <div className="text-center sm:text-left">
-          <h2 className="text-2xl font-bold text-gray-900">Rising Stars Animation</h2>
-          <p className="text-gray-600">Watch the top 20 fictions move through the rankings over the last 10 days</p>
-        </div>
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Rising Stars Animation</h1>
+        <p className="text-lg text-gray-600 mb-6">
+          Watch the top 20 fictions move through the {selectedGenre} rankings over the last 10 days
+        </p>
 
-        <div className="flex flex-wrap gap-3">
-          {!isPlaying ? (
-            <Button
-              onClick={startAnimation}
-              variant="primary"
-              className="px-6"
-            >
-              ▶️ Play Animation
-            </Button>
-          ) : (
-            <Button
-              onClick={stopAnimation}
-              variant="outline"
-              className="px-6"
-            >
-              ⏸️ Pause
-            </Button>
-          )}
-
-          <Button
-            onClick={resetAnimation}
-            variant="outline"
-            className="px-6"
+        {/* Controls moved here */}
+        <div className="flex items-center justify-center space-x-4 mb-6">
+          <button
+            onClick={isPlaying ? stopAnimation : startAnimation}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${isPlaying
+                ? 'bg-red-500 hover:bg-red-600 text-white'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
           >
-            🔄 Reset
-          </Button>
-        </div>
-      </div>
+            {isPlaying ? '❚❚ Pause' : '▶ Play'}
+          </button>
 
-      {/* Animation Speed Control */}
-      <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4">
-        <label className="text-sm font-medium text-gray-700">Animation Speed:</label>
-        <select
-          value={animationSpeed}
-          onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-          className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-          disabled={isPlaying}
-        >
-          <option value={1000}>Fast (1s)</option>
-          <option value={2000}>Normal (2s)</option>
-          <option value={3000}>Slow (3s)</option>
-        </select>
+          <select
+            value={selectedGenre}
+            onChange={(e) => setSelectedGenre(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="main">Main</option>
+            <option value="fantasy">Fantasy</option>
+            <option value="sci-fi">Sci-Fi</option>
+            <option value="romance">Romance</option>
+            <option value="mystery">Mystery</option>
+            <option value="horror">Horror</option>
+            <option value="adventure">Adventure</option>
+            <option value="comedy">Comedy</option>
+            <option value="drama">Drama</option>
+            <option value="tragedy">Tragedy</option>
+          </select>
+
+          <select
+            value={animationSpeed}
+            onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value={3000}>3s (Fast)</option>
+            <option value={5000}>5s (Normal)</option>
+            <option value={7000}>7s (Slow)</option>
+          </select>
+        </div>
       </div>
 
       {/* Progress Bar */}
@@ -388,7 +387,7 @@ const RisingStarsAnimation: React.FC = () => {
                       : isFalling
                         ? 'bg-yellow-50 border-yellow-200'
                         : 'bg-gray-50 border-gray-200'
-                  }`}
+                    }`}
                 >
                   {/* Position with change indicator */}
                   <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mr-4 relative">
