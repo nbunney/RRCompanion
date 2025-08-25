@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { risingStarsAPI } from '@/services/api';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
@@ -40,11 +41,25 @@ const RisingStarsAnimation: React.FC = () => {
   const animationIntervalRef = useRef<number | null>(null);
   const [followedFiction, setFollowedFiction] = useState<number | null>(null); // Track which fiction to follow
   const [selectedGenre, setSelectedGenre] = useState<string>('main'); // Default to main genre
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Load Rising Stars data for the last 10 days
   useEffect(() => {
     loadRisingStarsData();
   }, []);
+
+  // Load URL parameters on mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const genre = searchParams.get('genre');
+    const speed = searchParams.get('speed');
+    const follow = searchParams.get('follow');
+
+    if (genre) setSelectedGenre(genre);
+    if (speed) setAnimationSpeed(Number(speed));
+    if (follow) setFollowedFiction(Number(follow));
+  }, [location.search]);
 
   // Reload data when genre changes
   useEffect(() => {
@@ -100,15 +115,28 @@ const RisingStarsAnimation: React.FC = () => {
         return entryDate === dateStr && entry.genre === selectedGenre;
       });
 
-      // Sort by position and take top 20
-      const top20 = dayData
+      // Group by fiction_id and take the latest entry for each fiction
+      const fictionMap = new Map();
+      dayData.forEach(entry => {
+        const existing = fictionMap.get(entry.fiction_id);
+        if (!existing || new Date(entry.captured_at) > new Date(existing.captured_at)) {
+          fictionMap.set(entry.fiction_id, entry);
+        }
+      });
+
+      // Convert back to array, sort by position, and take top 20
+      const uniqueDayData = Array.from(fictionMap.values());
+      const top20 = uniqueDayData
         .sort((a, b) => a.position - b.position)
         .slice(0, 20);
 
-      rankings.push({
-        date: dateStr,
-        rankings: top20
-      });
+      // Only add days that have data
+      if (top20.length > 0) {
+        rankings.push({
+          date: dateStr,
+          rankings: top20
+        });
+      }
     }
 
     return rankings;
@@ -123,6 +151,22 @@ const RisingStarsAnimation: React.FC = () => {
       setFollowedFiction(fictionId);
     }
   };
+
+  // Update URL when parameters change
+  const updateURL = () => {
+    const searchParams = new URLSearchParams();
+    if (selectedGenre !== 'main') searchParams.set('genre', selectedGenre);
+    if (animationSpeed !== 5000) searchParams.set('speed', animationSpeed.toString());
+    if (followedFiction) searchParams.set('follow', followedFiction.toString());
+
+    const newURL = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    navigate(newURL, { replace: true });
+  };
+
+  // Update URL when parameters change
+  useEffect(() => {
+    updateURL();
+  }, [selectedGenre, animationSpeed, followedFiction]);
 
   // Get the visible rankings based on whether a fiction is followed
   const getVisibleRankings = (currentDayIndex: number): FictionMovement[] => {
@@ -298,8 +342,8 @@ const RisingStarsAnimation: React.FC = () => {
           <button
             onClick={isPlaying ? stopAnimation : startAnimation}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${isPlaying
-                ? 'bg-red-500 hover:bg-red-600 text-white'
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
+              ? 'bg-red-500 hover:bg-red-600 text-white'
+              : 'bg-blue-500 hover:bg-blue-600 text-white'
               }`}
           >
             {isPlaying ? '❚❚ Pause' : '▶ Play'}
@@ -331,6 +375,18 @@ const RisingStarsAnimation: React.FC = () => {
             <option value={5000}>5s (Normal)</option>
             <option value={7000}>7s (Slow)</option>
           </select>
+
+          <button
+            onClick={() => {
+              const currentURL = window.location.href;
+              navigator.clipboard.writeText(currentURL);
+              // Could add a toast notification here
+            }}
+            className="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            title="Copy current view link"
+          >
+            📋 Copy Link
+          </button>
         </div>
       </div>
 
