@@ -37,8 +37,8 @@ const RisingStarsAnimation: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [animationSpeed, setAnimationSpeed] = useState(2000);
-  const animationRef = useRef<HTMLDivElement>(null);
   const animationIntervalRef = useRef<number | null>(null);
+  const [followedFiction, setFollowedFiction] = useState<number | null>(null); // Track which fiction to follow
 
   // Load Rising Stars data for the last 10 days
   useEffect(() => {
@@ -104,6 +104,47 @@ const RisingStarsAnimation: React.FC = () => {
     }
 
     return rankings;
+  };
+
+  const handleFollowFiction = (fictionId: number) => {
+    if (followedFiction === fictionId) {
+      // Unfollow
+      setFollowedFiction(null);
+    } else {
+      // Follow new fiction
+      setFollowedFiction(fictionId);
+    }
+  };
+
+  // Get the visible rankings based on whether a fiction is followed
+  const getVisibleRankings = (currentDayIndex: number): FictionMovement[] => {
+    const currentDayData = dailyRankings[currentDayIndex];
+    if (!currentDayData) return [];
+
+    const currentRankings = currentDayData.rankings || [];
+    const previousRankings = currentDayIndex > 0 ? dailyRankings[currentDayIndex - 1]?.rankings : undefined;
+
+    // If we have a followed fiction, show focused view
+    if (followedFiction && currentDayIndex >= 0) {
+      const followedEntry = currentRankings.find((entry: RisingStarsEntry) => entry.fiction_id === followedFiction);
+
+      if (followedEntry) {
+        // Followed fiction found - show 13 entries centered on it
+        const followedPosition = followedEntry.position;
+        const startIndex = Math.max(0, followedPosition - 7);
+        const endIndex = Math.min(currentRankings.length, followedPosition + 6);
+
+        const visibleRankings = currentRankings.slice(startIndex, endIndex);
+        return getFictionMovement(visibleRankings, previousRankings);
+      } else {
+        // Followed fiction not found - show bottom 13 entries
+        const bottomRankings = currentRankings.slice(-13);
+        return getFictionMovement(bottomRankings, previousRankings);
+      }
+    }
+
+    // No followed fiction - show all entries
+    return getFictionMovement(currentRankings, previousRankings);
   };
 
   const getFictionMovement = (currentRankings: RisingStarsEntry[], previousRankings?: RisingStarsEntry[]): FictionMovement[] => {
@@ -239,10 +280,7 @@ const RisingStarsAnimation: React.FC = () => {
     );
   }
 
-  const currentRankings = dailyRankings[currentDayIndex]?.rankings || [];
-  const previousRankings = currentDayIndex > 0 ? dailyRankings[currentDayIndex - 1]?.rankings : undefined;
-  const currentDate = dailyRankings[currentDayIndex]?.date || '';
-  const fictionMovements = getFictionMovement(currentRankings, previousRankings);
+  const visibleRankings = getVisibleRankings(currentDayIndex);
 
   return (
     <div className="space-y-6">
@@ -298,70 +336,52 @@ const RisingStarsAnimation: React.FC = () => {
       </div>
 
       {/* Progress Bar */}
-      {isPlaying && (
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">
+            Day {currentDayIndex + 1} of {dailyRankings.length}
+          </span>
+          <span className="text-sm text-gray-500">
+            {dailyRankings[currentDayIndex]?.date}
+          </span>
+        </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
-            style={{
-              width: `${((currentDayIndex + 1) / dailyRankings.length) * 100}%`
-            }}
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${((currentDayIndex + 1) / dailyRankings.length) * 100}%` }}
           />
+        </div>
+      </div>
+
+      {/* Focused View Indicator */}
+      {followedFiction && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            📍 <strong>Focused View:</strong> Showing fictions centered on your followed fiction.
+            <button
+              onClick={() => handleFollowFiction(followedFiction)}
+              className="ml-2 text-yellow-600 hover:text-yellow-800 underline"
+            >
+              Show all 50
+            </button>
+          </p>
         </div>
       )}
 
-      {/* Date Display */}
-      <div className="text-center">
-        <p className="text-lg font-medium text-gray-700">
-          {currentDate ? new Date(currentDate).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }) : 'Loading...'}
-        </p>
-        <p className="text-sm text-gray-500">
-          Day {currentDayIndex + 1} of {dailyRankings.length}
-        </p>
-      </div>
-
       {/* Rankings Display */}
       <Card className="p-6">
-        <div className="space-y-2" ref={animationRef}>
-          {fictionMovements.map((entry) => {
-            if (entry.isDropped) {
+        <div className="space-y-2 w-full max-w-4xl mx-auto px-4 sm:px-6">
+          {(() => {
+            return visibleRankings.map((entry) => {
+              const isFollowed = followedFiction === entry.fiction_id;
+              const positionChange = entry.previousPosition ? entry.previousPosition - entry.currentPosition : 0;
+              const isRising = positionChange > 0;
+              const isFalling = positionChange < 0;
+
               return (
                 <div
-                  key={`dropped-${entry.fiction_id}-${currentDayIndex}`}
-                  className="flex items-center p-3 bg-red-50 rounded-lg border border-red-200 transition-all duration-500 ease-out opacity-60"
-                >
-                  <div className="flex-shrink-0 w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center font-bold text-lg mr-4">
-                    ↓
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">
-                      {entry.title}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      by {entry.author_name}
-                    </p>
-                    <p className="text-sm text-red-600 font-medium">
-                      Dropped from position {entry.previousPosition}
-                    </p>
-                  </div>
-                </div>
-              );
-            }
-
-            const positionChange = entry.previousPosition
-              ? entry.previousPosition - entry.currentPosition
-              : 0;
-            const isRising = positionChange > 0;
-            const isFalling = positionChange < 0;
-
-            return (
-              <div
-                key={`${entry.fiction_id}-${currentDayIndex}`}
-                className={`flex items-center p-3 rounded-lg border transition-all duration-500 ease-out ${entry.isNew
+                  key={`${entry.fiction_id}-${currentDayIndex}`}
+                  className={`flex items-center p-3 rounded-lg border transition-all duration-500 ease-out min-w-[800px] ${entry.isNew
                     ? 'bg-green-50 border-green-200'
                     : isRising
                       ? 'bg-green-50 border-green-200'
@@ -369,67 +389,85 @@ const RisingStarsAnimation: React.FC = () => {
                         ? 'bg-yellow-50 border-yellow-200'
                         : 'bg-gray-50 border-gray-200'
                   }`}
-              >
-                {/* Position with change indicator */}
-                <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mr-4 relative">
-                  <div className={`w-full h-full rounded-full flex items-center justify-center ${entry.isNew
+                >
+                  {/* Position with change indicator */}
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mr-4 relative">
+                    <div className={`w-full h-full rounded-full flex items-center justify-center ${entry.isNew
                       ? 'bg-green-600 text-white'
                       : isRising
                         ? 'bg-green-600 text-white'
                         : isFalling
                           ? 'bg-yellow-600 text-white'
                           : 'bg-blue-600 text-white'
-                    }`}>
-                    {entry.currentPosition}
-                  </div>
-                  {!entry.isNew && positionChange !== 0 && (
-                    <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isRising ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'
                       }`}>
-                      {isRising ? '+' : ''}{positionChange}
+                      {entry.currentPosition}
                     </div>
-                  )}
-                  {entry.isNew && (
-                    <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold">
-                      NEW
-                    </div>
-                  )}
-                </div>
-
-                {/* Fiction Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">
-                    {entry.title}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    by {entry.author_name}
-                  </p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {entry.genre}
-                    </span>
                     {!entry.isNew && positionChange !== 0 && (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isRising ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isRising ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'
                         }`}>
-                        {isRising ? '↗' : '↘'} {Math.abs(positionChange)} positions
-                      </span>
+                        {isRising ? '+' : ''}{positionChange}
+                      </div>
+                    )}
+                    {entry.isNew && (
+                      <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold">
+                        NEW
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Royal Road Link */}
-                <div className="flex-shrink-0 ml-4">
-                  <a
-                    href={`https://www.royalroad.com/fiction/${entry.royalroad_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    View on RR →
-                  </a>
+                  {/* Fiction Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-gray-900 truncate">
+                      {entry.title}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      by {entry.author_name}
+                    </p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {entry.genre}
+                      </span>
+                      {!entry.isNew && positionChange !== 0 && (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isRising ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                          {isRising ? '↗' : '↘'} {Math.abs(positionChange)} positions
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Follow Button */}
+                  <div className="flex flex-col items-end space-y-1 ml-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFollowFiction(entry.fiction_id);
+                      }}
+                      className={`px-2 py-1 text-xs font-medium rounded-full transition-colors ${isFollowed
+                        ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      title={isFollowed ? 'Unfollow' : 'Follow this fiction'}
+                    >
+                      {isFollowed ? '⭐ Following' : '👁️ Follow'}
+                    </button>
+                  </div>
+
+                  {/* Royal Road Link */}
+                  <div className="flex-shrink-0 ml-4">
+                    <a
+                      href={`https://www.royalroad.com/fiction/${entry.royalroad_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      View on RR →
+                    </a>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </div>
       </Card>
 
