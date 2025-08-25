@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/Button';
@@ -21,6 +21,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Debug logging for admin link
   console.log('🔐 Header - Component rendered with props:', { title, showBackButton, backUrl, showUserInfo, showAboutLink });
@@ -38,12 +39,18 @@ const Header: React.FC<HeaderProps> = ({
   const handleLogout = () => {
     logout();
     navigate('/login');
+    setIsMobileMenuOpen(false);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
   };
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
+          {/* Left side - Logo/Title and Back Button */}
           <div className="flex items-center">
             {showBackButton && (
               <Button
@@ -70,7 +77,8 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          <div className="flex items-center space-x-4">
+          {/* Desktop Navigation - Hidden on mobile */}
+          <div className="hidden md:flex items-center space-x-4">
             {showAboutLink && (
               <Link
                 to="/about"
@@ -133,6 +141,122 @@ const Header: React.FC<HeaderProps> = ({
                 <Link
                   to="/register"
                   className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+              aria-expanded="false"
+              aria-label="Toggle mobile menu"
+            >
+              <span className="sr-only">Open main menu</span>
+              {/* Hamburger icon */}
+              <svg
+                className={`${isMobileMenuOpen ? 'hidden' : 'block'} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              {/* Close icon */}
+              <svg
+                className={`${isMobileMenuOpen ? 'block' : 'hidden'} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile menu */}
+        <div className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:hidden`}>
+          <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+            {/* Navigation Links */}
+            {showAboutLink && (
+              <Link
+                to="/about"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                onClick={closeMobileMenu}
+              >
+                About
+              </Link>
+            )}
+
+            {user && (
+              <Link
+                to="/dashboard"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                onClick={closeMobileMenu}
+              >
+                Dashboard
+              </Link>
+            )}
+
+            <Link
+              to="/coffee"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              onClick={closeMobileMenu}
+            >
+              ☕ Coffee
+            </Link>
+
+            {user?.admin && (
+              <Link
+                to="/admin"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                onClick={closeMobileMenu}
+              >
+                Admin
+              </Link>
+            )}
+
+            {/* User Authentication Section */}
+            {user ? (
+              // User is logged in
+              <div className="pt-4 pb-3 border-t border-gray-200">
+                {showUserInfo && (
+                  <div className="px-3 py-2 text-sm text-gray-700">
+                    Welcome, {user?.name || user?.email}
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="w-full justify-center"
+                >
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              // User is not logged in
+              <div className="pt-4 pb-3 border-t border-gray-200 space-y-2">
+                <Link
+                  to="/login"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                  onClick={closeMobileMenu}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                  onClick={closeMobileMenu}
                 >
                   Register
                 </Link>

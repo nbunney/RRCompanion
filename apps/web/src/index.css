@@ -10,6 +10,25 @@
   body {
     @apply bg-gray-50 text-gray-900;
   }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 768px) {
+    /* Improve touch targets */
+    button, a, input, select, textarea {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Better text readability on mobile */
+    body {
+      font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Improve scrolling on mobile */
+    * {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
 }
 
 @layer components {
@@ -43,5 +62,23 @@
   
   .card-content {
     @apply p-6 pt-0;
+  }
+
+  /* Mobile-specific component classes */
+  .mobile-menu {
+    @apply fixed inset-0 z-50 bg-white;
+  }
+  
+  .mobile-menu-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40;
+  }
+  
+  /* Responsive spacing utilities */
+  .mobile-padding {
+    @apply px-4 py-4 sm:px-6 sm:py-6;
+  }
+  
+  .mobile-margin {
+    @apply mx-4 my-4 sm:mx-6 sm:my-6;
   }
 } 

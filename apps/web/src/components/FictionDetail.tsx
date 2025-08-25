@@ -378,7 +378,7 @@ const FictionDetail: React.FC = () => {
             <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-8">
               {/* Fiction Image */}
               {fiction.image && (
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 flex justify-center lg:justify-start">
                   <a
                     href={getRoyalRoadUrl()}
                     target="_blank"
@@ -396,9 +396,9 @@ const FictionDetail: React.FC = () => {
 
               {/* Fiction Details */}
               <div className="flex-1">
-                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-4">
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-4 space-y-4 lg:space-y-0">
                   <div className="flex-1">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                       <a
                         href={getRoyalRoadUrl()}
                         target="_blank"
@@ -408,7 +408,7 @@ const FictionDetail: React.FC = () => {
                         {fiction.title}
                       </a>
                     </h1>
-                    <p className="text-lg text-gray-600 mb-3">
+                    <p className="text-base sm:text-lg text-gray-600 mb-3">
                       by{' '}
                       <a
                         href={`https://www.royalroad.com/profile/${fiction.author.id}`}
@@ -422,12 +422,13 @@ const FictionDetail: React.FC = () => {
 
                   </div>
                   <div className="flex flex-col space-y-2">
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                       {userFiction ? (
                         <Button
                           onClick={handleToggleFavorite}
                           disabled={isAddingToFavorites}
                           variant={userFiction.is_favorite ? "primary" : "outline"}
+                          className="w-full sm:w-auto"
                         >
                           {isAddingToFavorites ? '...' : (userFiction.is_favorite ? '❤️ Favorited' : '🤍 Add to Favorites')}
                         </Button>
@@ -436,6 +437,7 @@ const FictionDetail: React.FC = () => {
                           onClick={handleAddToFavorites}
                           disabled={isAddingToFavorites}
                           variant="outline"
+                          className="w-full sm:w-auto"
                         >
                           {isAddingToFavorites ? 'Adding...' : '🤍 Add to Favorites'}
                         </Button>
@@ -444,6 +446,7 @@ const FictionDetail: React.FC = () => {
                         onClick={handleDownloadCSV}
                         disabled={false}
                         variant="outline"
+                        className="w-full sm:w-auto"
                       >
                         📦 Data
                       </Button>
