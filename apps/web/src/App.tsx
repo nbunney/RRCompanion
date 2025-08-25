@@ -93,14 +93,7 @@ const App: React.FC = () => {
         />
 
         <Route path="/coffee" element={<Coffee />} />
-        <Route
-          path="/rising-stars-animation"
-          element={
-            <ProtectedRoute>
-              <RisingStarsAnimation />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/rising-stars-animation" element={<RisingStarsAnimation />} />
         <Route
           path="/fiction/:id/:slug?"
           element={<FictionDetail />}

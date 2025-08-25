@@ -15,12 +15,23 @@ export async function getRisingStars(ctx: Context) {
     let endDate: Date | undefined;
 
     if (startDateStr) {
-      startDate = new Date(startDateStr);
+      // Create UTC date for start of day
+      startDate = new Date(startDateStr + 'T00:00:00.000Z');
     }
 
     if (endDateStr) {
-      endDate = new Date(endDateStr);
+      // Create UTC date for end of day to include all data for that date
+      endDate = new Date(endDateStr + 'T23:59:59.999Z');
     }
+
+    console.log('🔍 Rising Stars API - Date conversion:', {
+      startDateStr,
+      endDateStr,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+      startDateLocal: startDate?.toString(),
+      endDateLocal: endDate?.toString()
+    });
 
     const data = await risingStarsService.getRisingStarsData(genre, startDate, endDate);
 
@@ -64,7 +75,7 @@ export async function getTopRisingStars(ctx: Context) {
   try {
     const url = new URL(ctx.request.url);
     const limit = parseInt(url.searchParams.get('limit') || '5');
-    
+
     const data = await risingStarsService.getTopRisingStars(limit);
 
     ctx.response.status = 200;

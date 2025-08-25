@@ -7,6 +7,9 @@ export interface RisingStarEntry {
   genre: string;
   position: number;
   captured_at?: Date;
+  title?: string;
+  author_name?: string;
+  royalroad_id?: string;
 }
 
 export class RisingStarsService {
@@ -42,7 +45,7 @@ export class RisingStarsService {
   async getRisingStarsData(genre?: string, startDate?: Date, endDate?: Date): Promise<RisingStarEntry[]> {
     try {
       let query = `
-        SELECT rs.*, f.title, f.author_name
+        SELECT rs.*, f.title, f.author_name, f.royalroad_id
         FROM risingStars rs
         JOIN fiction f ON rs.fiction_id = f.id
         WHERE 1=1
@@ -65,6 +68,16 @@ export class RisingStarsService {
       }
 
       query += ` ORDER BY rs.captured_at DESC, rs.position ASC`;
+
+      console.log('🔍 Rising Stars Service - Query params:', {
+        genre,
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString(),
+        startDateLocal: startDate?.toString(),
+        endDateLocal: endDate?.toString(),
+        query,
+        params: params.map(p => p instanceof Date ? p.toISOString() : p)
+      });
 
       const result = await this.dbClient.query(query, params);
       return result as RisingStarEntry[];
