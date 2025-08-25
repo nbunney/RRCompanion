@@ -41,6 +41,8 @@ const RisingStarsAnimation: React.FC = () => {
   const animationIntervalRef = useRef<number | null>(null);
   const [followedFiction, setFollowedFiction] = useState<number | null>(null); // Track which fiction to follow
   const [selectedGenre, setSelectedGenre] = useState<string>('main'); // Default to main genre
+  const [isMoving, setIsMoving] = useState(false); // Track if we're in movement phase
+  const [movementData, setMovementData] = useState<FictionMovement[]>([]); // Store movement data
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -255,11 +257,56 @@ const RisingStarsAnimation: React.FC = () => {
     });
   };
 
+  // Calculate movement path for followed fiction
+  const getMovementPath = (currentDayIndex: number): FictionMovement[] => {
+    if (!followedFiction || currentDayIndex >= dailyRankings.length - 1) return [];
+    
+    const currentDay = dailyRankings[currentDayIndex];
+    const nextDay = dailyRankings[currentDayIndex + 1];
+    
+    if (!currentDay || !nextDay) return [];
+    
+    const currentEntry = currentDay.rankings.find(r => r.fiction_id === followedFiction);
+    const nextEntry = nextDay.rankings.find(r => r.fiction_id === followedFiction);
+    
+    if (!currentEntry || !nextEntry) return [];
+    
+    // Create a list that shows the followed fiction moving to its new position
+    const movements: FictionMovement[] = [];
+    
+    // Add current rankings
+    currentDay.rankings.forEach(entry => {
+      if (entry.fiction_id === followedFiction) {
+        // This is the followed fiction - mark it for movement
+        movements.push({
+          ...entry,
+          currentPosition: entry.position,
+          previousPosition: entry.position,
+          isNew: false,
+          isDropped: false
+        });
+      } else {
+        // Regular entry
+        movements.push({
+          ...entry,
+          currentPosition: entry.position,
+          previousPosition: entry.position,
+          isNew: false,
+          isDropped: false
+        });
+      }
+    });
+    
+    // Sort by current position
+    return movements.sort((a, b) => a.currentPosition - b.currentPosition);
+  };
+
   const startAnimation = () => {
     if (dailyRankings.length === 0) return;
 
     setIsPlaying(true);
     setCurrentDayIndex(0);
+    setIsMoving(false);
 
     // Start the animation loop
     animationIntervalRef.current = setInterval(() => {
@@ -272,6 +319,33 @@ const RisingStarsAnimation: React.FC = () => {
           }
           return 0;
         }
+
+        // Check if we need to show movement animation for followed fiction
+        if (followedFiction && prev < dailyRankings.length - 1) {
+          const currentDay = dailyRankings[prev];
+          const nextDay = dailyRankings[prev + 1];
+          
+          if (currentDay && nextDay) {
+            const currentEntry = currentDay.rankings.find(r => r.fiction_id === followedFiction);
+            const nextEntry = nextDay.rankings.find(r => r.fiction_id === followedFiction);
+            
+            if (currentEntry && nextEntry && currentEntry.position !== nextEntry.position) {
+              // Show movement animation
+              setIsMoving(true);
+              const movementPath = getMovementPath(prev);
+              setMovementData(movementPath);
+              
+              // After movement animation, continue to next day
+              setTimeout(() => {
+                setIsMoving(false);
+                setCurrentDayIndex(prev + 1);
+              }, 2000); // 2 second movement animation
+              
+              return prev; // Stay on current day during movement
+            }
+          }
+        }
+
         return prev + 1;
       });
     }, animationSpeed);
@@ -328,6 +402,9 @@ const RisingStarsAnimation: React.FC = () => {
   }
 
   const visibleRankings = getVisibleRankings(currentDayIndex);
+
+  // If we're showing movement animation, use movement data
+  const displayRankings = isMoving ? movementData : visibleRankings;
 
   return (
     <div className="space-y-6">
@@ -390,13 +467,20 @@ const RisingStarsAnimation: React.FC = () => {
         </div>
       </div>
 
+      {/* Movement Animation Indicator */}
+      {isMoving && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800 text-center">
+            🎬 <strong>Movement Animation:</strong> Watch your followed fiction move to its new position...
+          </p>
+        </div>
+      )}
+
       {/* Progress Bar */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">
-            Day {currentDayIndex + 1} of {dailyRankings.length}
-          </span>
-          <span className="text-sm text-gray-500">
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>Day {currentDayIndex + 1} of {dailyRankings.length}</span>
+          <span>
             {dailyRankings[currentDayIndex]?.date}
           </span>
         </div>
@@ -409,7 +493,7 @@ const RisingStarsAnimation: React.FC = () => {
       </div>
 
       {/* Focused View Indicator */}
-      {followedFiction && (
+      {followedFiction && !isMoving && (
         <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
             📍 <strong>Focused View:</strong> Showing fictions centered on your followed fiction.
@@ -427,7 +511,7 @@ const RisingStarsAnimation: React.FC = () => {
       <Card className="p-6">
         <div className="space-y-2 w-full max-w-4xl mx-auto px-4 sm:px-6">
           {(() => {
-            return visibleRankings.map((entry) => {
+            return displayRankings.map((entry) => {
               const isFollowed = followedFiction === entry.fiction_id;
               const positionChange = entry.previousPosition ? entry.previousPosition - entry.currentPosition : 0;
               const isRising = positionChange > 0;
