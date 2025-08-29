@@ -19,23 +19,54 @@ import adminRoutes from './routes/admin.ts';
 import couponRoutes from './routes/coupon.ts';
 
 // Load environment variables with multiple path attempts
+console.log('🔍 Current working directory:', Deno.cwd());
+console.log('🔍 Script location:', import.meta.url);
+
 try {
   // Try relative to current working directory first
   config({ export: true });
   console.log('✅ Loaded .env from current working directory');
 } catch (error) {
+  console.log('❌ Failed to load from current working directory:', (error as Error).message);
+
   try {
-    // Try relative to the script location
-    const envPath = new URL('.env', import.meta.url).pathname;
+    // Try relative to the script location (go up one directory to apps/api/)
+    const scriptDir = new URL('.', import.meta.url).pathname;
+    const apiDir = scriptDir.replace('/src/', '/');
+    const envPath = apiDir + '.env';
+    console.log('🔍 Trying script location path:', envPath);
     config({ path: envPath, export: true });
     console.log('✅ Loaded .env from script location:', envPath);
   } catch (error2) {
+    console.log('❌ Failed to load from script location:', (error2 as Error).message);
+
     try {
-      // Try absolute path from project root
-      config({ path: '/var/www/rrcompanion/apps/api/.env', export: true });
-      console.log('✅ Loaded .env from absolute path');
+      // Try relative to current working directory but go up to apps/api/
+      const cwd = Deno.cwd();
+      let envPath;
+      if (cwd.includes('/src')) {
+        envPath = cwd.replace('/src', '') + '/.env';
+      } else if (cwd.includes('/apps/api')) {
+        envPath = cwd + '/.env';
+      } else {
+        envPath = cwd + '/apps/api/.env';
+      }
+      console.log('🔍 Trying adjusted path:', envPath);
+      config({ path: envPath, export: true });
+      console.log('✅ Loaded .env from adjusted path:', envPath);
     } catch (error3) {
-      console.warn('❌ Could not load .env file, using system environment variables');
+      console.log('❌ Failed to load from adjusted path:', (error3 as Error).message);
+
+      try {
+        // Try absolute path from project root
+        const absolutePath = '/var/www/rrcompanion/apps/api/.env';
+        console.log('🔍 Trying absolute path:', absolutePath);
+        config({ path: absolutePath, export: true });
+        console.log('✅ Loaded .env from absolute path');
+      } catch (error4) {
+        console.log('❌ Failed to load from absolute path:', (error4 as Error).message);
+        console.warn('❌ Could not load .env file, using system environment variables');
+      }
     }
   }
 }
@@ -162,7 +193,7 @@ try {
   await initializeDatabase();
 
   // Start cron service for Rising Stars collection and Royal Road data collection in production
-  const nodeEnv = Deno.env.get('NODE_ENV') || 'development';
+  const nodeEnv = Deno.env.get('NODE_ENV') || 'production'; // Default to production instead of development
   if (nodeEnv === 'production') {
     const cronService = new CronService();
     cronService.start();

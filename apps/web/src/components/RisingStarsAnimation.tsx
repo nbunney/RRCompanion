@@ -33,22 +33,22 @@ interface FictionMovement {
 
 const RisingStarsAnimation: React.FC = () => {
   const [dailyRankings, setDailyRankings] = useState<DailyRanking[]>([]);
+  const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentDayIndex, setCurrentDayIndex] = useState(-1); // Start at -1, will be set to last day after loading
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [animationSpeed, setAnimationSpeed] = useState(5000); // 5 seconds default
-  const animationIntervalRef = useRef<number | null>(null);
-  const [followedFiction, setFollowedFiction] = useState<number | null>(null); // Track which fiction to follow
-  const [selectedGenre, setSelectedGenre] = useState<string>('main'); // Default to main genre
+  const [animationSpeed, setAnimationSpeed] = useState(2000);
+  const [selectedGenre, setSelectedGenre] = useState('main');
+  const [followedFiction, setFollowedFiction] = useState<number | null>(null);
   const [animationPhase, setAnimationPhase] = useState<'start' | 'sliding' | 'end'>('start');
+  const [isLoading, setIsLoading] = useState(true);
+  const [urlParamsProcessed, setUrlParamsProcessed] = useState(false);
+  // Removed unused shouldStopAnimation state - using shouldStopAnimationRef.current instead
+  const [showNewPosition, setShowNewPosition] = useState(false);
+  const animationIntervalRef = useRef<number | null>(null);
+  const shouldStopAnimationRef = useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Load Rising Stars data for the last 10 days
-  useEffect(() => {
-    loadRisingStarsData();
-  }, []);
+  console.log('🎬 Component mounted - shouldStopAnimationRef.current initial value:', shouldStopAnimationRef.current);
 
   // Load URL parameters on mount
   useEffect(() => {
@@ -57,65 +57,112 @@ const RisingStarsAnimation: React.FC = () => {
     const speed = searchParams.get('speed');
     const follow = searchParams.get('follow');
 
+    console.log('🔗 URL Parameters processed:', { genre, speed, follow });
+
     if (genre) setSelectedGenre(genre);
     if (speed) setAnimationSpeed(Number(speed));
     if (follow) setFollowedFiction(Number(follow));
+    setUrlParamsProcessed(true); // Mark URL parameters as processed
   }, [location.search]);
 
-  // Reload data when genre changes
+  // Load Rising Stars data after URL parameters are processed
   useEffect(() => {
-    if (dailyRankings.length > 0) {
+    console.log('📊 Data loading effect triggered:', { selectedGenre, followedFiction, urlParamsProcessed });
+    // Only load when URL parameters have been processed and we have a genre
+    if (urlParamsProcessed && selectedGenre) {
       loadRisingStarsData();
     }
-  }, [selectedGenre]);
+  }, [urlParamsProcessed, selectedGenre, followedFiction]); // Depend on URL processing flag
 
   const loadRisingStarsData = async () => {
     try {
-      setIsLoading(true);
-      setError('');
+      console.log('🚀 Starting loadRisingStarsData with:', { selectedGenre, followedFiction });
 
-      // Calculate date range for the last 10 days
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 9);
+      let startDate: string;
+      let endDate: string;
 
-      // Get Rising Stars data for the last 10 days
-      const response = await risingStarsAPI.getRisingStars(
-        selectedGenre, // Use selected genre instead of undefined
-        startDate.toISOString().split('T')[0],
-        endDate.toISOString().split('T')[0]
-      );
+      if (followedFiction) {
+        try {
+          console.log('🎯 Getting date range for followed fiction:', followedFiction);
+          const dateRangeResponse = await risingStarsAPI.getFictionDateRange(followedFiction, selectedGenre);
+          console.log('📅 Date range response:', dateRangeResponse);
+
+          if (dateRangeResponse.success && dateRangeResponse.data) {
+            const { firstDate, lastDate } = dateRangeResponse.data;
+
+            // Use the full date range from the backend
+            startDate = firstDate;
+            // Ensure end date covers the entire day by setting it to end of day
+            const endDateObj = new Date(lastDate);
+            endDateObj.setHours(23, 59, 59, 999);
+            endDate = endDateObj.toISOString();
+
+            console.log('📅 Fiction', followedFiction, 'appears from', startDate, 'to', endDate);
+          } else {
+            throw new Error('Failed to get date range');
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not get date range for followed fiction, using default range:', error);
+          // Fall back to default 10-day range
+          const end = new Date();
+          const start = new Date();
+          start.setDate(start.getDate() - 9);
+          startDate = start.toISOString().split('T')[0];
+          endDate = end.toISOString().split('T')[0];
+        }
+      } else {
+        // Default 10-day range
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 9);
+        startDate = start.toISOString().split('T')[0];
+        endDate = end.toISOString().split('T')[0];
+      }
+
+      console.log('📅 Using date range:', { startDate, endDate, selectedGenre });
+
+      const response = await risingStarsAPI.getRisingStars(selectedGenre, startDate, endDate);
+      console.log('📡 API response:', response);
 
       if (response.success && response.data) {
-        // Group data by date and get top 20 for each day
-        const groupedData = groupDataByDate(response.data);
-        setDailyRankings(groupedData);
-        setCurrentDayIndex(groupedData.length - 1); // Set to the last day after loading
+        console.log('✅ Rising Stars data loaded successfully:', response.data.length, 'entries');
+        const grouped = groupDataByDate(response.data);
+        console.log('📊 Grouped data result:', grouped);
+        setDailyRankings(grouped);
+        setCurrentDayIndex(grouped.length - 1); // Start on the last day
+        console.log('📊 Grouped data:', grouped.length, 'days');
+        setIsLoading(false);
       } else {
-        setError('Failed to load Rising Stars data');
+        console.error('❌ Failed to load Rising Stars data:', response.error);
+        setIsLoading(false);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load data');
-    } finally {
+    } catch (error) {
+      console.error('❌ Error loading Rising Stars data:', error);
       setIsLoading(false);
     }
   };
 
   const groupDataByDate = (data: any[]): DailyRanking[] => {
-    const today = new Date();
+    console.log('🔍 groupDataByDate called with:', data.length, 'entries');
     const rankings: DailyRanking[] = [];
 
-    // Create entries for the last 10 days
-    for (let i = 9; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+    // Group data by date
+    const groupedByDate: { [key: string]: any[] } = {};
+    data.forEach(entry => {
+      const entryDate = new Date(entry.captured_at).toISOString().split('T')[0];
+      if (!groupedByDate[entryDate]) {
+        groupedByDate[entryDate] = [];
+      }
+      groupedByDate[entryDate].push(entry);
+    });
 
-      // Filter data for this date and get top 20
-      const dayData = data.filter(entry => {
-        const entryDate = new Date(entry.captured_at).toISOString().split('T')[0];
-        return entryDate === dateStr && entry.genre === selectedGenre;
-      });
+    console.log('📅 Grouped by date:', Object.keys(groupedByDate).length, 'dates:', Object.keys(groupedByDate));
+
+    // Sort dates chronologically and process each day
+    const sortedDates = Object.keys(groupedByDate).sort();
+    sortedDates.forEach(dateStr => {
+      const dayData = groupedByDate[dateStr].filter(entry => entry.genre === selectedGenre);
+      console.log('🎭 Date', dateStr, 'has', dayData.length, 'entries for genre', selectedGenre);
 
       // Group by fiction_id and take the latest entry for each fiction
       const fictionMap = new Map();
@@ -126,21 +173,24 @@ const RisingStarsAnimation: React.FC = () => {
         }
       });
 
-      // Convert back to array, sort by position, and take top 20
+      // Convert back to array, sort by position, and take top 50
       const uniqueDayData = Array.from(fictionMap.values());
-      const top20 = uniqueDayData
+      const top50 = uniqueDayData
         .sort((a, b) => a.position - b.position)
-        .slice(0, 20);
+        .slice(0, 50);
+
+      console.log('📊 Date', dateStr, 'processed:', uniqueDayData.length, 'unique fictions, top 50:', top50.length);
 
       // Only add days that have data
-      if (top20.length > 0) {
+      if (top50.length > 0) {
         rankings.push({
           date: dateStr,
-          rankings: top20
+          rankings: top50
         });
       }
-    }
+    });
 
+    console.log('🏁 Final rankings result:', rankings.length, 'days with data');
     return rankings;
   };
 
@@ -183,21 +233,87 @@ const RisingStarsAnimation: React.FC = () => {
       const followedEntry = currentRankings.find((entry: RisingStarsEntry) => entry.fiction_id === followedFiction);
 
       if (followedEntry) {
-        // Followed fiction found - show 13 entries centered on it
+        // Followed fiction found - show 25 entries in memory but only display 13 centered on it
         const followedPosition = followedEntry.position;
-        const startIndex = Math.max(0, followedPosition - 7);
-        const endIndex = Math.min(currentRankings.length, followedPosition + 6);
+        const startIndex = Math.max(0, followedPosition - 12);
+        const endIndex = Math.min(currentRankings.length, followedPosition + 12);
 
         const visibleRankings = currentRankings.slice(startIndex, endIndex);
-        return getFictionMovement(visibleRankings, previousRankings);
+        console.log('🎯 Focused view - centered on fiction:', followedFiction, 'position:', followedPosition, 'showing entries:', startIndex, 'to', endIndex, 'total:', visibleRankings.length);
+
+        // For focused view, only show current rankings, no dropped fictions
+        const allEntries = visibleRankings.map(entry => ({
+          ...entry,
+          currentPosition: entry.position,
+          previousPosition: previousRankings?.find(r => r.fiction_id === entry.fiction_id)?.position,
+          isNew: !previousRankings?.find(r => r.fiction_id === entry.fiction_id),
+          isDropped: false
+        }));
+
+        // Only return 13 entries centered on the followed fiction for display
+        const centerIndex = allEntries.findIndex(entry => entry.fiction_id === followedFiction);
+
+        // Always try to center the followed fiction in the middle of the 13 visible entries
+        // This means it should be at position 6 (0-indexed) in our display array
+        let displayStart: number;
+        let displayEnd: number;
+
+        // Calculate the ideal center position (6th position out of 13)
+        const idealCenterIndex = 6;
+
+        // Calculate how many entries we can show above and below
+        const entriesAbove = Math.min(idealCenterIndex, centerIndex);
+        const entriesBelow = Math.min(13 - idealCenterIndex - 1, allEntries.length - centerIndex - 1);
+
+        // Calculate the actual start and end indices
+        displayStart = centerIndex - entriesAbove;
+        displayEnd = centerIndex + entriesBelow + 1;
+
+        // Ensure we always show exactly 13 entries if possible
+        if (displayEnd - displayStart < 13 && allEntries.length >= 13) {
+          if (displayStart === 0) {
+            // At the top, extend downward
+            displayEnd = Math.min(allEntries.length, 13);
+          } else if (displayEnd === allEntries.length) {
+            // At the bottom, extend upward
+            displayStart = Math.max(0, allEntries.length - 13);
+          } else {
+            // In the middle, try to balance both sides
+            const remaining = 13 - (displayEnd - displayStart);
+            const extendUp = Math.min(Math.floor(remaining / 2), displayStart);
+            const extendDown = Math.min(remaining - extendUp, allEntries.length - displayEnd);
+
+            displayStart -= extendUp;
+            displayEnd += extendDown;
+          }
+        }
+
+        const displayEntries = allEntries.slice(displayStart, displayEnd);
+
+        console.log('🎯 Focused view result:', allEntries.length, 'total entries,', displayEntries.length, 'displayed');
+        console.log('🎯 Display range:', displayStart, 'to', displayEnd, 'centerIndex:', centerIndex, 'entriesAbove:', entriesAbove, 'entriesBelow:', entriesBelow);
+        return displayEntries;
       } else {
         // Followed fiction not found - show bottom 13 entries
         const bottomRankings = currentRankings.slice(-13);
-        return getFictionMovement(bottomRankings, previousRankings);
+        console.log('🎯 Focused view - fiction not found, showing bottom 13 entries');
+
+        // For focused view, only show current rankings, no dropped fictions
+        const result = bottomRankings.map(entry => ({
+          ...entry,
+          currentPosition: entry.position,
+          previousPosition: previousRankings?.find(r => r.fiction_id === entry.fiction_id)?.position,
+          isNew: !previousRankings?.find(r => r.fiction_id === entry.fiction_id),
+          isDropped: false
+        }));
+
+        console.log('🎯 Bottom 13 result:', result.length, 'entries');
+        return result;
       }
     }
 
-    // No followed fiction - show all entries
+    // No followed fiction - show all entries with full movement data
+    console.log('📊 Full view - showing all', currentRankings.length, 'entries');
     return getFictionMovement(currentRankings, previousRankings);
   };
 
@@ -260,30 +376,86 @@ const RisingStarsAnimation: React.FC = () => {
 
   // Calculate the sliding offset for smooth animations between days
   const calculateSlidingOffset = (entry: FictionMovement): number => {
-    if (animationPhase !== 'sliding' || currentDayIndex >= dailyRankings.length - 1) return 0;
+    if (animationPhase !== 'sliding' || currentDayIndex === 0) return 0;
 
+    console.log('🎬 Calculating movement for fiction:', entry.fiction_id, 'title:', entry.title, 'currentPosition:', entry.currentPosition, 'previousPosition:', entry.previousPosition);
+
+    const previousDay = dailyRankings[currentDayIndex - 1];
     const currentDay = dailyRankings[currentDayIndex];
-    const nextDay = dailyRankings[currentDayIndex + 1];
+    if (!previousDay || !currentDay) return 0;
 
-    if (!currentDay || !nextDay) return 0;
+    // Find this fiction in the previous day's rankings
+    const previousEntry = previousDay.rankings.find(r => r.fiction_id === entry.fiction_id);
 
-    const nextEntry = nextDay.rankings.find(r => r.fiction_id === entry.fiction_id);
-    if (!nextEntry) return 0; // Fiction dropped from rankings
+    if (!previousEntry) {
+      // Fiction is new, no movement needed
+      console.log('🎬 Fiction is new, no movement needed:', entry.fiction_id);
+      return 0;
+    }
 
-    // Calculate how many positions the fiction will move
-    const positionChange = nextEntry.position - entry.currentPosition;
+    // If the fiction has no position (0) or is outside our visible range, it should disappear
+    if (entry.currentPosition === 0 || entry.currentPosition > 50) {
+      console.log('🎬 Fiction has no position or is outside range, should disappear:', entry.fiction_id, 'position:', entry.currentPosition);
+      return 0;
+    }
 
-    // Each position is approximately 60px (based on the height of each entry + spacing)
-    const pixelOffset = positionChange * 60;
+    // Calculate the position change: how many positions did this item move?
+    const positionChange = previousEntry.position - entry.currentPosition;
 
-    return pixelOffset;
+    if (positionChange === 0) {
+      console.log('🎬 No position change for fiction:', entry.fiction_id);
+      return 0;
+    }
+
+    // Only move "Magical Girl of Despair" with 66px per position
+    if (entry.title === 'Magical Girl of Despair') {
+      const movementOffset = positionChange * 66;
+
+      console.log('%c🔍 MAGICAL GIRL OF DESPAIR - DETAILED MOVEMENT LOG 🔍', 'background: #FF6B6B; color: white; font-size: 16px; font-weight: bold; padding: 5px; border-radius: 5px;');
+      console.log('%c📊 MOVEMENT DATA:', 'background: #4ECDC4; color: white; font-weight: bold;', {
+        fictionId: entry.fiction_id,
+        title: entry.title,
+        previousPosition: previousEntry.position,
+        currentPosition: entry.currentPosition,
+        positionChange: positionChange,
+        movementOffset: movementOffset,
+        dayIndex: currentDayIndex,
+        animationPhase: animationPhase,
+        timestamp: new Date().toISOString(),
+        functionCall: 'calculateSlidingOffset'
+      });
+
+      console.log('%c🧮 CALCULATION BREAKDOWN:', 'background: #45B7D1; color: white; font-weight: bold;', {
+        previousPosition: previousEntry.position,
+        currentPosition: entry.currentPosition,
+        calculation: `${previousEntry.position} - ${entry.currentPosition} = ${positionChange}`,
+        pixelCalculation: `${positionChange} × 66px = ${movementOffset}px`,
+        direction: positionChange > 0 ? 'DOWN' : positionChange < 0 ? 'UP' : 'NO MOVEMENT'
+      });
+
+      return movementOffset;
+    }
+
+    // All other fictions get no movement
+    console.log('🎬 Fiction not moving (not Magical Girl of Despair):', entry.fiction_id, 'title:', entry.title);
+    return 0;
   };
+
+  // Removed unused calculateScrollOffset function
 
   const startAnimation = () => {
     if (dailyRankings.length === 0) return;
 
+    console.log('🎬 startAnimation called with dailyRankings.length:', dailyRankings.length);
+    console.log('🎬 Current shouldStopAnimationRef.current:', shouldStopAnimationRef.current);
+    console.log('🎬 Current isPlaying:', isPlaying);
+
+    // Reset the stop flag when starting animation
+    shouldStopAnimationRef.current = false;
+    console.log('🎬 Reset shouldStopAnimationRef.current to false');
+
     setIsPlaying(true);
-    
+
     // If we have a followed fiction, find the first day it appears
     let startDayIndex = 0;
     if (followedFiction) {
@@ -295,48 +467,90 @@ const RisingStarsAnimation: React.FC = () => {
         }
       }
     }
-    
+
+    console.log('🎬 Starting animation from day index:', startDayIndex);
     setCurrentDayIndex(startDayIndex);
     setAnimationPhase('start');
 
-    // Start the animation loop
-    animationIntervalRef.current = setInterval(() => {
-      setCurrentDayIndex(prev => {
-        if (prev >= dailyRankings.length - 1) {
-          // Animation complete - stay on the last day
-          setIsPlaying(false);
-          setAnimationPhase('end');
-          if (animationIntervalRef.current) {
-            clearInterval(animationIntervalRef.current);
-          }
-          return dailyRankings.length - 1; // Stay on the last day (day 10)
-        }
-        
-        // Start sliding animation
-        setAnimationPhase('sliding');
-        
-        // After sliding animation completes, move to next day
+    // Start the animation loop using recursive setTimeout for proper sequencing
+    const animateNextDay = (dayIndex: number) => {
+      console.log('🎬 animateNextDay called with dayIndex:', dayIndex, 'total days:', dailyRankings.length);
+
+      if (shouldStopAnimationRef.current) {
+        console.log('🎬 Animation stopped by user - shouldStopAnimationRef.current is true');
+        return;
+      }
+
+      if (dayIndex >= dailyRankings.length - 1) {
+        // Animation complete - stay on the last day
+        console.log('🎬 Animation complete - reached last day');
+        setIsPlaying(false);
+        setAnimationPhase('end');
+        setShowNewPosition(false);
+        shouldStopAnimationRef.current = false;
+        console.log('🎬 Reset shouldStopAnimationRef.current to false');
+        return;
+      }
+
+      // Phase 1: Start sliding animation with OLD position numbers visible
+      setShowNewPosition(false);
+      setAnimationPhase('sliding');
+      console.log('🎬 Animation phase: SLIDING for day', dayIndex + 1);
+
+      // Phase 2: After sliding animation completes, show NEW positions and pause for 3 seconds
+      setTimeout(() => {
+        if (shouldStopAnimationRef.current) return;
+
+        // Show new positions immediately when movement completes
+        setShowNewPosition(true);
+        setAnimationPhase('start');
+        console.log('🎬 Animation phase: COMPLETED - showing NEW positions for day', dayIndex + 1);
+
+        // Pause for 3 seconds to let users see the new positions
         setTimeout(() => {
+          if (shouldStopAnimationRef.current) return;
+
+          // Reset and move to next day
           setAnimationPhase('start');
-          setCurrentDayIndex(prev + 1);
-        }, 1000); // 1 second sliding animation
-        
-        return prev; // Stay on current day during sliding
-      });
-    }, animationSpeed);
+          setShowNewPosition(false);
+          console.log('🎬 Moving to next day:', dayIndex + 2);
+          setCurrentDayIndex(dayIndex + 1);
+
+          // Schedule the next day's animation
+          setTimeout(() => {
+            if (!shouldStopAnimationRef.current) {
+              console.log('🎬 Scheduling next day animation for day', dayIndex + 2);
+              animateNextDay(dayIndex + 1);
+            }
+          }, 500); // Small delay before starting next day
+        }, 3000); // 3 second pause to show new positions
+      }, 3000); // 3 second sliding animation
+    };
+
+    // Start the first day's animation
+    animateNextDay(startDayIndex);
   };
 
   const stopAnimation = () => {
+    console.log('🛑 stopAnimation called');
     setIsPlaying(false);
-    setCurrentDayIndex(0);
+    // Don't reset currentDayIndex - stay on the current day
+    setAnimationPhase('start');
+    setShowNewPosition(false);
+    shouldStopAnimationRef.current = true;
+    console.log('🛑 Set shouldStopAnimationRef.current to true');
+    // Clear any pending timeouts by setting a flag
     if (animationIntervalRef.current) {
       clearInterval(animationIntervalRef.current);
+      animationIntervalRef.current = null;
     }
   };
 
-  // Cleanup interval on unmount
+  // Cleanup on unmount
   useEffect(() => {
+    console.log('🧹 useEffect cleanup setup - component mounted');
     return () => {
+      console.log('🧹 useEffect cleanup running - component unmounting');
       if (animationIntervalRef.current) {
         clearInterval(animationIntervalRef.current);
       }
@@ -350,17 +564,6 @@ const RisingStarsAnimation: React.FC = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading Rising Stars data...</p>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-600 mb-4">{error}</p>
-        <Button onClick={loadRisingStarsData} variant="outline">
-          Try Again
-        </Button>
       </div>
     );
   }
@@ -385,9 +588,7 @@ const RisingStarsAnimation: React.FC = () => {
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Rising Stars Animation</h1>
-        <p className="text-lg text-gray-600 mb-6">
-          Watch the top 20 fictions move through the {selectedGenre} rankings over the last 10 days
-        </p>
+
 
         {/* Controls moved here */}
         <div className="flex items-center justify-center space-x-4 mb-6">
@@ -442,14 +643,7 @@ const RisingStarsAnimation: React.FC = () => {
         </div>
       </div>
 
-      {/* Movement Animation Indicator */}
-      {false && ( // isMoving is removed, so this will always be false
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800 text-center">
-            🎬 <strong>Movement Animation:</strong> Watch your followed fiction move to its new position...
-          </p>
-        </div>
-      )}
+
 
       {/* Progress Bar */}
       <div className="space-y-2">
@@ -461,9 +655,18 @@ const RisingStarsAnimation: React.FC = () => {
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+            className={`h-2 rounded-full transition-all duration-300 ease-out ${showNewPosition ? 'bg-yellow-500' :
+              animationPhase === 'sliding' ? 'bg-green-500' :
+                'bg-blue-600'
+              }`}
             style={{ width: `${((currentDayIndex + 1) / dailyRankings.length) * 100}%` }}
           />
+        </div>
+        {/* Animation Phase Indicator */}
+        <div className="text-center text-xs text-gray-500">
+          {showNewPosition ? '📊 POSITION UPDATE - Numbers changing before movement' :
+            animationPhase === 'sliding' ? '🎬 MOVEMENT - Fictions sliding to new positions' :
+              '⏸️ Ready for next animation'}
         </div>
       </div>
 
@@ -484,7 +687,9 @@ const RisingStarsAnimation: React.FC = () => {
 
       {/* Rankings Display */}
       <Card className="p-6">
-        <div className="space-y-1 w-full max-w-4xl mx-auto px-4 sm:px-6">
+        <div
+          className="space-y-1 w-full max-w-4xl mx-auto px-4 sm:px-6"
+        >
           {(() => {
             return displayRankings.map((entry) => {
               const isFollowed = followedFiction === entry.fiction_id;
@@ -494,9 +699,9 @@ const RisingStarsAnimation: React.FC = () => {
 
               return (
                 <div
-                  key={`${entry.fiction_id}-${currentDayIndex}`}
-                  className={`flex items-center p-2 rounded-lg border transition-all duration-1000 ease-out min-w-[800px] ${isFollowed
-                    ? 'bg-yellow-100 border-yellow-300 shadow-lg'
+                  key={entry.fiction_id}
+                  className={`flex items-center p-2 rounded-lg border min-w-[800px] transition-all duration-500 ${isFollowed
+                    ? showNewPosition ? 'bg-yellow-300 border-yellow-500 shadow-2xl ring-2 ring-yellow-400' : 'bg-yellow-100 border-yellow-300 shadow-lg'
                     : entry.isNew
                       ? 'bg-green-50 border-green-200'
                       : isRising
@@ -506,32 +711,82 @@ const RisingStarsAnimation: React.FC = () => {
                           : 'bg-gray-50 border-gray-200'
                     }`}
                   style={{
-                    transform: animationPhase === 'sliding'
-                      ? `translateY(${calculateSlidingOffset(entry)}px)`
-                      : 'translateY(0px)',
+                    transform: (() => {
+                      const offset = calculateSlidingOffset(entry);
+                      if (entry.title === 'Magical Girl of Despair') {
+                        console.log('%c🎯 MAGICAL GIRL OF DESPAIR - TRANSFORM APPLIED 🎯', 'background: #FFD93D; color: black; font-size: 16px; font-weight: bold; padding: 5px; border-radius: 5px;');
+                        console.log('%c⚡ TRANSFORM DATA:', 'background: #FF8E53; color: white; font-weight: bold;', {
+                          fictionId: entry.fiction_id,
+                          title: entry.title,
+                          animationPhase,
+                          offset,
+                          transform: `translateY(${offset}px)`,
+                          timestamp: new Date().toISOString()
+                        });
+                      }
+                      return animationPhase === 'sliding'
+                        ? `translateY(${offset}px)`
+                        : 'translateY(0px)';
+                    })(),
                     transition: animationPhase === 'sliding'
                       ? 'transform 1s ease-in-out'
                       : 'all 0.5s ease-out'
                   }}
+                  onClick={(event) => {
+                    const offset = calculateSlidingOffset(entry);
+                    const target = event.currentTarget as HTMLElement;
+                    console.log('🎬 Entry clicked:', {
+                      fictionId: entry.fiction_id,
+                      title: entry.title,
+                      currentPosition: entry.currentPosition,
+                      previousPosition: entry.previousPosition,
+                      animationPhase,
+                      slidingOffset: offset,
+                      transform: `translateY(${offset}px)`,
+                      // Get the actual DOM element position
+                      domElement: target,
+                      rect: target.getBoundingClientRect()
+                    });
+                  }}
                 >
                   {/* Position with change indicator */}
                   <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mr-4 relative">
-                    <div className={`w-full h-full rounded-full flex items-center justify-center ${entry.isNew
+                    <div className={`w-full h-full rounded-full flex items-center justify-center transition-all duration-500 ${entry.isNew
                       ? 'bg-green-600 text-white'
                       : isRising
                         ? 'bg-green-600 text-white'
                         : isFalling
                           ? 'bg-yellow-600 text-white'
                           : 'bg-blue-600 text-white'
-                      }`}>
-                      {entry.currentPosition}
+                      } ${showNewPosition ? 'scale-125 shadow-xl ring-4 ring-yellow-300' : ''}`}>
+                      {/* Show new position during the pause phase, current position otherwise */}
+                      {showNewPosition && currentDayIndex < dailyRankings.length - 1 ?
+                        (() => {
+                          const nextDay = dailyRankings[currentDayIndex + 1];
+                          if (nextDay) {
+                            const nextDayEntry = nextDay.rankings.find(r => r.fiction_id === entry.fiction_id);
+                            if (nextDayEntry && nextDayEntry.position !== entry.currentPosition) {
+                              // Position is changing - show the new position with dramatic styling
+                              return (
+                                <span className="text-white font-bold text-2xl">
+                                  {nextDayEntry.position}
+                                </span>
+                              );
+                            }
+                            return nextDayEntry ? nextDayEntry.position : entry.currentPosition;
+                          }
+                          return entry.currentPosition;
+                        })() :
+                        entry.currentPosition
+                      }
                     </div>
-                    {!entry.isNew && positionChange !== 0 && (
+                    {!entry.isNew && positionChange !== 0 && !showNewPosition && (
                       <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isRising ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'
                         }`}>
                         {isRising ? '+' : ''}{positionChange}
                       </div>
                     )}
+
                     {entry.isNew && (
                       <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold">
                         NEW

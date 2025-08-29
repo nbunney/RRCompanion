@@ -12,9 +12,7 @@ let dbConfig: {
 
 // Initialize environment variables and database configuration
 async function initializeConfig() {
-  // Load environment variables with force reload
-  config({ export: true, path: './apps/api/.env' });
-
+  // Environment variables are already loaded in main.ts, just read them
   dbConfig = {
     hostname: Deno.env.get('DB_HOST') || 'localhost',
     port: parseInt(Deno.env.get('DB_PORT') || '3306'),
@@ -22,6 +20,15 @@ async function initializeConfig() {
     password: Deno.env.get('DB_PASSWORD') || '',
     db: Deno.env.get('DB_NAME') || 'RRCompanion',
   };
+
+  // Debug: Log the database configuration (without password)
+  console.log('🔍 Database config loaded:', {
+    hostname: dbConfig.hostname,
+    port: dbConfig.port,
+    username: dbConfig.username,
+    db: dbConfig.db,
+    passwordSet: !!dbConfig.password
+  });
 }
 
 // Create database client

@@ -268,6 +268,12 @@ export const risingStarsAPI = {
     const response = await api.get(`/rising-stars/top?limit=${limit}`);
     return response.data;
   },
+
+  // Get date range when a specific fiction appears in rankings
+  getFictionDateRange: async (fictionId: number, genre: string): Promise<ApiResponse<{ firstDate: string; lastDate: string; totalDays: number }>> => {
+    const response = await api.get(`/rising-stars/fiction-date-range?fictionId=${fictionId}&genre=${genre}`);
+    return response.data;
+  },
 };
 
 // Stripe API

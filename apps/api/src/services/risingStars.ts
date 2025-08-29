@@ -99,13 +99,43 @@ export class RisingStarsService {
           FROM risingStars 
           WHERE genre = rs.genre
         )
-        ORDER BY rs.genre, rs.position
+        ORDER BY rs.genre, rs.position ASC
       `;
 
       const result = await this.dbClient.query(query);
       return result as RisingStarEntry[];
     } catch (error) {
       console.error('❌ Error getting latest rising stars data:', error);
+      throw error;
+    }
+  }
+
+  // Get the date range when a specific fiction appears in rankings for a given genre
+  async getFictionDateRange(fictionId: number, genre: string): Promise<{ firstDate: string; lastDate: string; totalDays: number }> {
+    try {
+      const query = `
+        SELECT 
+          MIN(DATE(captured_at)) as first_date,
+          MAX(DATE(captured_at)) as last_date,
+          COUNT(DISTINCT DATE(captured_at)) as total_days
+        FROM risingStars 
+        WHERE fiction_id = ? AND genre = ?
+      `;
+
+      const result = await this.dbClient.query(query, [fictionId, genre]);
+      const row = result[0] as any;
+
+      if (!row || !row.first_date) {
+        throw new Error(`Fiction ${fictionId} not found in ${genre} rankings`);
+      }
+
+      return {
+        firstDate: row.first_date,
+        lastDate: row.last_date,
+        totalDays: row.total_days
+      };
+    } catch (error) {
+      console.error('❌ Error getting fiction date range:', error);
       throw error;
     }
   }
