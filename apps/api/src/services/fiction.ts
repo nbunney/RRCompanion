@@ -227,6 +227,15 @@ export class FictionService {
     return { fictions, total, totalPages };
   }
 
+  // Get all fictions without pagination (for scraping)
+  static async getAllFictions(): Promise<Fiction[]> {
+    const result = await client.query(
+      'SELECT * FROM fiction ORDER BY created_at DESC'
+    );
+
+    return result.map((row: any) => this.mapDatabaseRowToFiction(row));
+  }
+
   // Search fictions
   static async searchFictions(query: string, page: number = 1, limit: number = 20): Promise<{ fictions: Fiction[]; total: number; totalPages: number }> {
     const offset = (page - 1) * limit;
