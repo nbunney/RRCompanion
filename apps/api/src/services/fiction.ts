@@ -91,6 +91,16 @@ export class FictionService {
     return this.mapDatabaseRowToFiction(fiction[0]);
   }
 
+  // Check if fiction exists by RoyalRoad ID (minimal query)
+  static async checkFictionExists(royalroadId: string): Promise<boolean> {
+    const result = await client.query(
+      'SELECT 1 FROM fiction WHERE royalroad_id = ? LIMIT 1',
+      [royalroadId]
+    );
+
+    return result.length > 0;
+  }
+
   // Get fiction by Royal Road ID
   static async getFictionByRoyalRoadId(royalroadId: string): Promise<Fiction | null> {
     const result = await client.query(

@@ -2,6 +2,7 @@ import { Router } from 'oak';
 import {
   getFictions,
   getFictionByRoyalRoadId,
+  checkFictionExists,
   searchFictions,
   getFictionsByAuthor,
   getTopFictions,
@@ -22,6 +23,7 @@ const router = new Router();
 router.get('/fictions/popular', getPopularFictions);
 router.get('/fictions/popular-by-users', getPopularFictionsBySiteUsers);
 router.get('/fictions/top', getTopFictions);
+router.get('/fictions/:id/exists', checkFictionExists);
 router.get('/cache/stats', getCacheStats);
 
 // Protected routes (require authentication)

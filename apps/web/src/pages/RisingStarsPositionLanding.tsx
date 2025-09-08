@@ -99,10 +99,10 @@ const RisingStarsPositionLanding: React.FC = () => {
       // Validate that the fiction exists (only for logged-in users)
       if (user) {
         try {
-          const response = await api.get(`/fictions/${finalFictionId}`);
+          const response = await api.get(`/fictions/${finalFictionId}/exists`);
           const data = response.data;
 
-          if (!data.success) {
+          if (!data.success || !data.data.exists) {
             setError('Fiction not found. Please check your ID or URL.');
             return;
           }

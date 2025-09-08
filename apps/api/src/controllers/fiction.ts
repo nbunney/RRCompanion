@@ -36,6 +36,39 @@ export async function getFictions(ctx: Context): Promise<void> {
   }
 }
 
+// Check if fiction exists by RoyalRoad ID (public endpoint)
+export async function checkFictionExists(ctx: Context): Promise<void> {
+  try {
+    const royalroadId = (ctx as any).params?.id;
+    if (!royalroadId) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: 'Royal Road ID is required',
+      } as ApiResponse;
+      return;
+    }
+
+    const exists = await FictionService.checkFictionExists(royalroadId);
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: {
+        exists,
+        royalroadId,
+      },
+    } as ApiResponse;
+  } catch (error) {
+    console.error('Check fiction exists error:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Internal server error',
+    } as ApiResponse;
+  }
+}
+
 // Get fiction by RoyalRoad ID
 export async function getFictionByRoyalRoadId(ctx: Context): Promise<void> {
   try {
@@ -81,7 +114,7 @@ export async function getFictionByRoyalRoadId(ctx: Context): Promise<void> {
   }
 }
 
-    // Download CSV data for fiction
+// Download CSV data for fiction
 export async function downloadFictionHistoryCSV(ctx: Context): Promise<void> {
   try {
     const fictionId = parseInt((ctx as any).params?.id);
