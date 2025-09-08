@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RRCompanion Scraper</title>
+  <style>
+    body {
+      width: 400px;
+      min-height: 500px;
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8f9fa;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0;
+      color: #2c3e50;
+      font-size: 18px;
+    }
+
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .section h2 {
+      margin: 0 0 12px 0;
+      color: #34495e;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 4px;
+      color: #555;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      flex: 1;
+    }
+
+    .btn-primary {
+      background-color: #3498db;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #2980b9;
+    }
+
+    .btn-secondary {
+      background-color: #95a5a6;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #7f8c8d;
+    }
+
+    .btn-success {
+      background-color: #27ae60;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background-color: #229954;
+    }
+
+    .btn:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+    }
+
+    .status {
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .status.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .status.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .page-info {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+
+    .message {
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .message.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .data-display {
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 11px;
+      line-height: 1.4;
+      display: none;
+    }
+
+    .data-section {
+      margin-bottom: 16px;
+      padding: 12px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border-left: 3px solid #3498db;
+    }
+
+    .data-section h3, .data-section h4 {
+      margin: 0 0 8px 0;
+      color: #2c3e50;
+    }
+
+    .data-section p {
+      margin: 4px 0;
+      color: #555;
+    }
+
+    .campaign-item {
+      margin-bottom: 12px;
+      padding: 8px;
+      background-color: white;
+      border-radius: 4px;
+      border: 1px solid #e9ecef;
+    }
+
+    .campaign-item p {
+      margin: 2px 0;
+    }
+
+    .campaign-item ul {
+      margin: 4px 0;
+      padding-left: 16px;
+    }
+
+    .campaign-item li {
+      margin: 1px 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>RRCompanion Scraper</h1>
+  </div>
+
+  <div class="section">
+    <h2>Configuration</h2>
+    <div class="form-group">
+      <label for="apiUrl">API URL:</label>
+      <input type="url" id="apiUrl" placeholder="http://localhost:8000/api/royalroad">
+    </div>
+    <div class="form-group">
+      <label for="authToken">Auth Token (optional):</label>
+      <input type="password" id="authToken" placeholder="Bearer token">
+    </div>
+    <div class="button-group">
+      <button id="saveConfigBtn" class="btn btn-secondary">Save Config</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Page Information</h2>
+    <div id="pageStatus" class="status info">Checking page...</div>
+    <div class="page-info">
+      <strong>Current URL:</strong><br>
+      <span id="currentUrl">Loading...</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Actions</h2>
+    <div class="button-group">
+      <button id="scrapeBtn" class="btn btn-primary">Scrape Page</button>
+      <button id="extractCampaignsBtn" class="btn btn-success hidden">Extract Campaigns</button>
+    </div>
+    <div class="button-group">
+      <button id="sendBtn" class="btn btn-secondary" disabled>Send to API</button>
+    </div>
+  </div>
+
+  <div id="message" class="message"></div>
+
+  <div id="dataDisplay" class="data-display"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

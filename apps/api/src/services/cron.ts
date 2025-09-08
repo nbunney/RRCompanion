@@ -2,8 +2,7 @@ import { FictionHistoryService } from './fictionHistory.ts';
 
 export class CronService {
   private fictionHistoryService: FictionHistoryService;
-  private lastRunDate: string | null = null;
-  private lastRunHour: number | null = null;
+  private lastRisingStarsRun: number = 0;
   private lastTopFictionsRefresh: number = 0;
   private lastAllFictionsRunDate: string | null = null;
   private lastAllFictionsRunHour: number | null = null;
@@ -12,26 +11,23 @@ export class CronService {
     this.fictionHistoryService = new FictionHistoryService();
   }
 
-  // Check if it's time to run the Rising Stars collection (12:24am, 6:24am, 12:24pm, 6:24pm PST)
-  private shouldRunCollection(): boolean {
+  // Check if it's time to run the Rising Stars collection (1 minute past each quarter hour)
+  private shouldRunRisingStarsCollection(): boolean {
     const now = new Date();
+    const minute = now.getMinutes();
+    const second = now.getSeconds();
 
-    // Convert to PST (UTC-8)
-    const pstTime = new Date(now.getTime() - (8 * 60 * 60 * 1000));
+    // Run at 1:01, 16:01, 31:01, 46:01 (1 minute past each quarter hour)
+    const quarterHourMinutes = [1, 16, 31, 46];
 
-    const hour = pstTime.getHours(); // Fixed: Use local hours, not UTC hours
-    const minute = pstTime.getMinutes(); // Fixed: Use local minutes, not UTC minutes
-    const today = pstTime.toISOString().split('T')[0];
+    // Check if we're at the right minute and within the first 30 seconds to avoid multiple runs
+    if (quarterHourMinutes.includes(minute) && second < 30) {
+      const nowTime = Date.now();
+      const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
 
-    // Define the four daily run times (in PST) - including 12:24am as requested
-    const runTimes = [0, 6, 12, 18]; // 12:24am, 6:24am, 12:24pm, 6:24pm PST
-
-    // Check if it's one of the scheduled times and we haven't run at this hour today
-    if (minute === 24 && runTimes.includes(hour)) {
-      // Check if we've already run at this specific hour today
-      if (this.lastRunDate !== today || this.lastRunHour !== hour) {
-        this.lastRunDate = today;
-        this.lastRunHour = hour;
+      // Only run if we haven't run in the last 15 minutes
+      if (nowTime - this.lastRisingStarsRun >= fifteenMinutes) {
+        this.lastRisingStarsRun = nowTime;
         return true;
       }
     }
@@ -100,28 +96,26 @@ export class CronService {
 
   // Check and run collection if needed
   private async checkAndRunCollection(): Promise<void> {
-    // Check if it's time to run Rising Stars collection
-    if (this.shouldRunCollection()) {
+    // Check if it's time to run Rising Stars collection (1 minute past each quarter hour)
+    if (this.shouldRunRisingStarsCollection()) {
       const now = new Date();
-      const pstTime = new Date(now.getTime() - (8 * 60 * 60 * 1000));
-      const hour = pstTime.getHours();
-
+      const minute = now.getMinutes();
       let timeLabel = '';
-      if (hour === 0) timeLabel = '12:24am PST';
-      else if (hour === 6) timeLabel = '6:24am PST';
-      else if (hour === 12) timeLabel = '12:24pm PST';
-      else if (hour === 18) timeLabel = '6:24pm PST';
+      if (minute === 1) timeLabel = '1 minute past the hour';
+      else if (minute === 16) timeLabel = '16 minutes past the hour';
+      else if (minute === 31) timeLabel = '31 minutes past the hour';
+      else if (minute === 46) timeLabel = '46 minutes past the hour';
 
-      console.log(`🌙 Running ${timeLabel} Rising Stars collection...`);
+      console.log(`🌙 Running Rising Stars collection (${timeLabel})...`);
       try {
         const success = await this.fictionHistoryService.runRisingStarsCollection();
         if (success) {
-          console.log(`✅ ${timeLabel} Rising Stars collection completed successfully`);
+          console.log(`✅ Rising Stars collection completed successfully`);
         } else {
-          console.error(`❌ ${timeLabel} Rising Stars collection failed`);
+          console.error(`❌ Rising Stars collection failed`);
         }
       } catch (error) {
-        console.error(`❌ Error during ${timeLabel} Rising Stars collection:`, error);
+        console.error(`❌ Error during Rising Stars collection:`, error);
       }
     }
 
@@ -167,8 +161,7 @@ export class CronService {
       this.checkAndRunCollection();
     }, 60000); // 60 seconds
 
-    console.log('✅ Cron service started - checking for Rising Stars collection at 12:24am, 6:24am, 12:24pm, 6:24pm PST');
-    console.log('🌙 Cron service started - Rising Stars collection at 12:24am, 6:24am, 12:24pm, and 6:24pm PST');
+    console.log('✅ Cron service started - Rising Stars collection at 1 minute past each quarter hour (1:01, 16:01, 31:01, 46:01)');
     console.log('📚 Cron service started - All Fictions collection at 1:24am, 7:24am, 1:24pm, and 7:24pm PST');
     console.log('🌐 Royal Road data collection runs every 6 hours');
     console.log('🔄 Top fictions data refreshes every 10 minutes');

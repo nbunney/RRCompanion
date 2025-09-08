@@ -17,6 +17,8 @@ import { risingStarsRoutes } from './routes/risingStars.ts';
 import stripeRoutes from './routes/stripe.ts';
 import adminRoutes from './routes/admin.ts';
 import couponRoutes from './routes/coupon.ts';
+import campaignRoutes from './routes/campaign.ts';
+import retentionRoutes from './routes/retention.ts';
 
 // Load environment variables with multiple path attempts
 console.log('🔍 Current working directory:', Deno.cwd());
@@ -157,6 +159,8 @@ router.use('/api', risingStarsRoutes.routes(), risingStarsRoutes.allowedMethods(
 router.use('/api/stripe', stripeRoutes.routes(), stripeRoutes.allowedMethods());
 router.use('/api/admin', adminRoutes.routes(), adminRoutes.allowedMethods());
 router.use('/api/coupons', couponRoutes.routes(), couponRoutes.allowedMethods());
+router.use('/api/campaigns', campaignRoutes.routes(), campaignRoutes.allowedMethods());
+router.use('/api/retention', retentionRoutes.routes(), retentionRoutes.allowedMethods());
 
 // Register router routes
 app.use(router.routes());
@@ -197,7 +201,7 @@ try {
   if (nodeEnv === 'production') {
     const cronService = new CronService();
     cronService.start();
-    console.log(`🌙 Cron service started - Rising Stars collection at 12:24am, 6:24am, 12:24pm, and 6:24pm PST`);
+    console.log(`🌙 Cron service started - Rising Stars collection at 1 minute past each quarter hour (1:01, 16:01, 31:01, 46:01)`);
     console.log(`🌐 Cron service started - Royal Road data collection every 6 hours`);
   } else {
     console.log(`🌙 Cron service skipped - NODE_ENV is '${nodeEnv}' (only runs in production)`);

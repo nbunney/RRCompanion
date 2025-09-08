@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "RRCompanion Scraper",
+  "version": "1.0.0",
+  "description": "Chrome extension for scraping private pages from Royal Road",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "cookies",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.royalroad.com/*",
+    "http://localhost:8000/*",
+    "https://your-domain.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.royalroad.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "RRCompanion Scraper"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "injected.js"
+      ],
+      "matches": [
+        "https://www.royalroad.com/*"
+      ]
+    }
+  ]
+}

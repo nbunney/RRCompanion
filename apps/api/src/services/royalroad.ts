@@ -731,8 +731,11 @@ export class RoyalRoadService {
   async getAllRisingStars(): Promise<RoyalRoadResponse<RisingStarFiction[]>> {
     try {
       // Royal Road has genre-specific Rising Stars pages using query parameters
-      // Note: Some genres use underscores instead of hyphens in URLs
-      const genres = ['main', 'action', 'adventure', 'comedy', 'drama', 'fantasy', 'historical', 'horror', 'mystery', 'psychological', 'romance', 'satire', 'sci_fi', 'one_shot', 'tragedy'];
+      // Complete list of all Rising Stars genres with correct URL formats
+      const genres = [
+        'main', 'action', 'adventure', 'comedy', 'drama', 'fantasy', 'historical', 'horror', 'mystery', 'romance', 'satire', 'sci_fi', 'slice_of_life', 'sports', 'supernatural', 'tragedy',
+        'anti-hero_lead', 'artificial_intelligence', 'attractive_lead', 'cyberpunk', 'dungeon', 'dystopia', 'female_lead', 'first_contact', 'gamelit', 'gender_bender', 'genetically_engineered%20', 'grimdark', 'harem', 'high_fantasy', 'litrpg', 'low_fantasy', 'loop', 'male_lead', 'martial_arts', 'multiple_lead', 'mythos', 'non-human_lead', 'post_apocalyptic', 'progression', 'psychological', 'reader_interactive', 'reincarnation', 'ruling_class', 'school_life', 'secret_identity', 'soft_sci-fi', 'space_opera', 'steampunk', 'strong_lead', 'super_heroes', 'technologically_engineered', 'time_travel', 'urban_fantasy', 'villainous_lead', 'virtual_reality', 'war_and_military', 'wuxia', 'xianxia', 'summoned_hero'
+      ];
       const allRisingStars: RisingStarFiction[] = [];
 
       for (const genre of genres) {
