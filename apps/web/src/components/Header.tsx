@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/Button';
 import Logo from '@/components/Logo';
@@ -21,7 +21,16 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Helper function to determine if a link is active
+  const isActive = (path: string): boolean => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
 
   // Debug logging for admin link
   console.log('🔐 Header - Component rendered with props:', { title, showBackButton, backUrl, showUserInfo, showAboutLink });
@@ -82,7 +91,10 @@ const Header: React.FC<HeaderProps> = ({
             {showAboutLink && (
               <Link
                 to="/about"
-                className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                className={`text-sm transition-colors px-3 py-2 rounded-md ${isActive('/about')
+                  ? 'bg-blue-600 text-white font-medium'
+                  : 'text-gray-700 hover:text-gray-900'
+                  }`}
               >
                 About
               </Link>
@@ -91,7 +103,10 @@ const Header: React.FC<HeaderProps> = ({
             {user && (
               <Link
                 to="/dashboard"
-                className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                className={`text-sm transition-colors px-3 py-2 rounded-md ${isActive('/dashboard')
+                  ? 'bg-blue-600 text-white font-medium'
+                  : 'text-gray-700 hover:text-gray-900'
+                  }`}
               >
                 Dashboard
               </Link>
@@ -99,14 +114,20 @@ const Header: React.FC<HeaderProps> = ({
 
             <Link
               to="/coffee"
-              className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+              className={`text-sm transition-colors px-3 py-2 rounded-md ${isActive('/coffee')
+                ? 'bg-blue-600 text-white font-medium'
+                : 'text-gray-700 hover:text-gray-900'
+                }`}
             >
               ☕ Coffee
             </Link>
 
             <Link
               to="/rising-stars-position"
-              className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+              className={`text-sm transition-colors px-3 py-2 rounded-md ${isActive('/rising-stars-position')
+                ? 'bg-blue-600 text-white font-medium'
+                : 'text-gray-700 hover:text-gray-900'
+                }`}
             >
               🎯 Position Calculator
             </Link>
@@ -114,7 +135,10 @@ const Header: React.FC<HeaderProps> = ({
             {user?.admin && (
               <Link
                 to="/admin"
-                className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                className={`text-sm transition-colors px-3 py-2 rounded-md ${isActive('/admin')
+                  ? 'bg-blue-600 text-white font-medium'
+                  : 'text-gray-700 hover:text-gray-900'
+                  }`}
               >
                 Admin
               </Link>
@@ -197,7 +221,10 @@ const Header: React.FC<HeaderProps> = ({
             {showAboutLink && (
               <Link
                 to="/about"
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive('/about')
+                  ? 'text-blue-600 bg-blue-50'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
                 onClick={closeMobileMenu}
               >
                 About
@@ -207,7 +234,10 @@ const Header: React.FC<HeaderProps> = ({
             {user && (
               <Link
                 to="/dashboard"
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive('/dashboard')
+                  ? 'text-blue-600 bg-blue-50'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
                 onClick={closeMobileMenu}
               >
                 Dashboard
@@ -216,7 +246,10 @@ const Header: React.FC<HeaderProps> = ({
 
             <Link
               to="/coffee"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive('/coffee')
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
               onClick={closeMobileMenu}
             >
               ☕ Coffee
@@ -224,7 +257,10 @@ const Header: React.FC<HeaderProps> = ({
 
             <Link
               to="/rising-stars-position"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive('/rising-stars-position')
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
               onClick={closeMobileMenu}
             >
               🎯 Position Calculator
@@ -233,7 +269,10 @@ const Header: React.FC<HeaderProps> = ({
             {user?.admin && (
               <Link
                 to="/admin"
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive('/admin')
+                  ? 'text-blue-600 bg-blue-50'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
                 onClick={closeMobileMenu}
               >
                 Admin
