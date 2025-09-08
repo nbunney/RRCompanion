@@ -39,11 +39,25 @@ router.get('/:royalroadId', async (ctx) => {
 
   } catch (error) {
     console.error('Error in rising-stars-position endpoint:', error);
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: 'Internal server error'
-    };
+
+    // Check if it's a user-friendly error message
+    if (error instanceof Error && (
+      error.message.includes('not currently on any Rising Stars genre list') ||
+      error.message.includes('No recent Rising Stars data available') ||
+      error.message.includes('Rate limited')
+    )) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: error.message
+      };
+    } else {
+      ctx.response.status = 500;
+      ctx.response.body = {
+        success: false,
+        error: 'Internal server error'
+      };
+    }
   }
 });
 

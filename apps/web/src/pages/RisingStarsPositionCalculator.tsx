@@ -71,8 +71,10 @@ const RisingStarsPositionCalculator: React.FC = () => {
           startCountdown(parseInt(match[1]));
         }
         setError('Analysis in progress. Please wait before requesting again.');
+      } else if (err.response?.data?.error?.includes('not currently on any Rising Stars genre list')) {
+        setError(err.response.data.error);
       } else {
-        setError('Network error occurred');
+        setError(err.response?.data?.error || 'Network error occurred');
       }
       console.error('Error fetching position:', err);
     } finally {

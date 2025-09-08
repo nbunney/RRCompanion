@@ -1,4 +1,7 @@
 import { client } from '../config/database.ts';
+import { RoyalRoadService } from './royalroad.ts';
+import { FictionService } from './fiction.ts';
+import type { CreateFictionRequest } from '../types/index.ts';
 
 export interface RisingStarsPosition {
   fictionId: number;
@@ -42,6 +45,62 @@ export class RisingStarsPositionService {
   }
 
   /**
+   * Try to scrape a fiction from Royal Road and add it to our database
+   */
+  private async scrapeAndCreateFiction(royalroadId: string): Promise<any | null> {
+    try {
+      console.log(`🔍 Attempting to scrape fiction ${royalroadId} from Royal Road...`);
+
+      const royalroadService = new RoyalRoadService();
+      const fictionResponse = await royalroadService.getFiction(royalroadId);
+
+      if (!fictionResponse.success || !fictionResponse.data) {
+        console.log(`❌ Failed to scrape fiction ${royalroadId}: ${fictionResponse.message || 'No data returned'}`);
+        return null;
+      }
+
+      const fictionData = fictionResponse.data;
+
+      // Convert Royal Road fiction data to our CreateFictionRequest format
+      const createFictionData: CreateFictionRequest = {
+        royalroad_id: royalroadId,
+        title: fictionData.title,
+        author_name: fictionData.author.name,
+        author_id: fictionData.author.id,
+        author_avatar: fictionData.author.avatar || undefined,
+        description: fictionData.description,
+        image_url: fictionData.image || undefined,
+        status: fictionData.status,
+        type: fictionData.type,
+        tags: fictionData.tags,
+        warnings: fictionData.warnings,
+        pages: fictionData.stats.pages,
+        ratings: fictionData.stats.ratings,
+        followers: fictionData.stats.followers,
+        favorites: fictionData.stats.favorites,
+        views: fictionData.stats.views,
+        score: fictionData.stats.score,
+        overall_score: fictionData.stats.overall_score,
+        style_score: fictionData.stats.style_score,
+        story_score: fictionData.stats.story_score,
+        grammar_score: fictionData.stats.grammar_score,
+        character_score: fictionData.stats.character_score,
+        total_views: fictionData.stats.total_views,
+        average_views: fictionData.stats.average_views,
+      };
+
+      // Create the fiction in our database
+      const createdFiction = await FictionService.createFiction(createFictionData);
+      console.log(`✅ Successfully created fiction ${royalroadId} in database`);
+
+      return createdFiction;
+    } catch (error) {
+      console.error(`❌ Error scraping fiction ${royalroadId}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Calculate how close a fiction is to being on Rising Stars main page
    */
   async calculateRisingStarsPosition(royalroadId: string): Promise<RisingStarsPosition | null> {
@@ -68,11 +127,27 @@ export class RisingStarsPositionService {
       `;
       const fictionResult = await this.dbClient.query(fictionQuery, [royalroadId]);
 
+      let fiction;
       if (fictionResult.length === 0) {
-        return null;
-      }
+        // Fiction not found in database, try to scrape it from Royal Road
+        console.log(`📚 Fiction ${royalroadId} not found in database, attempting to scrape...`);
+        const scrapedFiction = await this.scrapeAndCreateFiction(royalroadId);
 
-      const fiction = fictionResult[0];
+        if (!scrapedFiction) {
+          console.log(`❌ Could not scrape fiction ${royalroadId} from Royal Road`);
+          return null;
+        }
+
+        // Use the scraped fiction data
+        fiction = {
+          id: scrapedFiction.id,
+          title: scrapedFiction.title,
+          author_name: scrapedFiction.author_name,
+          royalroad_id: scrapedFiction.royalroad_id
+        };
+      } else {
+        fiction = fictionResult[0];
+      }
 
       // Get the most recent completed scrape timestamp
       const latestScrapeQuery = `
@@ -85,6 +160,19 @@ export class RisingStarsPositionService {
 
       if (!latestScrape) {
         throw new Error('No recent Rising Stars data available');
+      }
+
+      // Check if fiction appears in any Rising Stars genre list
+      const genreCheckQuery = `
+        SELECT COUNT(*) as count 
+        FROM risingStars 
+        WHERE fiction_id = ? 
+        AND captured_at = ?
+      `;
+      const genreCheckResult = await this.dbClient.query(genreCheckQuery, [fiction.id, latestScrape]);
+
+      if (genreCheckResult[0].count === 0) {
+        throw new Error(`Fiction "${fiction.title}" by ${fiction.author_name} is not currently on any Rising Stars genre list. Once this fiction is on a genre list try again.`);
       }
 
       // Check if fiction is already on Rising Stars main
