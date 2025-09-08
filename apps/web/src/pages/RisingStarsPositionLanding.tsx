@@ -96,13 +96,20 @@ const RisingStarsPositionLanding: React.FC = () => {
         return;
       }
 
-      // Validate that the fiction exists
-      const response = await api.get(`/fictions/${finalFictionId}`);
-      const data = response.data;
+      // Validate that the fiction exists (only for logged-in users)
+      if (user) {
+        try {
+          const response = await api.get(`/fictions/${finalFictionId}`);
+          const data = response.data;
 
-      if (!data.success) {
-        setError('Fiction not found. Please check your ID or URL.');
-        return;
+          if (!data.success) {
+            setError('Fiction not found. Please check your ID or URL.');
+            return;
+          }
+        } catch (err) {
+          setError('Error validating fiction. Please check your ID or URL.');
+          return;
+        }
       }
 
       navigate(`/rising-stars-position/${finalFictionId}`);
