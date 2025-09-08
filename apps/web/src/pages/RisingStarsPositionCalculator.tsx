@@ -122,7 +122,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title="Rising Stars Position Calculator" />
+        <Header title="Rising Stars Position Calculator" showUserInfo={true} />
         <main className="py-8">
           <div className="max-w-4xl mx-auto px-4">
             <div className="bg-white rounded-lg shadow-lg p-8">
@@ -147,7 +147,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title="Rising Stars Position Calculator" />
+        <Header title="Rising Stars Position Calculator" showUserInfo={true} />
         <main className="py-8">
           <div className="max-w-4xl mx-auto px-4">
             <div className="bg-white rounded-lg shadow-lg p-8">
@@ -195,7 +195,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
   if (!position) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title="Rising Stars Position Calculator" />
+        <Header title="Rising Stars Position Calculator" showUserInfo={true} />
         <main className="py-8">
           <div className="max-w-4xl mx-auto px-4">
             <div className="bg-white rounded-lg shadow-lg p-8">

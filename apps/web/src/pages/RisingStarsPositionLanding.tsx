@@ -128,7 +128,7 @@ const RisingStarsPositionLanding: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header title="Rising Stars Position Calculator" />
+      <Header title="Rising Stars Position Calculator" showUserInfo={true} />
 
       <main className="max-w-4xl mx-auto py-12 px-4">
         <div className="bg-white rounded-lg shadow-lg p-8">
