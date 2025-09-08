@@ -111,6 +111,13 @@ const Header: React.FC<HeaderProps> = ({
               📈 Rising Stars Animation
             </Link>
 
+            <Link
+              to="/rising-stars-position"
+              className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              🎯 Position Calculator
+            </Link>
+
             {user?.admin && (
               <Link
                 to="/admin"
@@ -228,6 +235,14 @@ const Header: React.FC<HeaderProps> = ({
               onClick={closeMobileMenu}
             >
               📈 Rising Stars Animation
+            </Link>
+
+            <Link
+              to="/rising-stars-position"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              onClick={closeMobileMenu}
+            >
+              🎯 Position Calculator
             </Link>
 
             {user?.admin && (
