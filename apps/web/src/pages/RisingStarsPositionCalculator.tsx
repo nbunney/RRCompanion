@@ -22,8 +22,6 @@ const RisingStarsPositionCalculator: React.FC = () => {
   const [position, setPosition] = useState<RisingStarsPosition | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rateLimited, setRateLimited] = useState(false);
-  const [remainingTime, setRemainingTime] = useState(0);
   const [latestScrape, setLatestScrape] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,7 +49,6 @@ const RisingStarsPositionCalculator: React.FC = () => {
   const fetchPosition = async (fictionId: number) => {
     setLoading(true);
     setError(null);
-    setRateLimited(false);
 
     try {
       const response = await api.get(`/rising-stars-position/${fictionId}`);
@@ -63,15 +60,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
         setError(data.error || 'Failed to calculate position');
       }
     } catch (err: any) {
-      if (err.response?.data?.error?.includes('Rate limited')) {
-        setRateLimited(true);
-        const match = err.response.data.error.match(/(\d+) seconds/);
-        if (match) {
-          setRemainingTime(parseInt(match[1]));
-          startCountdown(parseInt(match[1]));
-        }
-        setError('Analysis in progress. Please wait before requesting again.');
-      } else if (err.response?.data?.error?.includes('not currently on any Rising Stars genre list')) {
+      if (err.response?.data?.error?.includes('not currently on any Rising Stars genre list')) {
         setError(err.response.data.error);
       } else {
         setError(err.response?.data?.error || 'Network error occurred');
@@ -82,21 +71,9 @@ const RisingStarsPositionCalculator: React.FC = () => {
     }
   };
 
-  const startCountdown = (seconds: number) => {
-    setRemainingTime(seconds);
-    const interval = setInterval(() => {
-      setRemainingTime(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setRateLimited(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
   const formatDate = (dateString: string) => {
+    // The dateString from the database is in UTC format (e.g., "2025-09-08T21:17:49.000Z")
+    // We need to explicitly parse it as UTC and then convert to local timezone
     const date = new Date(dateString);
     return date.toLocaleString(undefined, {
       year: 'numeric',
@@ -160,37 +137,15 @@ const RisingStarsPositionCalculator: React.FC = () => {
           <div className="max-w-4xl mx-auto px-4">
             <div className="bg-white rounded-lg shadow-lg p-8">
               <div className="text-center">
-                {rateLimited ? (
-                  <>
-                    <div className="text-yellow-600 text-6xl mb-4">⏳</div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Analysis in Progress</h1>
-                    <p className="text-gray-600 mb-4">{error}</p>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                      <p className="text-yellow-800 font-medium">
-                        Please wait {remainingTime} seconds before requesting again
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => id && fetchPosition(parseInt(id))}
-                      disabled={rateLimited}
-                      className="bg-gray-400 text-white px-6 py-2 rounded-lg cursor-not-allowed"
-                    >
-                      Analysis in Progress...
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-red-600 text-6xl mb-4">⚠️</div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Error</h1>
-                    <p className="text-gray-600 mb-6">{error}</p>
-                    <button
-                      onClick={() => id && fetchPosition(parseInt(id))}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Try Again
-                    </button>
-                  </>
-                )}
+                <div className="text-red-600 text-6xl mb-4">⚠️</div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">Error</h1>
+                <p className="text-gray-600 mb-6">{error}</p>
+                <button
+                  onClick={() => id && fetchPosition(parseInt(id))}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Try Again
+                </button>
               </div>
             </div>
           </div>
@@ -280,7 +235,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Last Updated:</span>
-                    <span className="font-medium text-gray-900">{formatDate(position.lastUpdated)}</span>
+                    <span className="font-medium text-gray-900">{latestScrape ? formatDate(latestScrape) : formatDate(position.lastUpdated)}</span>
                   </div>
                 </div>
               </div>
@@ -319,16 +274,6 @@ const RisingStarsPositionCalculator: React.FC = () => {
                 </div>
 
                 <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-green-600 text-sm font-semibold">📊</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Reading Progress</h4>
-                    <p className="text-sm text-gray-600">Track your reading progress, ratings, and reviews for all your fictions</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                     <span className="text-purple-600 text-sm font-semibold">📈</span>
                   </div>
@@ -347,16 +292,6 @@ const RisingStarsPositionCalculator: React.FC = () => {
                   <div>
                     <h4 className="font-semibold text-gray-900">Faster Access</h4>
                     <p className="text-sm text-gray-600">Quick access to position calculations with your saved fictions</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <span className="text-red-600 text-sm font-semibold">🔔</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Notifications</h4>
-                    <p className="text-sm text-gray-600">Get notified when your favorite fictions move up in Rising Stars rankings</p>
                   </div>
                 </div>
 

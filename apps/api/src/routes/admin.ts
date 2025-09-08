@@ -5,7 +5,8 @@ import {
   generateCouponCodes,
   getCouponCodes,
   getCouponStats,
-  deactivateCouponCode
+  deactivateCouponCode,
+  convertTimestampsToUTC
 } from '../controllers/admin.ts';
 import { adminMiddleware } from '../middleware/admin.ts';
 
@@ -20,5 +21,6 @@ router.post('/coupons/generate', generateCouponCodes);
 router.get('/coupons', getCouponCodes);
 router.get('/coupons/stats', getCouponStats);
 router.put('/coupons/:id/deactivate', deactivateCouponCode);
+router.post('/migrate/timestamps-to-utc', convertTimestampsToUTC);
 
 export default router;

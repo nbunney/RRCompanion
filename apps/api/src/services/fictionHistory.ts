@@ -25,7 +25,7 @@ export interface FictionHistoryEntry {
   character_score: number;
   total_views: number;
   average_views: number;
-  captured_at?: Date;
+  captured_at?: string; // ISO string format
 }
 
 export class FictionHistoryService {
@@ -78,7 +78,7 @@ export class FictionHistoryService {
       console.log(`\n💾 Saving ${risingStars.length} fiction history entries to database...`);
 
       // Create a single timestamp for this collection run
-      const collectionTimestamp = new Date();
+      const collectionTimestamp = new Date().toISOString();
 
       // Track which fictions we've already processed to avoid duplicate API calls
       const processedFictionIds = new Set<string>();
@@ -392,7 +392,7 @@ export class FictionHistoryService {
         character_score: fictionData.character_score || 0,
         total_views: fictionData.total_views || 0,
         average_views: fictionData.average_views || 0,
-        captured_at: new Date()
+        captured_at: new Date().toISOString()
       };
 
       // Save the entry (this method handles checking for existing entries)
@@ -463,7 +463,7 @@ export class FictionHistoryService {
           entry.character_score,
           entry.total_views,
           entry.average_views,
-          entry.captured_at || new Date(),
+          entry.captured_at || new Date().toISOString(),
           existingEntry[0].id
         ]);
 
@@ -659,7 +659,7 @@ export class FictionHistoryService {
               character_score: freshData.stats?.character_score || 0,
               total_views: freshData.stats?.total_views || 0,
               average_views: freshData.stats?.average_views || 0,
-              captured_at: new Date()
+              captured_at: new Date().toISOString()
             };
 
             // Save fiction history entry
@@ -791,7 +791,7 @@ export class FictionHistoryService {
       }
 
       // Create a single timestamp for this collection run
-      const collectionTimestamp = new Date();
+      const collectionTimestamp = new Date().toISOString();
 
       // Process each fiction
       for (let i = 0; i < allFictions.length; i++) {

@@ -18,31 +18,6 @@ export interface RisingStarsPosition {
 
 export class RisingStarsPositionService {
   private dbClient = client;
-  private lastRequestTimes = new Map<string, number>(); // royalroadId -> timestamp
-
-  /**
-   * Check if enough time has passed since last request (1 minute cooldown)
-   */
-  private canMakeRequest(royalroadId: string): boolean {
-    const now = Date.now();
-    const lastRequest = this.lastRequestTimes.get(royalroadId);
-
-    if (!lastRequest) {
-      return true; // First request
-    }
-
-    const timeSinceLastRequest = now - lastRequest;
-    const oneMinute = 60 * 1000; // 60 seconds in milliseconds
-
-    return timeSinceLastRequest >= oneMinute;
-  }
-
-  /**
-   * Record that a request was made for this fiction
-   */
-  private recordRequest(royalroadId: string): void {
-    this.lastRequestTimes.set(royalroadId, Date.now());
-  }
 
   /**
    * Try to scrape a fiction from Royal Road and add it to our database
@@ -105,20 +80,6 @@ export class RisingStarsPositionService {
    */
   async calculateRisingStarsPosition(royalroadId: string): Promise<RisingStarsPosition | null> {
     try {
-      // Check rate limiting
-      if (!this.canMakeRequest(royalroadId)) {
-        const now = Date.now();
-        const lastRequest = this.lastRequestTimes.get(royalroadId)!;
-        const timeSinceLastRequest = now - lastRequest;
-        const oneMinute = 60 * 1000;
-        const remainingTime = Math.ceil((oneMinute - timeSinceLastRequest) / 1000);
-
-        throw new Error(`Rate limited. Please wait ${remainingTime} seconds before requesting again.`);
-      }
-
-      // Record this request
-      this.recordRequest(royalroadId);
-
       // Get fiction details by Royal Road ID
       const fictionQuery = `
         SELECT id, title, author_name, royalroad_id 

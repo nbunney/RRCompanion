@@ -69,8 +69,7 @@ router.get('/:royalroadId', async (ctx) => {
     // Check if it's a user-friendly error message
     if (error instanceof Error && (
       error.message.includes('not currently on any Rising Stars genre list') ||
-      error.message.includes('No recent Rising Stars data available') ||
-      error.message.includes('Rate limited')
+      error.message.includes('No recent Rising Stars data available')
     )) {
       ctx.response.status = 400;
       ctx.response.body = {

@@ -1,5 +1,6 @@
 import { Context } from 'oak';
 import { adminService } from '../services/admin.ts';
+import { client } from '../config/database.ts';
 import type { ApiResponse } from '../types/index.ts';
 
 // Get site statistics
@@ -163,5 +164,73 @@ export async function deactivateCouponCode(ctx: Context) {
       success: false,
       error: 'Failed to deactivate coupon code'
     };
+  }
+}
+
+// Convert timestamps from local time to UTC
+export async function convertTimestampsToUTC(ctx: Context): Promise<void> {
+  try {
+    console.log('🔄 Converting Rising Stars timestamps from local time to UTC...');
+
+    // First, check current timestamps
+    const beforeQuery = `
+      SELECT fiction_id, genre, position, captured_at 
+      FROM risingStars 
+      ORDER BY captured_at DESC 
+      LIMIT 3
+    `;
+
+    const beforeResults = await client.query(beforeQuery);
+    console.log('📊 Current timestamps (before conversion):');
+    beforeResults.forEach((row: any) => {
+      console.log(`  Fiction ${row.fiction_id} - ${row.genre} pos ${row.position} - ${row.captured_at}`);
+    });
+
+    // Convert Rising Stars timestamps (add 7 hours to convert PDT to UTC)
+    console.log('🔄 Converting Rising Stars timestamps...');
+    const risingStarsUpdate = `
+      UPDATE risingStars 
+      SET captured_at = DATE_ADD(captured_at, INTERVAL 7 HOUR)
+      WHERE captured_at IS NOT NULL
+    `;
+
+    const risingStarsResult = await client.execute(risingStarsUpdate);
+    console.log(`✅ Updated ${risingStarsResult.affectedRows} Rising Stars records`);
+
+    // Convert Fiction History timestamps
+    console.log('🔄 Converting Fiction History timestamps...');
+    const fictionHistoryUpdate = `
+      UPDATE fictionHistory 
+      SET captured_at = DATE_ADD(captured_at, INTERVAL 7 HOUR)
+      WHERE captured_at IS NOT NULL
+    `;
+
+    const fictionHistoryResult = await client.execute(fictionHistoryUpdate);
+    console.log(`✅ Updated ${fictionHistoryResult.affectedRows} Fiction History records`);
+
+    // Verify the conversion
+    const afterResults = await client.query(beforeQuery);
+    console.log('📊 Converted timestamps (after conversion):');
+    afterResults.forEach((row: any) => {
+      console.log(`  Fiction ${row.fiction_id} - ${row.genre} pos ${row.position} - ${row.captured_at}`);
+    });
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: {
+        message: 'Successfully converted timestamps to UTC',
+        risingStarsUpdated: risingStarsResult.affectedRows,
+        fictionHistoryUpdated: fictionHistoryResult.affectedRows
+      }
+    } as ApiResponse;
+
+  } catch (error) {
+    console.error('❌ Error converting timestamps:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Failed to convert timestamps to UTC'
+    } as ApiResponse;
   }
 }

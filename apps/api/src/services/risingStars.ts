@@ -6,7 +6,7 @@ export interface RisingStarEntry {
   fiction_id: number;
   genre: string;
   position: number;
-  captured_at?: Date;
+  captured_at?: string; // ISO string format
   title?: string;
   author_name?: string;
   royalroad_id?: string;
@@ -28,7 +28,7 @@ export class RisingStarsService {
         entry.fiction_id,
         entry.genre,
         entry.position,
-        entry.captured_at || new Date()
+        entry.captured_at || new Date().toISOString()
       ]);
 
       console.log(`✅ Saved rising star entry for fiction ${entry.fiction_id} (position ${entry.position} in ${entry.genre})`);
