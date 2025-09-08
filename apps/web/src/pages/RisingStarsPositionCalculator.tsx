@@ -38,7 +38,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
 
   const fetchLatestScrape = async () => {
     try {
-      const response = await fetch('/api/rising-stars-latest-scrape');
+      const response = await fetch('/api/rising-stars-position/latest-scrape');
       const data = await response.json();
       if (data.success) {
         setLatestScrape(data.data.latestScrape);

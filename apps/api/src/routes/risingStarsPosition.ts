@@ -5,6 +5,32 @@ const router = new Router();
 const risingStarsPositionService = new RisingStarsPositionService();
 
 /**
+ * Get latest Rising Stars scrape timestamp
+ * GET /api/rising-stars-position/latest-scrape
+ */
+router.get('/latest-scrape', async (ctx) => {
+  try {
+    const timestamp = await risingStarsPositionService.getLatestScrapeTimestamp();
+
+    ctx.response.body = {
+      success: true,
+      data: {
+        latestScrape: timestamp,
+        message: timestamp ? 'Data available' : 'No recent data available'
+      }
+    };
+
+  } catch (error) {
+    console.error('Error in rising-stars-latest-scrape endpoint:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Internal server error'
+    };
+  }
+});
+
+/**
  * Calculate Rising Stars position for a specific fiction
  * GET /api/rising-stars-position/:fictionId
  */
@@ -100,32 +126,6 @@ router.post('/', async (ctx) => {
 
   } catch (error) {
     console.error('Error in rising-stars-positions endpoint:', error);
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: 'Internal server error'
-    };
-  }
-});
-
-/**
- * Get latest Rising Stars scrape timestamp
- * GET /api/rising-stars-position/latest-scrape
- */
-router.get('/latest-scrape', async (ctx) => {
-  try {
-    const timestamp = await risingStarsPositionService.getLatestScrapeTimestamp();
-
-    ctx.response.body = {
-      success: true,
-      data: {
-        latestScrape: timestamp,
-        message: timestamp ? 'Data available' : 'No recent data available'
-      }
-    };
-
-  } catch (error) {
-    console.error('Error in rising-stars-latest-scrape endpoint:', error);
     ctx.response.status = 500;
     ctx.response.body = {
       success: false,
