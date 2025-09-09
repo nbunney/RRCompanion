@@ -28,7 +28,7 @@ export class RisingStarsService {
         entry.fiction_id,
         entry.genre,
         entry.position,
-        entry.captured_at ? new Date(entry.captured_at).toISOString() : new Date().toISOString()
+        entry.captured_at ? new Date(entry.captured_at).toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ')
       ]);
 
       console.log(`✅ Saved rising star entry for fiction ${entry.fiction_id} (position ${entry.position} in ${entry.genre})`);

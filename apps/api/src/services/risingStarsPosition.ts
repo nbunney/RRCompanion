@@ -451,7 +451,7 @@ export class RisingStarsPositionService {
       }
 
       let tags = fictionResult[0].tags || [];
-      
+
       // Parse tags if they're stored as a JSON string
       if (typeof tags === 'string') {
         try {
@@ -461,7 +461,7 @@ export class RisingStarsPositionService {
           tags = [];
         }
       }
-      
+
       const relevantGenres = this.mapTagsToGenres(tags);
 
       if (relevantGenres.length === 0) {
