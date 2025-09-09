@@ -463,7 +463,7 @@ export class FictionHistoryService {
           entry.character_score,
           entry.total_views,
           entry.average_views,
-          entry.captured_at || new Date().toISOString(),
+          entry.captured_at ? new Date(entry.captured_at).toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' '),
           existingEntry[0].id
         ]);
 
@@ -497,7 +497,7 @@ export class FictionHistoryService {
           entry.character_score,
           entry.total_views,
           entry.average_views,
-          entry.captured_at || new Date()
+          entry.captured_at ? new Date(entry.captured_at).toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ')
         ]);
 
         console.log(`✅ Created new fiction history entry for fiction ${entry.fiction_id}`);
