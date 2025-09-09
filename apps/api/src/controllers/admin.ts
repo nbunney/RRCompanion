@@ -1,6 +1,7 @@
 import { Context } from 'oak';
 import { adminService } from '../services/admin.ts';
 import { client } from '../config/database.ts';
+import { FictionHistoryService } from '../services/fictionHistory.ts';
 import type { ApiResponse } from '../types/index.ts';
 
 // Get site statistics
@@ -231,6 +232,41 @@ export async function convertTimestampsToUTC(ctx: Context): Promise<void> {
     ctx.response.body = {
       success: false,
       error: 'Failed to convert timestamps to UTC'
+    } as ApiResponse;
+  }
+}
+
+// Manually trigger Rising Stars scrape
+export async function triggerRisingStarsScrape(ctx: Context): Promise<void> {
+  try {
+    console.log('🔄 Manually triggering Rising Stars scrape...');
+
+    const fictionHistoryService = new FictionHistoryService();
+    const success = await fictionHistoryService.runRisingStarsCollection();
+
+    if (success) {
+      ctx.response.status = 200;
+      ctx.response.body = {
+        success: true,
+        data: {
+          message: 'Rising Stars scrape completed successfully',
+          timestamp: new Date().toISOString()
+        }
+      } as ApiResponse;
+    } else {
+      ctx.response.status = 500;
+      ctx.response.body = {
+        success: false,
+        error: 'Rising Stars scrape failed'
+      } as ApiResponse;
+    }
+
+  } catch (error) {
+    console.error('❌ Error triggering Rising Stars scrape:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Failed to trigger Rising Stars scrape'
     } as ApiResponse;
   }
 }
