@@ -438,7 +438,7 @@ export class RisingStarsPositionService {
   }
 
   /**
-   * Get fiction's position in each relevant genre
+   * Get fiction's most recent position in each relevant genre
    */
   async getFictionGenrePositions(fictionId: number, latestScrape: string): Promise<{ genre: string; position: number | null; isOnList: boolean }[]> {
     try {
@@ -462,15 +462,15 @@ export class RisingStarsPositionService {
 
       for (const genre of relevantGenres) {
         const positionQuery = `
-          SELECT position 
+          SELECT position, captured_at 
           FROM risingStars 
           WHERE fiction_id = ? 
           AND genre = ? 
-          AND captured_at = ?
+          ORDER BY captured_at DESC
           LIMIT 1
         `;
 
-        const positionResult = await this.dbClient.query(positionQuery, [fictionId, genre, latestScrape]);
+        const positionResult = await this.dbClient.query(positionQuery, [fictionId, genre]);
 
         genrePositions.push({
           genre,
