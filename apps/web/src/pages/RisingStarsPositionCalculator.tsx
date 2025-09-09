@@ -15,6 +15,7 @@ interface RisingStarsPosition {
   fictionsAhead: number;
   fictionsToClimb: number;
   lastUpdated: string;
+  genrePositions: { genre: string; position: number | null; isOnList: boolean }[];
 }
 
 const RisingStarsPositionCalculator: React.FC = () => {
@@ -241,6 +242,34 @@ const RisingStarsPositionCalculator: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Genre Positions */}
+          {position.genrePositions && position.genrePositions.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Genre Positions</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {position.genrePositions.map((genrePos, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700 capitalize">
+                      {genrePos.genre.replace(/_/g, ' ')}
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      {genrePos.isOnList ? (
+                        <>
+                          <span className="text-green-600 text-lg">✓</span>
+                          <span className="text-sm font-semibold text-green-600">
+                            #{genrePos.position}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-red-600 text-lg">✗</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Data Freshness */}
           {latestScrape && (

@@ -332,7 +332,7 @@ export class RisingStarsPositionService {
     const tagToGenreMap: { [key: string]: string } = {
       // Direct matches
       'action': 'action',
-      'adventure': 'adventure', 
+      'adventure': 'adventure',
       'comedy': 'comedy',
       'drama': 'drama',
       'fantasy': 'fantasy',
@@ -346,7 +346,7 @@ export class RisingStarsPositionService {
       'sports': 'sports',
       'supernatural': 'supernatural',
       'tragedy': 'tragedy',
-      
+
       // Character/lead type matches
       'anti-hero_lead': 'anti_hero_lead',
       'antihero_lead': 'anti_hero_lead',
@@ -367,6 +367,7 @@ export class RisingStarsPositionService {
       'grimdark': 'grimdark',
       'harem': 'harem',
       'high_fantasy': 'high_fantasy',
+
       'litrpg': 'litrpg',
       'lit_rpg': 'litrpg',
       'low_fantasy': 'low_fantasy',
@@ -407,7 +408,7 @@ export class RisingStarsPositionService {
       'wuxia': 'wuxia',
       'xianxia': 'xianxia',
       'summoned_hero': 'summoned_hero',
-      
+
       // Additional matches based on your examples
       'martial_arts': 'martial_arts',
       'portal_fantasy': 'portal_fantasy',
