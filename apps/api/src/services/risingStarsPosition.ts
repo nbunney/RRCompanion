@@ -14,7 +14,7 @@ export interface RisingStarsPosition {
   fictionsAhead: number;
   fictionsToClimb: number;
   lastUpdated: string;
-  genrePositions: { genre: string; position: number | null; isOnList: boolean }[];
+  genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
 }
 
 export class RisingStarsPositionService {
@@ -440,7 +440,7 @@ export class RisingStarsPositionService {
   /**
    * Get fiction's most recent position in each relevant genre
    */
-  async getFictionGenrePositions(fictionId: number, latestScrape: string): Promise<{ genre: string; position: number | null; isOnList: boolean }[]> {
+  async getFictionGenrePositions(fictionId: number, latestScrape: string): Promise<{ genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[]> {
     try {
       // Get fiction tags
       const fictionQuery = 'SELECT tags FROM fiction WHERE id = ?';
@@ -475,7 +475,8 @@ export class RisingStarsPositionService {
         genrePositions.push({
           genre,
           position: positionResult.length > 0 ? positionResult[0].position : null,
-          isOnList: positionResult.length > 0
+          isOnList: positionResult.length > 0,
+          lastScraped: positionResult.length > 0 ? positionResult[0].captured_at : null
         });
       }
 

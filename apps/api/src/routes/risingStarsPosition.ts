@@ -140,7 +140,7 @@ router.post('/', async (ctx) => {
 router.get('/debug/:royalroadId', async (ctx) => {
   try {
     const royalroadId = ctx.params.royalroadId;
-    
+
     if (!royalroadId) {
       ctx.response.status = 400;
       ctx.response.body = { success: false, error: 'Royal Road ID is required' };
@@ -154,17 +154,17 @@ router.get('/debug/:royalroadId', async (ctx) => {
       WHERE royalroad_id = ?
     `;
     const fictionResult = await risingStarsPositionService['dbClient'].query(fictionQuery, [royalroadId]);
-    
+
     if (fictionResult.length === 0) {
       ctx.response.status = 404;
       ctx.response.body = { success: false, error: 'Fiction not found' };
       return;
     }
-    
+
     const fiction = fictionResult[0];
     const tags = fiction.tags || [];
     const relevantGenres = risingStarsPositionService['mapTagsToGenres'](tags);
-    
+
     ctx.response.status = 200;
     ctx.response.body = {
       success: true,
@@ -182,13 +182,13 @@ router.get('/debug/:royalroadId', async (ctx) => {
         }
       }
     };
-    
+
   } catch (error) {
     console.error('Error in debug endpoint:', error);
     ctx.response.status = 500;
-    ctx.response.body = { 
-      success: false, 
-      error: 'Internal server error' 
+    ctx.response.body = {
+      success: false,
+      error: 'Internal server error'
     };
   }
 });
