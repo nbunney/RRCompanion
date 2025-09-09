@@ -14,6 +14,7 @@ export interface RisingStarsPosition {
   fictionsAhead: number;
   fictionsToClimb: number;
   lastUpdated: string;
+  genrePositions: { genre: string; position: number | null; isOnList: boolean }[];
 }
 
 export class RisingStarsPositionService {
@@ -148,6 +149,8 @@ export class RisingStarsPositionService {
 
       if (mainCheckResult.length > 0) {
         // Fiction is already on main page
+        const genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
+
         return {
           fictionId: fiction.id,
           title: fiction.title,
@@ -158,12 +161,14 @@ export class RisingStarsPositionService {
           estimatedPosition: mainCheckResult[0].position,
           fictionsAhead: mainCheckResult[0].position - 1,
           fictionsToClimb: 0,
-          lastUpdated: latestScrape
+          lastUpdated: latestScrape,
+          genrePositions
         };
       }
 
       // Fiction is not on main page - calculate position
       const positionData = await this.calculateEstimatedPosition(fiction.id, latestScrape);
+      const genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
 
       return {
         fictionId: fiction.id,
@@ -174,7 +179,8 @@ export class RisingStarsPositionService {
         estimatedPosition: positionData.estimatedPosition,
         fictionsAhead: positionData.fictionsAhead,
         fictionsToClimb: Math.max(0, positionData.fictionsAhead - 49),
-        lastUpdated: latestScrape
+        lastUpdated: latestScrape,
+        genrePositions
       };
 
     } catch (error) {
@@ -316,6 +322,166 @@ export class RisingStarsPositionService {
     } catch (error) {
       console.error('Error getting latest scrape timestamp:', error);
       return null;
+    }
+  }
+
+  /**
+   * Map fiction tags to Rising Stars genres
+   */
+  private mapTagsToGenres(tags: string[]): string[] {
+    const tagToGenreMap: { [key: string]: string } = {
+      // Direct matches
+      'action': 'action',
+      'adventure': 'adventure', 
+      'comedy': 'comedy',
+      'drama': 'drama',
+      'fantasy': 'fantasy',
+      'historical': 'historical',
+      'horror': 'horror',
+      'mystery': 'mystery',
+      'romance': 'romance',
+      'satire': 'satire',
+      'scifi': 'scifi',
+      'slice_of_life': 'slice_of_life',
+      'sports': 'sports',
+      'supernatural': 'supernatural',
+      'tragedy': 'tragedy',
+      
+      // Character/lead type matches
+      'anti-hero_lead': 'anti_hero_lead',
+      'antihero_lead': 'anti_hero_lead',
+      'antihero': 'anti_hero_lead',
+      'artificial_intelligence': 'artificial_intelligence',
+      'ai': 'artificial_intelligence',
+      'attractive_lead': 'attractive_lead',
+      'cyberpunk': 'cyberpunk',
+      'dungeon': 'dungeon',
+      'dystopia': 'dystopia',
+      'dystopian': 'dystopia',
+      'female_lead': 'female_lead',
+      'first_contact': 'first_contact',
+      'gamelit': 'gamelit',
+      'game_lit': 'gamelit',
+      'gender_bender': 'gender_bender',
+      'genetically_engineered': 'genetically_engineered',
+      'grimdark': 'grimdark',
+      'harem': 'harem',
+      'high_fantasy': 'high_fantasy',
+      'litrpg': 'litrpg',
+      'lit_rpg': 'litrpg',
+      'low_fantasy': 'low_fantasy',
+      'male_lead': 'male_lead',
+      'multiple_lead': 'multiple_lead',
+      'multiple_lead_characters': 'multiple_lead',
+      'mythos': 'mythos',
+      'non_human_lead': 'non_human_lead',
+      'non-human_lead': 'non_human_lead',
+      'post_apocalyptic': 'post_apocalyptic',
+      'post_apocalypse': 'post_apocalyptic',
+      'progression': 'progression',
+      'psychological': 'psychological',
+      'reader_interactive': 'reader_interactive',
+      'reincarnation': 'reincarnation',
+      'ruling_class': 'ruling_class',
+      'school_life': 'school_life',
+      'schoollife': 'school_life',
+      'secret_identity': 'secret_identity',
+      'soft_scifi': 'soft_scifi',
+      'soft_sci_fi': 'soft_scifi',
+      'soft_sci-fi': 'soft_scifi',
+      'space_opera': 'space_opera',
+      'steampunk': 'steampunk',
+      'strong_lead': 'strong_lead',
+      'super_heroes': 'super_heroes',
+      'superhero': 'super_heroes',
+      'superheroes': 'super_heroes',
+      'technologically_engineered': 'technologically_engineered',
+      'time_loop': 'time_loop',
+      'time_travel': 'time_travel',
+      'urban_fantasy': 'urban_fantasy',
+      'villainous_lead': 'villainous_lead',
+      'virtual_reality': 'virtual_reality',
+      'vr': 'virtual_reality',
+      'war_and_military': 'war_and_military',
+      'military': 'war_and_military',
+      'wuxia': 'wuxia',
+      'xianxia': 'xianxia',
+      'summoned_hero': 'summoned_hero',
+      
+      // Additional matches based on your examples
+      'martial_arts': 'martial_arts',
+      'portal_fantasy': 'portal_fantasy',
+      'isekai': 'portal_fantasy',
+      'magic': 'magic',
+      'strategy': 'strategy',
+      'contemporary': 'contemporary',
+      'hard_sci_fi': 'scifi',
+      'hard_sci-fi': 'scifi'
+    };
+
+    const matchedGenres = new Set<string>();
+
+    for (const tag of tags) {
+      // Normalize tag: lowercase, replace spaces and special chars with underscores
+      const normalizedTag = tag.toLowerCase()
+        .replace(/[^a-z0-9_]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+
+      if (tagToGenreMap[normalizedTag]) {
+        matchedGenres.add(tagToGenreMap[normalizedTag]);
+      }
+    }
+
+    return Array.from(matchedGenres);
+  }
+
+  /**
+   * Get fiction's position in each relevant genre
+   */
+  async getFictionGenrePositions(fictionId: number, latestScrape: string): Promise<{ genre: string; position: number | null; isOnList: boolean }[]> {
+    try {
+      // Get fiction tags
+      const fictionQuery = 'SELECT tags FROM fiction WHERE id = ?';
+      const fictionResult = await this.dbClient.query(fictionQuery, [fictionId]);
+
+      if (fictionResult.length === 0) {
+        return [];
+      }
+
+      const tags = fictionResult[0].tags || [];
+      const relevantGenres = this.mapTagsToGenres(tags);
+
+      if (relevantGenres.length === 0) {
+        return [];
+      }
+
+      // Get positions for each relevant genre
+      const genrePositions = [];
+
+      for (const genre of relevantGenres) {
+        const positionQuery = `
+          SELECT position 
+          FROM risingStars 
+          WHERE fiction_id = ? 
+          AND genre = ? 
+          AND captured_at = ?
+          LIMIT 1
+        `;
+
+        const positionResult = await this.dbClient.query(positionQuery, [fictionId, genre, latestScrape]);
+
+        genrePositions.push({
+          genre,
+          position: positionResult.length > 0 ? positionResult[0].position : null,
+          isOnList: positionResult.length > 0
+        });
+      }
+
+      return genrePositions;
+    } catch (error) {
+      console.error('Error getting fiction genre positions:', error);
+      return [];
     }
   }
 }
