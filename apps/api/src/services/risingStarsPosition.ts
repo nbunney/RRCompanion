@@ -450,7 +450,18 @@ export class RisingStarsPositionService {
         return [];
       }
 
-      const tags = fictionResult[0].tags || [];
+      let tags = fictionResult[0].tags || [];
+      
+      // Parse tags if they're stored as a JSON string
+      if (typeof tags === 'string') {
+        try {
+          tags = JSON.parse(tags);
+        } catch (error) {
+          console.error('Error parsing tags JSON:', error);
+          tags = [];
+        }
+      }
+      
       const relevantGenres = this.mapTagsToGenres(tags);
 
       if (relevantGenres.length === 0) {
