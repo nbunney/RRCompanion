@@ -86,6 +86,77 @@ export class FictionHistoryService {
     }
   }
 
+  // Bulk scrape multiple fictions
+  private async bulkScrapeFictions(fictions: RisingStarFiction[]): Promise<void> {
+    for (const fiction of fictions) {
+      try {
+        console.log(`📡 Scraping fiction ${fiction.id} (${fiction.title})`);
+        await this.createFictionFromRisingStar(fiction);
+      } catch (error) {
+        console.error(`❌ Error scraping fiction ${fiction.id}:`, error);
+      }
+    }
+  }
+
+
+  // Bulk insert Rising Stars entries
+  private async bulkInsertRisingStars(entries: RisingStarEntry[]): Promise<void> {
+    if (entries.length === 0) return;
+
+    const query = `
+      INSERT INTO risingStars (fiction_id, genre, position, captured_at)
+      VALUES ${entries.map(() => '(?, ?, ?, ?)').join(', ')}
+    `;
+
+    const values = entries.flatMap(entry => [
+      entry.fiction_id,
+      entry.genre,
+      entry.position,
+      entry.captured_at
+    ]);
+
+    await this.dbClient.execute(query, values);
+  }
+
+  // Bulk insert Fiction History entries
+  private async bulkInsertFictionHistory(entries: FictionHistoryEntry[]): Promise<void> {
+    if (entries.length === 0) return;
+
+    const query = `
+      INSERT INTO fictionHistory (
+        fiction_id, royalroad_id, description, status, type, tags, warnings,
+        pages, ratings, followers, favorites, views, score, overall_score, style_score,
+        story_score, grammar_score, character_score, total_views, average_views, captured_at
+      ) VALUES ${entries.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}
+    `;
+
+    const values = entries.flatMap(entry => [
+      entry.fiction_id,
+      entry.royalroad_id,
+      entry.description || null,
+      entry.status || null,
+      entry.type || null,
+      entry.tags || null,
+      entry.warnings || null,
+      entry.pages || 0,
+      entry.ratings || 0,
+      entry.followers || 0,
+      entry.favorites || 0,
+      entry.views || 0,
+      entry.score || 0,
+      entry.overall_score || 0,
+      entry.style_score || 0,
+      entry.story_score || 0,
+      entry.grammar_score || 0,
+      entry.character_score || 0,
+      entry.total_views || 0,
+      entry.average_views || 0,
+      entry.captured_at
+    ]);
+
+    await this.dbClient.execute(query, values);
+  }
+
   // Save fiction history data to the database
   async saveFictionHistoryData(risingStars: RisingStarFiction[]): Promise<void> {
     try {
