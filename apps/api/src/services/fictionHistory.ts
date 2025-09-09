@@ -77,9 +77,7 @@ export class FictionHistoryService {
     try {
       console.log(`\n💾 Saving ${risingStars.length} fiction history entries to database...`);
 
-      // Create a single timestamp for this collection run
-      const collectionTimestamp = new Date().toISOString();
-
+      // We'll create timestamps fresh for each entry to ensure accuracy
       // Track which fictions we've already processed to avoid duplicate API calls
       const processedFictionIds = new Set<string>();
 
@@ -104,7 +102,7 @@ export class FictionHistoryService {
                   fiction_id: fictionId,
                   genre: star.genre,
                   position: star.position,
-                  captured_at: collectionTimestamp
+                  captured_at: new Date().toISOString()
                 };
                 await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
                 console.log(`✅ Saved rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
@@ -152,7 +150,7 @@ export class FictionHistoryService {
             character_score: star.stats?.character_score || 0,
             total_views: star.stats?.total_views || 0,
             average_views: star.stats?.average_views || 0,
-            captured_at: collectionTimestamp
+            captured_at: new Date().toISOString()
           };
 
           // Save fiction history entry
@@ -165,7 +163,7 @@ export class FictionHistoryService {
               fiction_id: fictionId,
               genre: star.genre,
               position: star.position,
-              captured_at: collectionTimestamp
+              captured_at: new Date().toISOString()
             };
             // Save immediately instead of batching
             await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
@@ -790,8 +788,7 @@ export class FictionHistoryService {
         return true;
       }
 
-      // Create a single timestamp for this collection run
-      const collectionTimestamp = new Date().toISOString();
+      // We'll create timestamps fresh for each entry to ensure accuracy
 
       // Process each fiction
       for (let i = 0; i < allFictions.length; i++) {
@@ -836,7 +833,7 @@ export class FictionHistoryService {
               character_score: freshData.stats?.character_score || 0,
               total_views: freshData.stats?.total_views || 0,
               average_views: freshData.stats?.average_views || 0,
-              captured_at: collectionTimestamp
+              captured_at: new Date().toISOString()
             };
 
             // Save fiction history entry
