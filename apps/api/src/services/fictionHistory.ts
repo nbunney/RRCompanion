@@ -102,7 +102,7 @@ export class FictionHistoryService {
                   fiction_id: fictionId,
                   genre: star.genre,
                   position: star.position,
-                  captured_at: new Date().toISOString()
+                  captured_at: new Date(Date.now() + (7 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' ')
                 };
                 await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
                 console.log(`✅ Saved rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
@@ -150,7 +150,7 @@ export class FictionHistoryService {
             character_score: star.stats?.character_score || 0,
             total_views: star.stats?.total_views || 0,
             average_views: star.stats?.average_views || 0,
-            captured_at: new Date().toISOString()
+            captured_at: new Date(Date.now() + (7 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' ')
           };
 
           // Save fiction history entry
@@ -163,7 +163,7 @@ export class FictionHistoryService {
               fiction_id: fictionId,
               genre: star.genre,
               position: star.position,
-              captured_at: new Date().toISOString()
+              captured_at: new Date(Date.now() + (7 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' ')
             };
             // Save immediately instead of batching
             await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
@@ -657,7 +657,7 @@ export class FictionHistoryService {
               character_score: freshData.stats?.character_score || 0,
               total_views: freshData.stats?.total_views || 0,
               average_views: freshData.stats?.average_views || 0,
-              captured_at: new Date().toISOString()
+              captured_at: new Date(Date.now() + (7 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' ')
             };
 
             // Save fiction history entry
@@ -833,7 +833,7 @@ export class FictionHistoryService {
               character_score: freshData.stats?.character_score || 0,
               total_views: freshData.stats?.total_views || 0,
               average_views: freshData.stats?.average_views || 0,
-              captured_at: new Date().toISOString()
+              captured_at: new Date(Date.now() + (7 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' ')
             };
 
             // Save fiction history entry
