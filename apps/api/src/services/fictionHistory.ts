@@ -72,6 +72,20 @@ export class FictionHistoryService {
     }
   }
 
+  // Check if fiction exists by RoyalRoad ID
+  private async getFictionByRoyalRoadId(royalroadId: string): Promise<any | null> {
+    try {
+      const result = await this.dbClient.query(
+        'SELECT * FROM fiction WHERE royalroad_id = ? LIMIT 1',
+        [royalroadId]
+      );
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error('❌ Error checking fiction existence:', error);
+      return null;
+    }
+  }
+
   // Save fiction history data to the database
   async saveFictionHistoryData(risingStars: RisingStarFiction[]): Promise<void> {
     try {
@@ -111,12 +125,20 @@ export class FictionHistoryService {
             }
           }
 
-          // Fetch fresh data from Royal Road API if we haven't processed this fiction yet
+          // Only fetch fresh data if we haven't processed this fiction yet AND it's not in our database
           if (processedFictionIds.has(star.id)) {
             console.log(`⏭️ Fiction ${star.id} already processed in this batch, skipping API call`);
           } else {
-            // Fetch fresh data from Royal Road API
-            console.log(`📡 Fetching fresh data for fiction ${star.id} from Royal Road API...`);
+            // Check if fiction exists in database
+            const existingFiction = await this.getFictionByRoyalRoadId(star.id);
+            if (existingFiction) {
+              console.log(`📚 Fiction ${star.id} already exists in database, skipping API call`);
+              processedFictionIds.add(star.id);
+              continue;
+            }
+
+            // Fetch fresh data from Royal Road API (only for new fictions)
+            console.log(`📡 Fetching fresh data for NEW fiction ${star.id} from Royal Road API...`);
             await this.createFictionFromRisingStar(star);
             processedFictionIds.add(star.id);
           }
