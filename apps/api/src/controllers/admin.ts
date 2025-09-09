@@ -241,25 +241,29 @@ export async function triggerRisingStarsScrape(ctx: Context): Promise<void> {
   try {
     console.log('🔄 Manually triggering Rising Stars scrape...');
 
+    // Start the scrape in the background
     const fictionHistoryService = new FictionHistoryService();
-    const success = await fictionHistoryService.runRisingStarsCollection();
 
-    if (success) {
-      ctx.response.status = 200;
-      ctx.response.body = {
-        success: true,
-        data: {
-          message: 'Rising Stars scrape completed successfully',
-          timestamp: new Date().toISOString()
-        }
-      } as ApiResponse;
-    } else {
-      ctx.response.status = 500;
-      ctx.response.body = {
-        success: false,
-        error: 'Rising Stars scrape failed'
-      } as ApiResponse;
-    }
+    // Run asynchronously without waiting
+    fictionHistoryService.runRisingStarsCollection().then((success) => {
+      if (success) {
+        console.log('✅ Manual Rising Stars scrape completed successfully');
+      } else {
+        console.error('❌ Manual Rising Stars scrape failed');
+      }
+    }).catch((error) => {
+      console.error('❌ Error during manual Rising Stars scrape:', error);
+    });
+
+    // Return immediately
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: {
+        message: 'Rising Stars scrape started in background',
+        timestamp: new Date().toISOString()
+      }
+    } as ApiResponse;
 
   } catch (error) {
     console.error('❌ Error triggering Rising Stars scrape:', error);
