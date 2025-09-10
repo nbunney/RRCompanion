@@ -194,17 +194,11 @@ const RisingStarsPositionCalculator: React.FC = () => {
               <p className="text-sm text-gray-500">Royal Road ID: {position.royalroadId}</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               {/* Estimated Position */}
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="text-3xl font-bold text-blue-600 mb-2">#{position.estimatedPosition}</div>
                 <div className="text-sm text-gray-600">Estimated Position</div>
-              </div>
-
-              {/* Fictions Ahead */}
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-3xl font-bold text-orange-600 mb-2">{position.fictionsAhead}</div>
-                <div className="text-sm text-gray-600">Fictions Ahead</div>
               </div>
 
               {/* Fictions to Climb */}
@@ -245,31 +239,24 @@ const RisingStarsPositionCalculator: React.FC = () => {
 
           {/* Genre Positions */}
           {position.genrePositions && position.genrePositions.length > 0 && (
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Genre Positions</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-lg shadow-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Genre Positions</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {position.genrePositions.map((genrePos, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-sm font-medium text-gray-700 capitalize">
-                          {genrePos.genre.replace(/_/g, ' ')}
-                        </span>
-                        {genrePos.isOnList ? (
-                          <>
-                            <span className="text-green-600 text-lg">✓</span>
-                            <span className="text-sm font-semibold text-green-600">
-                              #{genrePos.position}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-red-600 text-lg">✗</span>
-                        )}
-                      </div>
-                      {genrePos.lastScraped && (
-                        <div className="text-xs text-gray-500">
-                          Last updated: {formatDate(genrePos.lastScraped)}
-                        </div>
+                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                    <div className="flex items-center space-x-1">
+                      <span className="font-medium text-gray-700 capitalize text-xs">
+                        {genrePos.genre.replace(/_/g, ' ')}
+                      </span>
+                      {genrePos.isOnList ? (
+                        <>
+                          <span className="text-green-600 text-sm">✓</span>
+                          <span className="text-xs font-semibold text-green-600">
+                            #{genrePos.position}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-red-600 text-sm">✗</span>
                       )}
                     </div>
                   </div>
