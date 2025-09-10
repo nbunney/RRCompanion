@@ -195,41 +195,48 @@ export class RisingStarsPositionService {
     estimatedPosition: number;
     fictionsAhead: number;
   }> {
-    // Get all genres
+    // Get all genres (from any timestamp)
     const genresQuery = `
       SELECT DISTINCT genre 
       FROM risingStars 
-      WHERE captured_at = ?
       ORDER BY genre
     `;
-    const genresResult = await this.dbClient.query(genresQuery, [scrapeTimestamp]);
+    const genresResult = await this.dbClient.query(genresQuery);
     const allGenres = genresResult.map((row: any) => row.genre);
 
-    // Step 1: Add all fictions from Rising Stars main
+    // Step 1: Add all fictions from Rising Stars main (most recent)
     const mainFictionsQuery = `
       SELECT DISTINCT fiction_id 
       FROM risingStars 
       WHERE genre = 'main' 
-      AND captured_at = ?
-      ORDER BY position ASC
+      ORDER BY captured_at DESC
+      LIMIT 50
     `;
-    const mainFictionsResult = await this.dbClient.query(mainFictionsQuery, [scrapeTimestamp]);
+    const mainFictionsResult = await this.dbClient.query(mainFictionsQuery);
     const fictionsAhead = new Set(mainFictionsResult.map((row: any) => row.fiction_id));
 
-    // Step 2: Find genres where this fiction appears and add fictions above it
+    // Step 2: Find genres where this fiction appears and add fictions above it (most recent)
     const fictionGenresQuery = `
-      SELECT genre, position 
+      SELECT genre, position, captured_at
       FROM risingStars 
       WHERE fiction_id = ? 
-      AND captured_at = ?
+      ORDER BY captured_at DESC
     `;
-    const fictionGenresResult = await this.dbClient.query(fictionGenresQuery, [fictionId, scrapeTimestamp]);
+    const fictionGenresResult = await this.dbClient.query(fictionGenresQuery, [fictionId]);
 
+    // Group fiction genres by genre to get the most recent entry for each genre
+    const fictionGenresByGenre = new Map();
     for (const fictionGenre of fictionGenresResult) {
-      const genre = fictionGenre.genre;
-      const position = fictionGenre.position;
+      if (!fictionGenresByGenre.has(fictionGenre.genre)) {
+        fictionGenresByGenre.set(fictionGenre.genre, fictionGenre);
+      }
+    }
 
-      // Add all fictions above this fiction in this genre
+    for (const [genre, fictionGenre] of fictionGenresByGenre) {
+      const position = fictionGenre.position;
+      const capturedAt = fictionGenre.captured_at;
+
+      // Add all fictions above this fiction in this genre (same timestamp)
       const aboveFictionsQuery = `
         SELECT DISTINCT fiction_id 
         FROM risingStars 
@@ -237,7 +244,7 @@ export class RisingStarsPositionService {
         AND position < ? 
         AND captured_at = ?
       `;
-      const aboveFictionsResult = await this.dbClient.query(aboveFictionsQuery, [genre, position, scrapeTimestamp]);
+      const aboveFictionsResult = await this.dbClient.query(aboveFictionsQuery, [genre, position, capturedAt]);
 
       aboveFictionsResult.forEach((row: any) => {
         fictionsAhead.add(row.fiction_id);
@@ -245,7 +252,7 @@ export class RisingStarsPositionService {
     }
 
     // Step 3: For genres where this fiction doesn't appear, add any fiction that is above a fiction in the current list
-    const fictionGenres = fictionGenresResult.map((row: any) => row.genre);
+    const fictionGenres = Array.from(fictionGenresByGenre.keys());
     const missingGenres = allGenres.filter((genre: any) => !fictionGenres.includes(genre));
 
     for (const missingGenre of missingGenres) {
