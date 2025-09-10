@@ -124,14 +124,13 @@ export class RisingStarsPositionService {
         throw new Error('No recent Rising Stars data available');
       }
 
-      // Check if fiction appears in any Rising Stars genre list
+      // Check if fiction has ever appeared in any Rising Stars genre list
       const genreCheckQuery = `
         SELECT COUNT(*) as count 
         FROM risingStars 
-        WHERE fiction_id = ? 
-        AND captured_at = ?
+        WHERE fiction_id = ?
       `;
-      const genreCheckResult = await this.dbClient.query(genreCheckQuery, [fiction.id, latestScrape]);
+      const genreCheckResult = await this.dbClient.query(genreCheckQuery, [fiction.id]);
 
       if (genreCheckResult[0].count === 0) {
         throw new Error(`Fiction "${fiction.title}" by ${fiction.author_name} is not currently on any Rising Stars genre list. Once this fiction is on a genre list try again.`);
