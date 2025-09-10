@@ -163,7 +163,7 @@ router.get('/debug/:royalroadId', async (ctx) => {
 
     const fiction = fictionResult[0];
     let tags = fiction.tags || [];
-    
+
     // Parse tags if they're stored as a JSON string
     if (typeof tags === 'string') {
       try {
@@ -173,7 +173,7 @@ router.get('/debug/:royalroadId', async (ctx) => {
         tags = [];
       }
     }
-    
+
     const relevantGenres = risingStarsPositionService['mapTagsToGenres'](tags);
 
     ctx.response.status = 200;
