@@ -242,25 +242,39 @@ const RisingStarsPositionCalculator: React.FC = () => {
             <div className="bg-white rounded-lg shadow-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Genre Positions</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {position.genrePositions.map((genrePos, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
-                    <div className="flex items-center space-x-1">
-                      <span className="font-medium text-gray-700 capitalize text-xs">
-                        {genrePos.genre.replace(/_/g, ' ')}
-                      </span>
-                      {genrePos.isOnList ? (
-                        <>
-                          <span className="text-green-600 text-sm">✓</span>
-                          <span className="text-xs font-semibold text-green-600">
-                            #{genrePos.position}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-red-600 text-sm">✗</span>
-                      )}
+                {position.genrePositions
+                  .sort((a, b) => {
+                    // First, put red X's (not on list) at the front
+                    if (!a.isOnList && b.isOnList) return -1;
+                    if (a.isOnList && !b.isOnList) return 1;
+
+                    // If both are on list, sort by position (highest to lowest)
+                    if (a.isOnList && b.isOnList) {
+                      return (b.position || 0) - (a.position || 0);
+                    }
+
+                    // If both are not on list, sort alphabetically by genre name
+                    return a.genre.localeCompare(b.genre);
+                  })
+                  .map((genrePos, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                      <div className="flex items-center space-x-1">
+                        <span className="font-medium text-gray-700 capitalize text-xs">
+                          {genrePos.genre.replace(/_/g, ' ')}
+                        </span>
+                        {genrePos.isOnList ? (
+                          <>
+                            <span className="text-green-600 text-sm">✓</span>
+                            <span className="text-xs font-semibold text-green-600">
+                              #{genrePos.position}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-red-600 text-sm">✗</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           )}
