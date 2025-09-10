@@ -162,7 +162,18 @@ router.get('/debug/:royalroadId', async (ctx) => {
     }
 
     const fiction = fictionResult[0];
-    const tags = fiction.tags || [];
+    let tags = fiction.tags || [];
+    
+    // Parse tags if they're stored as a JSON string
+    if (typeof tags === 'string') {
+      try {
+        tags = JSON.parse(tags);
+      } catch (error) {
+        console.error('Error parsing tags JSON:', error);
+        tags = [];
+      }
+    }
+    
     const relevantGenres = risingStarsPositionService['mapTagsToGenres'](tags);
 
     ctx.response.status = 200;
