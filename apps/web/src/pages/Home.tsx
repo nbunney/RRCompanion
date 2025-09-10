@@ -11,7 +11,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header showUserInfo={false} />
+      <Header showUserInfo={true} />
 
       <main className="flex-1 max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
@@ -200,10 +200,13 @@ const Home: React.FC = () => {
 
           <Card className="p-8 text-center">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Ready to Get Started?
+              {isAuthenticated ? 'Welcome Back!' : 'Ready to Get Started?'}
             </h2>
             <p className="text-gray-700 mb-6">
-              Join those of us using RRCompanion to track our favorite fictions.
+              {isAuthenticated 
+                ? 'Continue tracking your favorite fictions and explore new features.'
+                : 'Join those of us using RRCompanion to track our favorite fictions.'
+              }
             </p>
             <div className="space-x-4">
               {isAuthenticated ? (
