@@ -15,7 +15,7 @@ interface RisingStarsPosition {
   fictionsAhead: number;
   fictionsToClimb: number;
   lastUpdated: string;
-  genrePositions: { genre: string; position: number | null; isOnList: boolean }[];
+  genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
 }
 
 const RisingStarsPositionCalculator: React.FC = () => {
@@ -247,22 +247,29 @@ const RisingStarsPositionCalculator: React.FC = () => {
           {position.genrePositions && position.genrePositions.length > 0 && (
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Genre Positions</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {position.genrePositions.map((genrePos, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-700 capitalize">
-                      {genrePos.genre.replace(/_/g, ' ')}
-                    </span>
-                    <div className="flex items-center space-x-2">
-                      {genrePos.isOnList ? (
-                        <>
-                          <span className="text-green-600 text-lg">✓</span>
-                          <span className="text-sm font-semibold text-green-600">
-                            #{genrePos.position}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-red-600 text-lg">✗</span>
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="text-sm font-medium text-gray-700 capitalize">
+                          {genrePos.genre.replace(/_/g, ' ')}
+                        </span>
+                        {genrePos.isOnList ? (
+                          <>
+                            <span className="text-green-600 text-lg">✓</span>
+                            <span className="text-sm font-semibold text-green-600">
+                              #{genrePos.position}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-red-600 text-lg">✗</span>
+                        )}
+                      </div>
+                      {genrePos.lastScraped && (
+                        <div className="text-xs text-gray-500">
+                          Last updated: {formatDate(genrePos.lastScraped)}
+                        </div>
                       )}
                     </div>
                   </div>
