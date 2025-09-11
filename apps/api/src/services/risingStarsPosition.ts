@@ -136,15 +136,16 @@ export class RisingStarsPositionService {
         throw new Error(`Fiction "${fiction.title}" by ${fiction.author_name} is not currently on any Rising Stars genre list. Once this fiction is on a genre list try again.`);
       }
 
-      // Check if fiction is already on Rising Stars main
+      // Check if fiction is already on Rising Stars main (most recent entry)
       const mainCheckQuery = `
         SELECT position 
         FROM risingStars 
         WHERE fiction_id = ? 
         AND genre = 'main' 
-        AND captured_at = ?
+        ORDER BY captured_at DESC
+        LIMIT 1
       `;
-      const mainCheckResult = await this.dbClient.query(mainCheckQuery, [fiction.id, latestScrape]);
+      const mainCheckResult = await this.dbClient.query(mainCheckQuery, [fiction.id]);
 
       if (mainCheckResult.length > 0) {
         // Fiction is already on main page

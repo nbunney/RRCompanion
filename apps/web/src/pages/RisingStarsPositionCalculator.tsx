@@ -198,18 +198,24 @@ const RisingStarsPositionCalculator: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              {/* Estimated Position */}
+              {/* Position Display */}
               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-3xl font-bold text-blue-600 mb-2">#{position.estimatedPosition}</div>
-                <div className="text-sm text-gray-600">Estimated Position</div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">
+                  #{position.isOnMain ? position.mainPosition : position.estimatedPosition}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {position.isOnMain ? 'Rising Stars Main Position' : 'Estimated Position'}
+                </div>
               </div>
 
-              {/* Fictions to Climb */}
-              <div className={`text-center p-4 rounded-lg ${position.fictionsToClimb === 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-                <div className={`text-3xl font-bold mb-2 ${getPositionColor(position.fictionsToClimb)}`}>
-                  {position.fictionsToClimb}
+              {/* Status Display */}
+              <div className={`text-center p-4 rounded-lg ${position.isOnMain ? 'bg-green-50' : (position.fictionsToClimb === 0 ? 'bg-green-50' : 'bg-red-50')}`}>
+                <div className={`text-3xl font-bold mb-2 ${position.isOnMain ? 'text-green-600' : getPositionColor(position.fictionsToClimb)}`}>
+                  {position.isOnMain ? '🎉' : position.fictionsToClimb}
                 </div>
-                <div className="text-sm text-gray-600">To Reach Main</div>
+                <div className="text-sm text-gray-600">
+                  {position.isOnMain ? 'Already on Main!' : 'To Reach Main'}
+                </div>
               </div>
             </div>
 
