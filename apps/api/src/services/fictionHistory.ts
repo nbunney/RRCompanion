@@ -166,6 +166,9 @@ export class FictionHistoryService {
       // Track which fictions we've already processed to avoid duplicate API calls
       const processedFictionIds = new Set<string>();
 
+      // Collect all Rising Stars entries to save in batches at the end
+      const risingStarsEntries: RisingStarEntry[] = [];
+
       for (let i = 0; i < risingStars.length; i++) {
         const star = risingStars[i];
 
@@ -189,8 +192,8 @@ export class FictionHistoryService {
                   position: star.position,
                   captured_at: new Date().toISOString()
                 };
-                await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
-                console.log(`✅ Saved rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
+                risingStarsEntries.push(risingStarEntry);
+                console.log(`📝 Collected rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
               }
               continue; // Skip to next fiction
             }
@@ -277,11 +280,11 @@ export class FictionHistoryService {
                 position: star.position,
                 captured_at: new Date().toISOString()
               };
-              // Save immediately instead of batching
-              await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
-              console.log(`✅ Saved rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
+              // Collect for batch saving instead of saving immediately
+              risingStarsEntries.push(risingStarEntry);
+              console.log(`📝 Collected rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
             } catch (error) {
-              console.error(`❌ Failed to save Rising Stars entry for ${star.id}:`, error);
+              console.error(`❌ Failed to create Rising Stars entry for ${star.id}:`, error);
               // This is critical data - we should continue but log the failure
             }
           }
@@ -300,7 +303,19 @@ export class FictionHistoryService {
         }
       }
 
-      // Rising star entries are now saved immediately during processing
+      // Save all Rising Stars entries in batches by genre
+      if (risingStarsEntries.length > 0) {
+        console.log(`\n💾 Saving ${risingStarsEntries.length} Rising Stars entries in batches by genre...`);
+        try {
+          await this.risingStarsService.saveRisingStarsData(risingStarsEntries);
+          console.log(`✅ Successfully saved all Rising Stars entries in batches`);
+        } catch (error) {
+          console.error(`❌ Failed to save Rising Stars entries in batches:`, error);
+          // Don't throw - we've already processed fiction history
+        }
+      } else {
+        console.log(`⚠️ No Rising Stars entries to save`);
+      }
 
       console.log(`✅ Successfully processed ${risingStars.length} fiction history entries`);
     } catch (error) {

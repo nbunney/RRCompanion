@@ -228,16 +228,57 @@ export class RisingStarsService {
     }
   }
 
-  // Save multiple rising star entries
+  // Save multiple rising star entries in batches by genre
   async saveRisingStarsData(entries: RisingStarEntry[]): Promise<void> {
-    console.log(`\n💾 Saving ${entries.length} rising star entries to database...`);
+    console.log(`\n💾 Saving ${entries.length} rising star entries to database in batches by genre...`);
+
+    // Group entries by genre
+    const entriesByGenre = new Map<string, RisingStarEntry[]>();
 
     for (const entry of entries) {
-      await this.saveRisingStarEntry(entry);
-      // Add a small delay to avoid overwhelming the database
-      await new Promise(resolve => setTimeout(resolve, 100));
+      if (!entriesByGenre.has(entry.genre)) {
+        entriesByGenre.set(entry.genre, []);
+      }
+      entriesByGenre.get(entry.genre)!.push(entry);
     }
 
-    console.log(`✅ Successfully saved ${entries.length} rising star entries`);
+    // Save each genre batch
+    for (const [genre, genreEntries] of entriesByGenre) {
+      console.log(`📊 Saving ${genreEntries.length} entries for genre: ${genre}`);
+
+      try {
+        await this.saveRisingStarsBatch(genreEntries);
+        console.log(`✅ Successfully saved ${genreEntries.length} entries for genre: ${genre}`);
+      } catch (error) {
+        console.error(`❌ Failed to save batch for genre ${genre}:`, error);
+        // Continue with other genres even if one fails
+      }
+    }
+
+    console.log(`✅ Completed saving all ${entries.length} rising star entries`);
+  }
+
+  // Save a batch of rising star entries for a single genre
+  private async saveRisingStarsBatch(entries: RisingStarEntry[]): Promise<void> {
+    if (entries.length === 0) return;
+
+    // Build batch insert query
+    const values = entries.map(entry => [
+      entry.fiction_id,
+      entry.genre,
+      entry.position,
+      entry.captured_at ? new Date(entry.captured_at).toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ')
+    ]);
+
+    const placeholders = entries.map(() => '(?, ?, ?, ?)').join(', ');
+    const query = `
+      INSERT INTO risingStars (fiction_id, genre, position, captured_at)
+      VALUES ${placeholders}
+    `;
+
+    // Flatten the values array for the query
+    const flatValues = values.flat();
+
+    await this.dbClient.execute(query, flatValues);
   }
 } 
