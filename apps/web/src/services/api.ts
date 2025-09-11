@@ -294,6 +294,19 @@ export const stripeAPI = {
   },
 };
 
+// Admin API
+export const adminAPI = {
+  manualScrapeFiction: async (fictionId: number): Promise<ApiResponse<{ message: string; fictionId: number; royalroadId: string; timestamp: string }>> => {
+    const response = await api.post(`/admin/manual-scrape/${fictionId}`);
+    return response.data;
+  },
+
+  triggerRisingStarsScrape: async (): Promise<ApiResponse<{ message: string; timestamp: string }>> => {
+    const response = await api.post('/admin/trigger/rising-stars-scrape');
+    return response.data;
+  },
+};
+
 // Health check
 export const healthAPI = {
   check: async (): Promise<ApiResponse> => {

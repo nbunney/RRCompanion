@@ -20,15 +20,25 @@ export class CronService {
     // Run at 1:01, 16:01, 31:01, 46:01 (1 minute past each quarter hour)
     const quarterHourMinutes = [1, 16, 31, 46];
 
+    // Debug logging every minute to see what's happening
+    if (minute % 5 === 0) { // Log every 5 minutes
+      console.log(`🕐 Cron check - Current time: ${now.toISOString()}, minute: ${minute}, second: ${second}, quarterHourMinutes: ${quarterHourMinutes.join(',')}`);
+    }
+
     // Check if we're at the right minute and within the first 30 seconds to avoid multiple runs
     if (quarterHourMinutes.includes(minute) && second < 30) {
       const nowTime = Date.now();
       const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
 
+      console.log(`🕐 Rising Stars timing check - minute: ${minute}, second: ${second}, timeSinceLastRun: ${nowTime - this.lastRisingStarsRun}ms`);
+
       // Only run if we haven't run in the last 15 minutes
       if (nowTime - this.lastRisingStarsRun >= fifteenMinutes) {
         this.lastRisingStarsRun = nowTime;
+        console.log(`✅ Rising Stars collection should run NOW!`);
         return true;
+      } else {
+        console.log(`⏰ Rising Stars collection skipped - too soon since last run`);
       }
     }
 
@@ -96,6 +106,12 @@ export class CronService {
 
   // Check and run collection if needed
   private async checkAndRunCollection(): Promise<void> {
+    // Debug: Log every minute to confirm cron is running
+    const now = new Date();
+    if (now.getSeconds() < 5) { // Log only in first 5 seconds of each minute
+      console.log(`🔄 Cron service running - ${now.toISOString()}`);
+    }
+
     // Check if it's time to run Rising Stars collection (1 minute past each quarter hour)
     if (this.shouldRunRisingStarsCollection()) {
       const now = new Date();

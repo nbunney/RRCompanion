@@ -781,213 +781,243 @@ export class RoyalRoadService {
     }
   }
 
-  // Scrape detailed statistics from a fiction page
-  private async scrapeFictionStats(fictionId: string): Promise<any> {
-    try {
-      const url = `https://www.royalroad.com/fiction/${fictionId}`;
+  // Scrape detailed statistics from a fiction page with retry logic
+  private async scrapeFictionStats(fictionId: string, maxRetries: number = 3): Promise<any> {
+    let lastError: any = null;
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Scraping attempt ${attempt}/${maxRetries} for fiction ${fictionId}`);
 
-      const html = await response.text();
+        const url = `https://www.royalroad.com/fiction/${fictionId}`;
+        const response = await fetch(url);
 
-      // Extract status and type from the colored area next to tags
-      let status = '';
-      let type = '';
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
-      // Look for the container that holds status and type information
-      const statusTypeContainer = html.match(/<div[^>]*class="[^"]*fiction-stats[^"]*"[^>]*>([\s\S]*?)<\/div>/);
-      if (statusTypeContainer) {
-        const containerHtml = statusTypeContainer[1];
+        const html = await response.text();
 
-        // Extract status - look for ONGOING, COMPLETED, HIATUS, etc.
-        const statusMatch = containerHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
-        if (statusMatch) {
-          for (const match of statusMatch) {
-            const statusText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
-            // Common status values
-            if (['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(statusText.toUpperCase())) {
-              status = statusText;
-              break;
+        // Extract status and type from the colored area next to tags
+        let status = '';
+        let type = '';
+
+        // Look for the container that holds status and type information
+        const statusTypeContainer = html.match(/<div[^>]*class="[^"]*fiction-stats[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+        if (statusTypeContainer) {
+          const containerHtml = statusTypeContainer[1];
+
+          // Extract status - look for ONGOING, COMPLETED, HIATUS, etc.
+          const statusMatch = containerHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+          if (statusMatch) {
+            for (const match of statusMatch) {
+              const statusText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+              // Common status values
+              if (['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(statusText.toUpperCase())) {
+                status = statusText;
+                break;
+              }
+            }
+          }
+
+          // Extract type - look for Original, Translation, etc.
+          const typeMatch = containerHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+          if (typeMatch) {
+            for (const match of typeMatch) {
+              const typeText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+              // Common type values
+              if (['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(typeText.toUpperCase())) {
+                type = typeText;
+                break;
+              }
             }
           }
         }
 
-        // Extract type - look for Original, Translation, etc.
-        const typeMatch = containerHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
-        if (typeMatch) {
-          for (const match of typeMatch) {
-            const typeText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
-            // Common type values
-            if (['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(typeText.toUpperCase())) {
-              type = typeText;
-              break;
+        // Alternative: Look for status and type in the fiction-info section
+        const fictionInfoSection = html.match(/<div[^>]*class="[^"]*fiction-info[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+        if (fictionInfoSection) {
+          const infoHtml = fictionInfoSection[1];
+
+          // Extract status - look for ONGOING, COMPLETED, HIATUS, etc.
+          const statusMatch = infoHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+          if (statusMatch) {
+            for (const match of statusMatch) {
+              const statusText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+              // Common status values
+              if (['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(statusText.toUpperCase())) {
+                status = statusText;
+                break;
+              }
+            }
+          }
+
+          // Extract type - look for Original, Translation, etc.
+          const typeMatch = infoHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+          if (typeMatch) {
+            for (const match of typeMatch) {
+              const typeText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
+              // Common type values
+              if (['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(typeText.toUpperCase())) {
+                type = typeText;
+                break;
+              }
             }
           }
         }
-      }
 
-      // Alternative: Look for status and type in the fiction-info section
-      const fictionInfoSection = html.match(/<div[^>]*class="[^"]*fiction-info[^"]*"[^>]*>([\s\S]*?)<\/div>/);
-      if (fictionInfoSection) {
-        const infoHtml = fictionInfoSection[1];
+        // Look for status and type in the entire HTML if not found yet
+        if (!status || !type) {
+          const allLabelMatches = html.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
+          if (allLabelMatches) {
+            for (const match of allLabelMatches) {
+              const text = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
 
-        // Extract status - look for ONGOING, COMPLETED, HIATUS, etc.
-        const statusMatch = infoHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
-        if (statusMatch) {
-          for (const match of statusMatch) {
-            const statusText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
-            // Common status values
-            if (['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(statusText.toUpperCase())) {
-              status = statusText;
-              break;
+              // Check for status
+              if (!status && ['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(text.toUpperCase())) {
+                status = text;
+              }
+
+              // Check for type
+              if (!type && ['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(text.toUpperCase())) {
+                type = text;
+              }
+
+              // If we found both, we can stop
+              if (status && type) {
+                break;
+              }
             }
           }
         }
 
-        // Extract type - look for Original, Translation, etc.
-        const typeMatch = infoHtml.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
-        if (typeMatch) {
-          for (const match of typeMatch) {
-            const typeText = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
-            // Common type values
-            if (['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(typeText.toUpperCase())) {
-              type = typeText;
-              break;
-            }
+        // Fallback: Try alternative patterns for status and type
+        if (!status) {
+          const statusMatch = html.match(/<span[^>]*class="[^"]*status[^"]*"[^>]*>([^<]+)<\/span>/);
+          if (statusMatch) {
+            status = this.decodeHtmlEntities(statusMatch[1].trim());
           }
         }
-      }
 
-      // Look for status and type in the entire HTML if not found yet
-      if (!status || !type) {
-        const allLabelMatches = html.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/g);
-        if (allLabelMatches) {
-          for (const match of allLabelMatches) {
-            const text = this.decodeHtmlEntities(match.replace(/<[^>]*>/g, '').trim());
-
-            // Check for status
-            if (!status && ['ONGOING', 'COMPLETED', 'HIATUS', 'DROPPED', 'STUB'].includes(text.toUpperCase())) {
-              status = text;
-            }
-
-            // Check for type
-            if (!type && ['ORIGINAL', 'TRANSLATION', 'ADAPTATION'].includes(text.toUpperCase())) {
-              type = text;
-            }
-
-            // If we found both, we can stop
-            if (status && type) {
-              break;
-            }
+        if (!type) {
+          const typeMatch = html.match(/<span[^>]*class="[^"]*type[^"]*"[^>]*>([^<]+)<\/span>/);
+          if (typeMatch) {
+            type = this.decodeHtmlEntities(typeMatch[1].trim());
           }
         }
-      }
 
-      // Fallback: Try alternative patterns for status and type
-      if (!status) {
-        const statusMatch = html.match(/<span[^>]*class="[^"]*status[^"]*"[^>]*>([^<]+)<\/span>/);
-        if (statusMatch) {
-          status = this.decodeHtmlEntities(statusMatch[1].trim());
+        // Extract detailed statistics from HTML
+        const stats: any = {
+          overall_score: 0,
+          style_score: 0,
+          story_score: 0,
+          grammar_score: 0,
+          character_score: 0,
+          total_views: 0,
+          average_views: 0,
+          followers: 0,
+          favorites: 0,
+          ratings: 0,
+          pages: 0,
+          status: status,
+          type: type
+        };
+
+        // Extract scores from star elements - fixed based on actual HTML structure
+        // The structure shows: data-content="4.77 / 5" aria-label="4.77 stars"
+        // Need to match each score type specifically
+        const overallScoreMatch = html.match(/Overall Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
+        if (overallScoreMatch) {
+          stats.overall_score = parseFloat(overallScoreMatch[1]);
+        }
+
+        const styleScoreMatch = html.match(/Style Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
+        if (styleScoreMatch) {
+          stats.style_score = parseFloat(styleScoreMatch[1]);
+        }
+
+        const storyScoreMatch = html.match(/Story Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
+        if (storyScoreMatch) {
+          stats.story_score = parseFloat(storyScoreMatch[1]);
+        }
+
+        const grammarScoreMatch = html.match(/Grammar Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
+        if (grammarScoreMatch) {
+          stats.grammar_score = parseFloat(grammarScoreMatch[1]);
+        }
+
+        const characterScoreMatch = html.match(/Character Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
+        if (characterScoreMatch) {
+          stats.character_score = parseFloat(characterScoreMatch[1]);
+        }
+
+        // Extract numeric statistics - fixed based on actual HTML structure
+        // The structure shows: <li class="bold uppercase">Total Views :</li><li class="bold uppercase font-red-sunglo">204,325</li>
+        const totalViewsMatch = html.match(/Total Views :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
+        if (totalViewsMatch) {
+          stats.total_views = parseInt(totalViewsMatch[1].replace(/,/g, ''));
+        }
+
+        const averageViewsMatch = html.match(/Average Views :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
+        if (averageViewsMatch) {
+          stats.average_views = parseInt(averageViewsMatch[1].replace(/,/g, ''));
+        }
+
+        const followersMatch = html.match(/Followers :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
+        if (followersMatch) {
+          stats.followers = parseInt(followersMatch[1].replace(/,/g, ''));
+        }
+
+        const favoritesMatch = html.match(/Favorites :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
+        if (favoritesMatch) {
+          stats.favorites = parseInt(favoritesMatch[1].replace(/,/g, ''));
+        }
+
+        const ratingsMatch = html.match(/Ratings :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
+        if (ratingsMatch) {
+          stats.ratings = parseInt(ratingsMatch[1].replace(/,/g, ''));
+        }
+
+        // Extract pages from the last font-red-sunglo entry
+        const fontRedMatches = html.match(/font-red-sunglo[^>]*>([\d,]+)<\/li>/g);
+        if (fontRedMatches && fontRedMatches.length > 0) {
+          const lastMatch = fontRedMatches[fontRedMatches.length - 1];
+          const pagesValue = lastMatch.match(/>([\d,]+)</);
+          if (pagesValue) {
+            stats.pages = parseInt(pagesValue[1].replace(/,/g, ''));
+          }
+        }
+
+        // Validate that we got meaningful data
+        if (stats.pages > 0 || stats.ratings > 0 || stats.followers > 0 || stats.favorites > 0 || stats.views > 0) {
+          console.log(`✅ Successfully scraped stats for fiction ${fictionId} on attempt ${attempt}`);
+          return stats;
+        } else {
+          console.log(`⚠️ Attempt ${attempt} returned zero stats for fiction ${fictionId}, retrying...`);
+          lastError = new Error('Zero stats returned');
+        }
+
+        // Add delay between retries (exponential backoff)
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Max 5 seconds
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+      } catch (error) {
+        console.log(`❌ Attempt ${attempt} threw error for fiction ${fictionId}:`, error);
+        lastError = error;
+
+        // Add delay between retries
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
-
-      if (!type) {
-        const typeMatch = html.match(/<span[^>]*class="[^"]*type[^"]*"[^>]*>([^<]+)<\/span>/);
-        if (typeMatch) {
-          type = this.decodeHtmlEntities(typeMatch[1].trim());
-        }
-      }
-
-      // Extract detailed statistics from HTML
-      const stats: any = {
-        overall_score: 0,
-        style_score: 0,
-        story_score: 0,
-        grammar_score: 0,
-        character_score: 0,
-        total_views: 0,
-        average_views: 0,
-        followers: 0,
-        favorites: 0,
-        ratings: 0,
-        pages: 0,
-        status: status,
-        type: type
-      };
-
-      // Extract scores from star elements - fixed based on actual HTML structure
-      // The structure shows: data-content="4.77 / 5" aria-label="4.77 stars"
-      // Need to match each score type specifically
-      const overallScoreMatch = html.match(/Overall Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
-      if (overallScoreMatch) {
-        stats.overall_score = parseFloat(overallScoreMatch[1]);
-      }
-
-      const styleScoreMatch = html.match(/Style Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
-      if (styleScoreMatch) {
-        stats.style_score = parseFloat(styleScoreMatch[1]);
-      }
-
-      const storyScoreMatch = html.match(/Story Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
-      if (storyScoreMatch) {
-        stats.story_score = parseFloat(storyScoreMatch[1]);
-      }
-
-      const grammarScoreMatch = html.match(/Grammar Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
-      if (grammarScoreMatch) {
-        stats.grammar_score = parseFloat(grammarScoreMatch[1]);
-      }
-
-      const characterScoreMatch = html.match(/Character Score[\s\S]*?data-content="([\d.]+) \/ 5"/);
-      if (characterScoreMatch) {
-        stats.character_score = parseFloat(characterScoreMatch[1]);
-      }
-
-      // Extract numeric statistics - fixed based on actual HTML structure
-      // The structure shows: <li class="bold uppercase">Total Views :</li><li class="bold uppercase font-red-sunglo">204,325</li>
-      const totalViewsMatch = html.match(/Total Views :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
-      if (totalViewsMatch) {
-        stats.total_views = parseInt(totalViewsMatch[1].replace(/,/g, ''));
-      }
-
-      const averageViewsMatch = html.match(/Average Views :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
-      if (averageViewsMatch) {
-        stats.average_views = parseInt(averageViewsMatch[1].replace(/,/g, ''));
-      }
-
-      const followersMatch = html.match(/Followers :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
-      if (followersMatch) {
-        stats.followers = parseInt(followersMatch[1].replace(/,/g, ''));
-      }
-
-      const favoritesMatch = html.match(/Favorites :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
-      if (favoritesMatch) {
-        stats.favorites = parseInt(favoritesMatch[1].replace(/,/g, ''));
-      }
-
-      const ratingsMatch = html.match(/Ratings :<\/li>\s*<li[^>]*class="[^"]*font-red-sunglo[^"]*"[^>]*>([\d,]+)<\/li>/);
-      if (ratingsMatch) {
-        stats.ratings = parseInt(ratingsMatch[1].replace(/,/g, ''));
-      }
-
-      // Extract pages from the last font-red-sunglo entry
-      const fontRedMatches = html.match(/font-red-sunglo[^>]*>([\d,]+)<\/li>/g);
-      if (fontRedMatches && fontRedMatches.length > 0) {
-        const lastMatch = fontRedMatches[fontRedMatches.length - 1];
-        const pagesValue = lastMatch.match(/>([\d,]+)</);
-        if (pagesValue) {
-          stats.pages = parseInt(pagesValue[1].replace(/,/g, ''));
-        }
-      }
-
-      return stats;
-
-    } catch (error) {
-      console.error(`❌ Error scraping fiction stats for ${fictionId}:`, error);
-      return null; // Return null instead of zeros to indicate failure
     }
+
+    console.log(`❌ All ${maxRetries} attempts failed for fiction ${fictionId}`);
+    return null; // Return null instead of zeros to indicate failure
   }
 }

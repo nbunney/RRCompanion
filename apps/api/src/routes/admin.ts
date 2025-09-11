@@ -8,7 +8,8 @@ import {
 
   deactivateCouponCode,
   convertTimestampsToUTC,
-  triggerRisingStarsScrape
+  triggerRisingStarsScrape,
+  manualScrapeFiction
 } from '../controllers/admin.ts';
 import { adminMiddleware } from '../middleware/admin.ts';
 
@@ -25,5 +26,6 @@ router.get('/coupons/stats', getCouponStats);
 router.put('/coupons/:id/deactivate', deactivateCouponCode);
 router.post('/migrate/timestamps-to-utc', convertTimestampsToUTC);
 router.post('/trigger/rising-stars-scrape', triggerRisingStarsScrape);
+router.post('/manual-scrape/:fictionId', manualScrapeFiction);
 
 export default router;

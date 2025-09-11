@@ -274,3 +274,71 @@ export async function triggerRisingStarsScrape(ctx: Context): Promise<void> {
     } as ApiResponse;
   }
 }
+
+// Manual scrape for a specific fiction
+export async function manualScrapeFiction(ctx: Context): Promise<void> {
+  try {
+    const fictionId = (ctx as any).params?.fictionId;
+
+    if (!fictionId) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: 'Fiction ID is required'
+      } as ApiResponse;
+      return;
+    }
+
+    console.log(`🔧 Admin manual scrape requested for fiction ID: ${fictionId}`);
+
+    // Get the fiction's royalroad_id from the database
+    const fictionQuery = 'SELECT royalroad_id, title FROM fiction WHERE id = ?';
+    const fictionRows = await client.query(fictionQuery, [fictionId]);
+
+    if (!Array.isArray(fictionRows) || fictionRows.length === 0) {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: 'Fiction not found'
+      } as ApiResponse;
+      return;
+    }
+
+    const fiction = fictionRows[0] as { royalroad_id: string; title: string };
+    console.log(`📚 Found fiction: ${fiction.title} (RR ID: ${fiction.royalroad_id})`);
+
+    // Create FictionHistoryService instance and run manual scrape
+    const fictionHistoryService = new FictionHistoryService();
+
+    // Run the scrape in the background
+    fictionHistoryService.runAllFictionsCollection().then((success) => {
+      if (success) {
+        console.log(`✅ Manual scrape completed successfully for fiction ${fictionId}`);
+      } else {
+        console.error(`❌ Manual scrape failed for fiction ${fictionId}`);
+      }
+    }).catch((error) => {
+      console.error(`❌ Error during manual scrape for fiction ${fictionId}:`, error);
+    });
+
+    // Return immediately
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      data: {
+        message: `Manual scrape started for fiction: ${fiction.title}`,
+        fictionId: parseInt(fictionId),
+        royalroadId: fiction.royalroad_id,
+        timestamp: new Date().toISOString()
+      }
+    } as ApiResponse;
+
+  } catch (error) {
+    console.error('❌ Error triggering manual fiction scrape:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Failed to trigger manual fiction scrape'
+    } as ApiResponse;
+  }
+}

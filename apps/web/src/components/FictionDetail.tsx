@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createFictionUrl } from '@/utils';
-import { royalroadAPI, userFictionAPI, fictionAPI, risingStarsAPI } from '@/services/api';
+import { royalroadAPI, userFictionAPI, fictionAPI, risingStarsAPI, adminAPI } from '@/services/api';
 import type { RoyalRoadFiction, UserFiction, Fiction } from '@/types';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 const FictionDetail: React.FC = () => {
   const { id, slug } = useParams<{ id: string; slug?: string }>();
   const navigate = useNavigate();
-  const { checkAuth, isAuthenticated } = useAuth();
+  const { checkAuth, isAuthenticated, user } = useAuth();
   const [fiction, setFiction] = useState<RoyalRoadFiction | null>(null);
   const [fictionWithHistory, setFictionWithHistory] = useState<Fiction | null>(null);
   const [userFiction, setUserFiction] = useState<UserFiction | null>(null);
@@ -27,6 +27,8 @@ const FictionDetail: React.FC = () => {
 
   const [showUnfavoriteConfirm, setShowUnfavoriteConfirm] = useState(false);
   const [risingStarsData, setRisingStarsData] = useState<any[]>([]);
+  const [isManualScraping, setIsManualScraping] = useState(false);
+  const [scrapeMessage, setScrapeMessage] = useState('');
 
 
 
@@ -281,6 +283,30 @@ const FictionDetail: React.FC = () => {
     }
   };
 
+  const handleManualScrape = async () => {
+    if (!fictionWithHistory?.id) return;
+
+    try {
+      setIsManualScraping(true);
+      setScrapeMessage('');
+
+      const response = await adminAPI.manualScrapeFiction(fictionWithHistory.id);
+      if (response.success && response.data) {
+        setScrapeMessage(`✅ ${response.data.message}`);
+        // Reload the fiction data after a short delay to show updated stats
+        setTimeout(() => {
+          loadFiction();
+        }, 3000);
+      } else {
+        setScrapeMessage(`❌ ${response.error || 'Failed to start manual scrape'}`);
+      }
+    } catch (err: any) {
+      setScrapeMessage(`❌ ${err.userMessage || err.message || 'Failed to start manual scrape'}`);
+    } finally {
+      setIsManualScraping(false);
+    }
+  };
+
 
 
   const getRoyalRoadUrl = () => {
@@ -451,6 +477,30 @@ const FictionDetail: React.FC = () => {
                         📦 Data
                       </Button>
                     </div>
+
+                    {/* Admin Manual Scrape Button */}
+                    {isAuthenticated && user?.admin && fictionWithHistory && (
+                      <div className="mt-2">
+                        <Button
+                          onClick={handleManualScrape}
+                          disabled={isManualScraping}
+                          variant="outline"
+                          className="w-full bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+                        >
+                          {isManualScraping ? '🔄 Scraping...' : '🔧 Manual Scrape'}
+                        </Button>
+                        {scrapeMessage && (
+                          <div className="mt-2 text-sm text-center">
+                            <span className={`px-2 py-1 rounded ${scrapeMessage.startsWith('✅')
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                              }`}>
+                              {scrapeMessage}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Buy Nate Coffee Button */}
                     <div className="mt-2">

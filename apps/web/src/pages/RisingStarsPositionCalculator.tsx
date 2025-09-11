@@ -20,6 +20,7 @@ interface RisingStarsPosition {
   lastUpdated: string;
   genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
   fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string; imageUrl?: string }[];
+
 }
 
 const RisingStarsPositionCalculator: React.FC = () => {

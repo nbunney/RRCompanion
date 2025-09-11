@@ -210,57 +210,80 @@ export class FictionHistoryService {
 
             // Fetch fresh data from Royal Road API (only for new fictions)
             console.log(`📡 Fetching fresh data for NEW fiction ${star.id} from Royal Road API...`);
-            await this.createFictionFromRisingStar(star);
-            processedFictionIds.add(star.id);
+            try {
+              await this.createFictionFromRisingStar(star);
+              processedFictionIds.add(star.id);
+            } catch (error) {
+              console.error(`❌ Failed to create fiction ${star.id} from Rising Star data:`, error);
+              // Continue processing - we'll still try to save Rising Stars data
+              processedFictionIds.add(star.id);
+            }
           }
 
           // Get the fiction ID (should exist now)
           fictionId = await this.getFictionIdByRoyalRoadId(star.id);
           if (!fictionId) {
-            console.error(`❌ Could not find fiction ID for Royal Road ID ${star.id}`);
+            console.error(`❌ Could not find fiction ID for Royal Road ID ${star.id} - skipping fiction history but will still try Rising Stars`);
+
+            // Even if we can't create fiction history, try to save Rising Stars data if we have enough info
+            if (star.genre && star.position) {
+              console.log(`⚠️ Attempting to save Rising Stars data without fiction history for ${star.id}`);
+              // We can't save to risingStars table without fiction_id, so we'll skip this one
+              console.log(`❌ Cannot save Rising Stars entry for ${star.id} - no fiction_id available`);
+            }
             continue;
           }
 
           // Create fiction history entry (only once per fiction per day)
-          const fictionHistoryEntry: FictionHistoryEntry = {
-            fiction_id: fictionId,
-            royalroad_id: star.id,
-            description: star.description || undefined,
-            status: star.status || undefined,
-            type: star.type || undefined,
-            tags: star.tags ? JSON.stringify(star.tags) : undefined,
-            warnings: star.warnings ? JSON.stringify(star.warnings) : undefined,
-            pages: star.pages || 0,
-            ratings: star.ratings || 0,
-            followers: star.stats?.followers || 0,
-            favorites: star.stats?.favorites || 0,
-            views: star.stats?.views || 0,
-            score: star.stats?.score || 0,
-            overall_score: star.stats?.overall_score || 0,
-            style_score: star.stats?.style_score || 0,
-            story_score: star.stats?.story_score || 0,
-            grammar_score: star.stats?.grammar_score || 0,
-            character_score: star.stats?.character_score || 0,
-            total_views: star.stats?.total_views || 0,
-            average_views: star.stats?.average_views || 0,
-            captured_at: new Date().toISOString()
-          };
-
-          // Save fiction history entry
-          await this.saveFictionHistoryEntry(fictionHistoryEntry);
-          console.log(`✅ Created fiction history entry for fiction ${star.id} (ID: ${fictionId})`);
-
-          // Always create rising star entry (one for each list appearance)
-          if (star.genre && star.position) {
-            const risingStarEntry: RisingStarEntry = {
+          try {
+            const fictionHistoryEntry: FictionHistoryEntry = {
               fiction_id: fictionId,
-              genre: star.genre,
-              position: star.position,
+              royalroad_id: star.id,
+              description: star.description || undefined,
+              status: star.status || undefined,
+              type: star.type || undefined,
+              tags: star.tags ? JSON.stringify(star.tags) : undefined,
+              warnings: star.warnings ? JSON.stringify(star.warnings) : undefined,
+              pages: star.pages || 0,
+              ratings: star.ratings || 0,
+              followers: star.stats?.followers || 0,
+              favorites: star.stats?.favorites || 0,
+              views: star.stats?.views || 0,
+              score: star.stats?.score || 0,
+              overall_score: star.stats?.overall_score || 0,
+              style_score: star.stats?.style_score || 0,
+              story_score: star.stats?.story_score || 0,
+              grammar_score: star.stats?.grammar_score || 0,
+              character_score: star.stats?.character_score || 0,
+              total_views: star.stats?.total_views || 0,
+              average_views: star.stats?.average_views || 0,
               captured_at: new Date().toISOString()
             };
-            // Save immediately instead of batching
-            await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
-            console.log(`✅ Saved rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
+
+            // Save fiction history entry
+            await this.saveFictionHistoryEntry(fictionHistoryEntry);
+            console.log(`✅ Created fiction history entry for fiction ${star.id} (ID: ${fictionId})`);
+          } catch (error) {
+            console.error(`❌ Failed to save fiction history for ${star.id}:`, error);
+            // Continue to Rising Stars entry even if fiction history fails
+          }
+
+          // Always create rising star entry (one for each list appearance) - this is critical!
+          if (star.genre && star.position) {
+            try {
+              const risingStarEntry: RisingStarEntry = {
+                fiction_id: fictionId,
+                genre: star.genre,
+                position: star.position,
+                captured_at: new Date().toISOString()
+              };
+              // Save immediately instead of batching
+              await this.risingStarsService.saveRisingStarEntry(risingStarEntry);
+              console.log(`✅ Saved rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
+            } catch (error) {
+              console.error(`❌ Failed to save Rising Stars entry for ${star.id}:`, error);
+              // This is critical data - we should continue but log the failure
+            }
           }
 
           console.log(`✅ Fiction ${star.id} ready for history entry (ID: ${fictionId})`);
@@ -897,9 +920,9 @@ export class FictionHistoryService {
             continue;
           }
 
-          // Fetch fresh data from Royal Road API
+          // Fetch fresh data from Royal Road API with retry logic
           console.log(`📡 Fetching fresh data for fiction ${fiction.royalroad_id} from Royal Road API...`);
-          const fictionResponse = await this.royalroadService.getFiction(fiction.royalroad_id);
+          const fictionResponse = await this.fetchFictionWithRetry(fiction.royalroad_id, 3);
 
           if (fictionResponse.success && fictionResponse.data) {
             const freshData = fictionResponse.data;
@@ -911,7 +934,7 @@ export class FictionHistoryService {
               freshData.stats.followers === 0 &&
               freshData.stats.favorites === 0 &&
               freshData.stats.views === 0) {
-              console.log(`⚠️ Skipping fiction ${fiction.royalroad_id} - invalid or zero stats detected`);
+              console.log(`⚠️ Skipping fiction ${fiction.royalroad_id} - invalid or zero stats detected after retries`);
               continue;
             }
 
@@ -1063,5 +1086,62 @@ export class FictionHistoryService {
       console.error('❌ Error during Rising Stars fiction details update:', error);
       throw error;
     }
+  }
+
+  /**
+   * Fetch fiction data with retry logic
+   */
+  private async fetchFictionWithRetry(royalroadId: string, maxRetries: number = 3): Promise<any> {
+    let lastError: any = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Attempt ${attempt}/${maxRetries} for fiction ${royalroadId}`);
+
+        const response = await this.royalroadService.getFiction(royalroadId);
+
+        if (response.success && response.data) {
+          // Validate the response has valid stats
+          const stats = response.data.stats;
+          if (stats &&
+            !(stats.pages === 0 && stats.ratings === 0 && stats.followers === 0 &&
+              stats.favorites === 0 && stats.views === 0)) {
+            console.log(`✅ Successfully fetched valid data for fiction ${royalroadId} on attempt ${attempt}`);
+            return response;
+          } else {
+            console.log(`⚠️ Attempt ${attempt} returned invalid stats for fiction ${royalroadId}, retrying...`);
+            lastError = new Error('Invalid stats returned');
+          }
+        } else {
+          console.log(`⚠️ Attempt ${attempt} failed for fiction ${royalroadId}: ${response.message}, retrying...`);
+          lastError = new Error(response.message || 'Unknown error');
+        }
+
+        // Add delay between retries (exponential backoff)
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Max 5 seconds
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+      } catch (error) {
+        console.log(`❌ Attempt ${attempt} threw error for fiction ${royalroadId}:`, error);
+        lastError = error;
+
+        // Add delay between retries
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    console.log(`❌ All ${maxRetries} attempts failed for fiction ${royalroadId}`);
+    return {
+      success: false,
+      data: null,
+      message: `Failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`
+    };
   }
 } 
