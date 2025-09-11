@@ -904,6 +904,17 @@ export class FictionHistoryService {
           if (fictionResponse.success && fictionResponse.data) {
             const freshData = fictionResponse.data;
 
+            // Validate that we have valid stats before saving
+            if (!freshData.stats ||
+              freshData.stats.pages === 0 &&
+              freshData.stats.ratings === 0 &&
+              freshData.stats.followers === 0 &&
+              freshData.stats.favorites === 0 &&
+              freshData.stats.views === 0) {
+              console.log(`⚠️ Skipping fiction ${fiction.royalroad_id} - invalid or zero stats detected`);
+              continue;
+            }
+
             // Create fiction history entry
             const fictionHistoryEntry: FictionHistoryEntry = {
               fiction_id: fiction.id!,

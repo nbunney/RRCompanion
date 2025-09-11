@@ -11,6 +11,7 @@ interface RisingStarsPosition {
   title: string;
   authorName: string;
   royalroadId: string;
+  imageUrl?: string;
   isOnMain: boolean;
   mainPosition?: number;
   estimatedPosition: number;
@@ -18,7 +19,7 @@ interface RisingStarsPosition {
   fictionsToClimb: number;
   lastUpdated: string;
   genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
-  fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string }[];
+  fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string; imageUrl?: string }[];
 }
 
 const RisingStarsPositionCalculator: React.FC = () => {
@@ -192,10 +193,32 @@ const RisingStarsPositionCalculator: React.FC = () => {
 
           {/* Main Results */}
           <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">{position.title}</h2>
-              <p className="text-gray-600">by {position.authorName}</p>
-              <p className="text-sm text-gray-500">Royal Road ID: {position.royalroadId}</p>
+            <div className="mb-6 flex items-start space-x-4">
+              {position.imageUrl && (
+                <a
+                  href={`/fiction/${position.royalroadId}`}
+                  className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                >
+                  <img
+                    src={position.imageUrl}
+                    alt={position.title}
+                    className="w-20 h-28 object-cover rounded-lg shadow-md"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </a>
+              )}
+              <div className="flex-1">
+                <a
+                  href={`/fiction/${position.royalroadId}`}
+                  className="hover:text-blue-600 transition-colors"
+                >
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">{position.title}</h2>
+                </a>
+                <p className="text-gray-600">by {position.authorName}</p>
+                <p className="text-sm text-gray-500">Royal Road ID: {position.royalroadId}</p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -298,16 +321,36 @@ const RisingStarsPositionCalculator: React.FC = () => {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {position.fictionsAheadDetails.slice(0, 20).map((fiction, index) => (
-                  <div key={fiction.fictionId} className="flex items-center justify-between p-3 bg-gray-50 rounded text-sm">
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900 truncate" title={fiction.title}>
-                        {fiction.title}
-                      </div>
+                  <div key={fiction.fictionId} className="flex items-center space-x-3 p-3 bg-gray-50 rounded text-sm hover:bg-gray-100 transition-colors">
+                    {fiction.imageUrl && (
+                      <a
+                        href={`/fiction/${fiction.royalroadId}`}
+                        className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                      >
+                        <img
+                          src={fiction.imageUrl}
+                          alt={fiction.title}
+                          className="w-12 h-16 object-cover rounded"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </a>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={`/fiction/${fiction.royalroadId}`}
+                        className="hover:text-blue-600 transition-colors"
+                      >
+                        <div className="font-medium text-gray-900 truncate" title={fiction.title}>
+                          {fiction.title}
+                        </div>
+                      </a>
                       <div className="text-xs text-gray-500">
                         by {fiction.authorName}
                       </div>
                     </div>
-                    <div className="ml-2 text-xs text-gray-400">
+                    <div className="ml-2 text-xs text-gray-400 flex-shrink-0">
                       #{index + 1}
                     </div>
                   </div>
@@ -318,6 +361,14 @@ const RisingStarsPositionCalculator: React.FC = () => {
                   Showing first 20 of {position.fictionsAhead} fictions ahead
                 </p>
               )}
+
+              {/* Explanatory note */}
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> If you are at position 52 (for example) you should see 1 fiction listed here.
+                  When you are at position 51 then there will be no fictions that are not on RS main ahead of you.
+                </p>
+              </div>
             </div>
           )}
 

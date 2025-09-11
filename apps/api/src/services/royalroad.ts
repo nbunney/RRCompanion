@@ -496,6 +496,16 @@ export class RoyalRoadService {
 
       // Extract detailed statistics from HTML
       const stats = await this.scrapeFictionStats(id);
+
+      if (!stats) {
+        console.error(`❌ Failed to scrape stats for fiction ${id}`);
+        return {
+          success: false,
+          data: null,
+          message: `Failed to scrape statistics for fiction ${id}`,
+        };
+      }
+
       fiction.stats = stats;
 
       // Extract status and type from stats (they were extracted in scrapeFictionStats)
@@ -977,21 +987,7 @@ export class RoyalRoadService {
 
     } catch (error) {
       console.error(`❌ Error scraping fiction stats for ${fictionId}:`, error);
-      return {
-        overall_score: 0,
-        style_score: 0,
-        story_score: 0,
-        grammar_score: 0,
-        character_score: 0,
-        total_views: 0,
-        average_views: 0,
-        followers: 0,
-        favorites: 0,
-        ratings: 0,
-        pages: 0,
-        status: '',
-        type: ''
-      };
+      return null; // Return null instead of zeros to indicate failure
     }
   }
 }

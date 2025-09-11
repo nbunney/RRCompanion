@@ -8,6 +8,7 @@ export interface RisingStarsPosition {
   title: string;
   authorName: string;
   royalroadId: string;
+  imageUrl?: string;
   isOnMain: boolean;
   mainPosition?: number;
   estimatedPosition: number;
@@ -15,7 +16,7 @@ export interface RisingStarsPosition {
   fictionsToClimb: number;
   lastUpdated: string;
   genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
-  fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string }[];
+  fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string; imageUrl?: string }[];
 }
 
 export class RisingStarsPositionService {
@@ -84,7 +85,7 @@ export class RisingStarsPositionService {
     try {
       // Get fiction details by Royal Road ID
       const fictionQuery = `
-        SELECT id, title, author_name, royalroad_id 
+        SELECT id, title, author_name, royalroad_id, image_url 
         FROM fiction 
         WHERE royalroad_id = ?
       `;
@@ -157,6 +158,7 @@ export class RisingStarsPositionService {
           title: fiction.title,
           authorName: fiction.author_name,
           royalroadId: fiction.royalroad_id,
+          imageUrl: fiction.image_url,
           isOnMain: true,
           mainPosition: mainCheckResult[0].position,
           estimatedPosition: mainCheckResult[0].position,
@@ -176,6 +178,7 @@ export class RisingStarsPositionService {
         title: fiction.title,
         authorName: fiction.author_name,
         royalroadId: fiction.royalroad_id,
+        imageUrl: fiction.image_url,
         isOnMain: false,
         estimatedPosition: positionData.estimatedPosition,
         fictionsAhead: positionData.fictionsAhead,
@@ -219,6 +222,7 @@ export class RisingStarsPositionService {
     const mainFictionsResult = await this.dbClient.query(mainFictionsQuery);
     const fictionsAhead = new Set(mainFictionsResult.map((row: any) => row.fiction_id));
 
+
     // Step 2: Find genres where this fiction appears and add fictions above it (most recent)
     const fictionGenresQuery = `
       SELECT genre, position, captured_at
@@ -254,6 +258,7 @@ export class RisingStarsPositionService {
         fictionsAhead.add(row.fiction_id);
       });
     }
+
 
     // Step 3: For genres where this fiction doesn't appear, add any fiction that is above a fiction in the current list
     const fictionGenres = Array.from(fictionGenresByGenre.keys());
@@ -292,31 +297,48 @@ export class RisingStarsPositionService {
     const totalFictionsAhead = fictionsAhead.size;
     const estimatedPosition = totalFictionsAhead + 1;
 
-    // Get fiction details for fictions ahead (limit to first 20 for performance)
-    // Exclude fictions that are already on Rising Stars Main
-    const fictionIdsArray = Array.from(fictionsAhead).slice(0, 20);
+    // Get fiction details for fictions ahead that are NOT on Rising Stars Main
+    // Look at ALL fictions ahead, then filter out the ones on Main
+    const fictionIdsArray = Array.from(fictionsAhead);
     let fictionsAheadDetails: { fictionId: number; title: string; authorName: string; royalroadId: string }[] = [];
-    
+
+
     if (fictionIdsArray.length > 0) {
-      const fictionDetailsQuery = `
-        SELECT f.id, f.title, f.author_name, f.royalroad_id 
-        FROM fiction f
-        WHERE f.id IN (${fictionIdsArray.map(() => '?').join(',')})
-        AND f.id NOT IN (
-          SELECT DISTINCT fiction_id 
-          FROM risingStars 
-          WHERE genre = 'main' 
-          ORDER BY captured_at DESC
-          LIMIT 50
-        )
+      // Get the fiction IDs that are on Rising Stars Main (most recent)
+      const mainFictionIdsQuery = `
+        SELECT DISTINCT fiction_id 
+        FROM risingStars 
+        WHERE genre = 'main' 
+        ORDER BY captured_at DESC
+        LIMIT 50
       `;
-      const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, fictionIdsArray);
-      fictionsAheadDetails = fictionDetailsResult.map((row: any) => ({
-        fictionId: row.id,
-        title: row.title,
-        authorName: row.author_name,
-        royalroadId: row.royalroad_id
-      }));
+      const mainFictionIdsResult = await this.dbClient.query(mainFictionIdsQuery);
+      const mainFictionIds = mainFictionIdsResult.map((row: any) => row.fiction_id);
+
+
+      // Filter out main fiction IDs from ALL fictions ahead (not just first 20)
+      const filteredFictionIds = fictionIdsArray.filter(id => !mainFictionIds.includes(id));
+
+
+      if (filteredFictionIds.length > 0) {
+        // Get details for all filtered fictions (limit to 20 for display purposes)
+        const fictionDetailsQuery = `
+          SELECT id, title, author_name, royalroad_id, image_url 
+          FROM fiction 
+          WHERE id IN (${filteredFictionIds.map(() => '?').join(',')})
+          ORDER BY id ASC
+          LIMIT 20
+        `;
+        const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, filteredFictionIds);
+        fictionsAheadDetails = fictionDetailsResult.map((row: any) => ({
+          fictionId: row.id,
+          title: row.title,
+          authorName: row.author_name,
+          royalroadId: row.royalroad_id,
+          imageUrl: row.image_url
+        }));
+
+      }
     }
 
     return {
