@@ -15,6 +15,7 @@ export interface RisingStarsPosition {
   fictionsToClimb: number;
   lastUpdated: string;
   genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
+  fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string }[];
 }
 
 export class RisingStarsPositionService {
@@ -180,7 +181,8 @@ export class RisingStarsPositionService {
         fictionsAhead: positionData.fictionsAhead,
         fictionsToClimb: Math.max(0, positionData.fictionsAhead - 49),
         lastUpdated: latestScrape,
-        genrePositions
+        genrePositions,
+        fictionsAheadDetails: positionData.fictionsAheadDetails
       };
 
     } catch (error) {
@@ -195,6 +197,7 @@ export class RisingStarsPositionService {
   private async calculateEstimatedPosition(fictionId: number, scrapeTimestamp: string): Promise<{
     estimatedPosition: number;
     fictionsAhead: number;
+    fictionsAheadDetails: { fictionId: number; title: string; authorName: string; royalroadId: string }[];
   }> {
     // Get all genres (from any timestamp)
     const genresQuery = `
@@ -289,9 +292,29 @@ export class RisingStarsPositionService {
     const totalFictionsAhead = fictionsAhead.size;
     const estimatedPosition = totalFictionsAhead + 1;
 
+    // Get fiction details for fictions ahead (limit to first 20 for performance)
+    const fictionIdsArray = Array.from(fictionsAhead).slice(0, 20);
+    let fictionsAheadDetails: { fictionId: number; title: string; authorName: string; royalroadId: string }[] = [];
+    
+    if (fictionIdsArray.length > 0) {
+      const fictionDetailsQuery = `
+        SELECT id, title, author_name, royalroad_id 
+        FROM fiction 
+        WHERE id IN (${fictionIdsArray.map(() => '?').join(',')})
+      `;
+      const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, fictionIdsArray);
+      fictionsAheadDetails = fictionDetailsResult.map((row: any) => ({
+        fictionId: row.id,
+        title: row.title,
+        authorName: row.author_name,
+        royalroadId: row.royalroad_id
+      }));
+    }
+
     return {
       estimatedPosition,
-      fictionsAhead: totalFictionsAhead
+      fictionsAhead: totalFictionsAhead,
+      fictionsAheadDetails
     };
   }
 

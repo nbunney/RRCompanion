@@ -18,6 +18,7 @@ interface RisingStarsPosition {
   fictionsToClimb: number;
   lastUpdated: string;
   genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
+  fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string }[];
 }
 
 const RisingStarsPositionCalculator: React.FC = () => {
@@ -285,6 +286,38 @@ const RisingStarsPositionCalculator: React.FC = () => {
                     </div>
                   ))}
               </div>
+            </div>
+          )}
+
+          {/* Fictions Ahead - Only show if within 10 spots of main and not already on main */}
+          {!position.isOnMain && position.fictionsToClimb <= 10 && position.fictionsAheadDetails && position.fictionsAheadDetails.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Fictions Ahead of You</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                You're within {position.fictionsToClimb} spots of Rising Stars Main! Here are some of the fictions ahead of you:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {position.fictionsAheadDetails.slice(0, 20).map((fiction, index) => (
+                  <div key={fiction.fictionId} className="flex items-center justify-between p-3 bg-gray-50 rounded text-sm">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 truncate" title={fiction.title}>
+                        {fiction.title}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        by {fiction.authorName}
+                      </div>
+                    </div>
+                    <div className="ml-2 text-xs text-gray-400">
+                      #{index + 1}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {position.fictionsAheadDetails.length > 20 && (
+                <p className="text-xs text-gray-500 mt-3 text-center">
+                  Showing first 20 of {position.fictionsAhead} fictions ahead
+                </p>
+              )}
             </div>
           )}
 
