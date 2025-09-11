@@ -294,7 +294,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
             <div className="bg-white rounded-lg shadow-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Fictions Ahead of You</h3>
               <p className="text-sm text-gray-600 mb-4">
-                You're within {position.fictionsToClimb} spots of Rising Stars Main! Here are some of the fictions ahead of you:
+                You're within {position.fictionsToClimb} spots of Rising Stars Main! Here are some of the fictions ahead of you (excluding those already on Main):
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {position.fictionsAheadDetails.slice(0, 20).map((fiction, index) => (

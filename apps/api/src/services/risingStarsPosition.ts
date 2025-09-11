@@ -293,14 +293,22 @@ export class RisingStarsPositionService {
     const estimatedPosition = totalFictionsAhead + 1;
 
     // Get fiction details for fictions ahead (limit to first 20 for performance)
+    // Exclude fictions that are already on Rising Stars Main
     const fictionIdsArray = Array.from(fictionsAhead).slice(0, 20);
     let fictionsAheadDetails: { fictionId: number; title: string; authorName: string; royalroadId: string }[] = [];
     
     if (fictionIdsArray.length > 0) {
       const fictionDetailsQuery = `
-        SELECT id, title, author_name, royalroad_id 
-        FROM fiction 
-        WHERE id IN (${fictionIdsArray.map(() => '?').join(',')})
+        SELECT f.id, f.title, f.author_name, f.royalroad_id 
+        FROM fiction f
+        WHERE f.id IN (${fictionIdsArray.map(() => '?').join(',')})
+        AND f.id NOT IN (
+          SELECT DISTINCT fiction_id 
+          FROM risingStars 
+          WHERE genre = 'main' 
+          ORDER BY captured_at DESC
+          LIMIT 50
+        )
       `;
       const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, fictionIdsArray);
       fictionsAheadDetails = fictionDetailsResult.map((row: any) => ({
