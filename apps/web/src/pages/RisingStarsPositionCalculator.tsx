@@ -288,7 +288,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Data Information</h3>
               <div className="text-sm text-gray-600">
                 <p>Analysis based on Rising Stars data from: <span className="font-medium">{formatDate(latestScrape)}</span></p>
-                <p className="mt-2">Data is updated every 15 minutes at 1 minute past each quarter hour.</p>
+                <p className="mt-2">Data is updated every 15 minutes a little past each quarter hour.</p>
               </div>
             </div>
           )}
