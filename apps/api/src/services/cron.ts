@@ -30,8 +30,8 @@ export class CronService {
       console.log(`🕐 Rising Stars minute detected - Current time: ${now.toISOString()}, minute: ${minute}, second: ${second}`);
     }
 
-    // Check if we're at the right minute and within the first 30 seconds to avoid multiple runs
-    if (quarterHourMinutes.includes(minute) && second < 30) {
+    // Check if we're at the right minute (remove seconds restriction to avoid missing runs)
+    if (quarterHourMinutes.includes(minute)) {
       const nowTime = Date.now();
       const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
 
