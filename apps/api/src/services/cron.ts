@@ -25,6 +25,11 @@ export class CronService {
       console.log(`🕐 Cron check - Current time: ${now.toISOString()}, minute: ${minute}, second: ${second}, quarterHourMinutes: ${quarterHourMinutes.join(',')}`);
     }
 
+    // Always log timing checks for Rising Stars minutes
+    if (quarterHourMinutes.includes(minute)) {
+      console.log(`🕐 Rising Stars minute detected - Current time: ${now.toISOString()}, minute: ${minute}, second: ${second}`);
+    }
+
     // Check if we're at the right minute and within the first 30 seconds to avoid multiple runs
     if (quarterHourMinutes.includes(minute) && second < 30) {
       const nowTime = Date.now();
@@ -108,9 +113,7 @@ export class CronService {
   private async checkAndRunCollection(): Promise<void> {
     // Debug: Log every minute to confirm cron is running
     const now = new Date();
-    if (now.getSeconds() < 5) { // Log only in first 5 seconds of each minute
-      console.log(`🔄 Cron service running - ${now.toISOString()}`);
-    }
+    console.log(`🔄 Cron service running - ${now.toISOString()}`);
 
     // Check if it's time to run Rising Stars collection (1 minute past each quarter hour)
     if (this.shouldRunRisingStarsCollection()) {
