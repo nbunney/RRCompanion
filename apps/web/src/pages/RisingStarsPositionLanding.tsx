@@ -37,7 +37,7 @@ const RisingStarsPositionLanding: React.FC = () => {
     if (user && favorites.length > 0 && inputMethod === 'url') {
       setInputMethod('favorite');
     }
-  }, [user, favorites, inputMethod]);
+  }, [user, favorites]); // Remove inputMethod from dependencies to prevent infinite loop
 
   const fetchFavorites = async () => {
     try {
