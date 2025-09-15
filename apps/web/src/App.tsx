@@ -19,6 +19,7 @@ import FictionDetail from '@/components/FictionDetail';
 import RisingStarsAnimation from '@/pages/RisingStarsAnimation';
 import RisingStarsPositionCalculator from '@/pages/RisingStarsPositionCalculator';
 import RisingStarsPositionLanding from '@/pages/RisingStarsPositionLanding';
+import RisingStarsMain from '@/pages/RisingStarsMain';
 
 // Route change tracker component
 const RouteTracker: React.FC = () => {
@@ -96,6 +97,7 @@ const App: React.FC = () => {
 
         <Route path="/coffee" element={<Coffee />} />
         <Route path="/rising-stars-animation" element={<RisingStarsAnimation />} />
+        <Route path="/rising-stars-main" element={<RisingStarsMain />} />
         <Route path="/rising-stars-position" element={<RisingStarsPositionLanding />} />
         <Route path="/rising-stars-position/:id" element={<RisingStarsPositionCalculator />} />
         <Route

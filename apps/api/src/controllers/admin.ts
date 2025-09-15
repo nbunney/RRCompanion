@@ -310,15 +310,15 @@ export async function manualScrapeFiction(ctx: Context): Promise<void> {
     // Create FictionHistoryService instance and run manual scrape
     const fictionHistoryService = new FictionHistoryService();
 
-    // Run the scrape in the background
-    fictionHistoryService.runAllFictionsCollection().then((success) => {
+    // Run the scrape in the background for just this specific fiction
+    fictionHistoryService.runSingleFictionCollection(parseInt(fictionId)).then((success) => {
       if (success) {
-        console.log(`✅ Manual scrape completed successfully for fiction ${fictionId}`);
+        console.log(`✅ Manual scrape completed successfully for fiction ${fictionId} (${fiction.royalroad_id})`);
       } else {
-        console.error(`❌ Manual scrape failed for fiction ${fictionId}`);
+        console.error(`❌ Manual scrape failed for fiction ${fictionId} (${fiction.royalroad_id})`);
       }
     }).catch((error) => {
-      console.error(`❌ Error during manual scrape for fiction ${fictionId}:`, error);
+      console.error(`❌ Error during manual scrape for fiction ${fictionId} (${fiction.royalroad_id}):`, error);
     });
 
     // Return immediately

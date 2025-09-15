@@ -229,7 +229,7 @@ export class RisingStarsService {
   }
 
   // Save multiple rising star entries in batches by genre
-  async saveRisingStarsData(entries: RisingStarEntry[]): Promise<void> {
+  async saveRisingStarsData(entries: RisingStarEntry[], scrapeTimestamp?: string): Promise<void> {
     console.log(`\n💾 Saving ${entries.length} rising star entries to database in batches by genre...`);
 
     // Group entries by genre
@@ -247,7 +247,7 @@ export class RisingStarsService {
       console.log(`📊 Saving ${genreEntries.length} entries for genre: ${genre}`);
 
       try {
-        await this.saveRisingStarsBatch(genreEntries);
+        await this.saveRisingStarsBatch(genreEntries, scrapeTimestamp);
         console.log(`✅ Successfully saved ${genreEntries.length} entries for genre: ${genre}`);
       } catch (error) {
         console.error(`❌ Failed to save batch for genre ${genre}:`, error);
@@ -259,15 +259,18 @@ export class RisingStarsService {
   }
 
   // Save a batch of rising star entries for a single genre
-  private async saveRisingStarsBatch(entries: RisingStarEntry[]): Promise<void> {
+  private async saveRisingStarsBatch(entries: RisingStarEntry[], scrapeTimestamp?: string): Promise<void> {
     if (entries.length === 0) return;
 
-    // Build batch insert query
+    // Use the provided timestamp or fall back to individual timestamps
+    const timestamp = scrapeTimestamp || new Date().toISOString();
+
+    // Build batch insert query - use the single timestamp for all entries
     const values = entries.map(entry => [
       entry.fiction_id,
       entry.genre,
       entry.position,
-      entry.captured_at ? new Date(entry.captured_at).toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ')
+      new Date(timestamp).toISOString().slice(0, 19).replace('T', ' ')
     ]);
 
     const placeholders = entries.map(() => '(?, ?, ?, ?)').join(', ');

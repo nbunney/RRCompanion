@@ -292,6 +292,12 @@ export const stripeAPI = {
     const response = await api.get(`/stripe/payment-status?paymentIntentId=${paymentIntentId}`);
     return response.data;
   },
+
+  // Rising Stars Main API
+  getRisingStarsMain: async (): Promise<ApiResponse<any[]>> => {
+    const response = await api.get('/rising-stars-main');
+    return response.data;
+  },
 };
 
 // Admin API

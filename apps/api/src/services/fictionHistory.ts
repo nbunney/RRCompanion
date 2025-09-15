@@ -1,4 +1,5 @@
 import { Client } from 'mysql';
+import { client } from '../config/database.ts';
 import { RoyalRoadService, RisingStarFiction } from './royalroad.ts';
 import { RisingStarsService, RisingStarEntry } from './risingStars.ts';
 import { FictionService } from './fiction.ts';
@@ -31,12 +32,11 @@ export interface FictionHistoryEntry {
 export class FictionHistoryService {
   private royalroadService: RoyalRoadService;
   private risingStarsService: RisingStarsService;
-  private dbClient: Client;
+  private dbClient = client;
 
   constructor() {
     this.royalroadService = new RoyalRoadService();
     this.risingStarsService = new RisingStarsService();
-    this.dbClient = new Client();
   }
 
   // Get a fresh database connection
@@ -158,11 +158,14 @@ export class FictionHistoryService {
   }
 
   // Save fiction history data to the database
-  async saveFictionHistoryData(risingStars: RisingStarFiction[]): Promise<void> {
+  async saveFictionHistoryData(risingStars: RisingStarFiction[], scrapeTimestamp?: string): Promise<void> {
     try {
       console.log(`\n💾 Saving ${risingStars.length} fiction history entries to database...`);
 
-      // We'll create timestamps fresh for each entry to ensure accuracy
+      // Use the provided scrape timestamp for all entries, or create one if not provided
+      const timestamp = scrapeTimestamp || new Date().toISOString();
+      console.log(`🕐 Using timestamp for all entries: ${timestamp}`);
+
       // Track which fictions we've already processed to avoid duplicate API calls
       const processedFictionIds = new Set<string>();
 
@@ -190,7 +193,7 @@ export class FictionHistoryService {
                   fiction_id: fictionId,
                   genre: star.genre,
                   position: star.position,
-                  captured_at: new Date().toISOString()
+                  captured_at: timestamp
                 };
                 risingStarsEntries.push(risingStarEntry);
                 console.log(`📝 Collected rising star entry for fiction ${star.id} (position ${star.position} in ${star.genre})`);
@@ -260,7 +263,7 @@ export class FictionHistoryService {
               character_score: star.stats?.character_score || 0,
               total_views: star.stats?.total_views || 0,
               average_views: star.stats?.average_views || 0,
-              captured_at: new Date().toISOString()
+              captured_at: timestamp
             };
 
             // Save fiction history entry
@@ -278,7 +281,7 @@ export class FictionHistoryService {
                 fiction_id: fictionId,
                 genre: star.genre,
                 position: star.position,
-                captured_at: new Date().toISOString()
+                captured_at: timestamp
               };
               // Collect for batch saving instead of saving immediately
               risingStarsEntries.push(risingStarEntry);
@@ -307,7 +310,7 @@ export class FictionHistoryService {
       if (risingStarsEntries.length > 0) {
         console.log(`\n💾 Saving ${risingStarsEntries.length} Rising Stars entries in batches by genre...`);
         try {
-          await this.risingStarsService.saveRisingStarsData(risingStarsEntries);
+          await this.risingStarsService.saveRisingStarsData(risingStarsEntries, timestamp);
           console.log(`✅ Successfully saved all Rising Stars entries in batches`);
         } catch (error) {
           console.error(`❌ Failed to save Rising Stars entries in batches:`, error);
@@ -884,14 +887,18 @@ export class FictionHistoryService {
     try {
       console.log('⭐ Starting Rising Stars collection...');
 
+      // Capture a single timestamp for this entire scrape
+      const scrapeTimestamp = new Date().toISOString();
+      console.log(`🕐 Using scrape timestamp: ${scrapeTimestamp}`);
+
       // Get all Rising Stars data
       const response = await this.royalroadService.getAllRisingStars();
 
       if (response.success && response.data) {
         console.log(`📊 Collected ${response.data.length} fiction entries from Rising Stars`);
 
-        // Save the data to fiction history (Rising Stars only)
-        await this.saveFictionHistoryData(response.data);
+        // Save the data to fiction history (Rising Stars only) with the single timestamp
+        await this.saveFictionHistoryData(response.data, scrapeTimestamp);
 
         console.log('✅ Rising Stars collection completed successfully');
         return true;
@@ -901,6 +908,84 @@ export class FictionHistoryService {
       }
     } catch (error) {
       console.error('❌ Error during Rising Stars collection:', error);
+      return false;
+    }
+  }
+
+  // Run collection for a single fiction by database ID
+  async runSingleFictionCollection(fictionId: number): Promise<boolean> {
+    try {
+      console.log(`📚 Starting collection for single fiction ID: ${fictionId}`);
+
+      // Get the fiction from the database by ID
+      const fiction = await FictionService.getFictionById(fictionId);
+      if (!fiction) {
+        console.log(`❌ Fiction with ID ${fictionId} not found in database`);
+        return false;
+      }
+
+      console.log(`📊 Found fiction: ${fiction.title} (RR ID: ${fiction.royalroad_id})`);
+
+      // Check if we already have a history entry for today
+      const hasHistoryToday = await this.hasFictionHistoryEntryToday(fiction.id);
+      if (hasHistoryToday) {
+        console.log(`⏭️ Fiction ${fiction.royalroad_id} already has a history entry for today, skipping`);
+        return true;
+      }
+
+      // Fetch fresh data from Royal Road API with retry logic
+      console.log(`📡 Fetching fresh data for fiction ${fiction.royalroad_id} from Royal Road API...`);
+      const fictionResponse = await this.fetchFictionWithRetry(fiction.royalroad_id, 3);
+
+      if (fictionResponse.success && fictionResponse.data) {
+        const freshData = fictionResponse.data;
+        console.log(`✅ Successfully fetched data for fiction ${fiction.royalroad_id}`);
+
+        // Validate the data before saving
+        if (!freshData.stats ||
+          freshData.stats.pages === 0 &&
+          freshData.stats.followers === 0 &&
+          freshData.stats.favorites === 0 &&
+          freshData.stats.views === 0) {
+          console.log(`⚠️ Fiction ${fiction.royalroad_id} returned invalid/zero stats, skipping save`);
+          return false;
+        }
+
+        // Create fiction history entry
+        const fictionHistoryEntry: FictionHistoryEntry = {
+          fiction_id: fiction.id,
+          royalroad_id: fiction.royalroad_id,
+          description: freshData.description || undefined,
+          status: freshData.status || undefined,
+          type: freshData.type || undefined,
+          tags: freshData.tags ? JSON.stringify(freshData.tags) : undefined,
+          warnings: freshData.warnings ? JSON.stringify(freshData.warnings) : undefined,
+          pages: freshData.pages || 0,
+          ratings: freshData.ratings || 0,
+          followers: freshData.stats?.followers || 0,
+          favorites: freshData.stats?.favorites || 0,
+          views: freshData.stats?.views || 0,
+          score: freshData.stats?.score || 0,
+          overall_score: freshData.stats?.overall_score || 0,
+          style_score: freshData.stats?.style_score || 0,
+          story_score: freshData.stats?.story_score || 0,
+          grammar_score: freshData.stats?.grammar_score || 0,
+          character_score: freshData.stats?.character_score || 0,
+          total_views: freshData.stats?.total_views || 0,
+          average_views: freshData.stats?.average_views || 0,
+          captured_at: new Date().toISOString()
+        };
+
+        // Save the fiction history entry
+        await this.saveFictionHistoryEntry(fictionHistoryEntry);
+        console.log(`✅ Successfully saved fiction history for ${fiction.royalroad_id}`);
+        return true;
+      } else {
+        console.log(`❌ Failed to fetch data for fiction ${fiction.royalroad_id}`);
+        return false;
+      }
+    } catch (error) {
+      console.error(`❌ Error during single fiction collection for ID ${fictionId}:`, error);
       return false;
     }
   }

@@ -123,6 +123,16 @@ const Header: React.FC<HeaderProps> = ({
             </Link>
 
             <Link
+              to="/rising-stars-main"
+              className={`text-sm transition-colors px-3 py-2 rounded-md ${isActive('/rising-stars-main')
+                ? 'bg-blue-600 text-white font-medium'
+                : 'text-gray-700 hover:text-gray-900'
+                }`}
+            >
+              ⭐ Rising Stars Main
+            </Link>
+
+            <Link
               to="/rising-stars-position"
               className={`text-sm transition-colors px-3 py-2 rounded-md ${isActive('/rising-stars-position')
                 ? 'bg-blue-600 text-white font-medium'
@@ -253,6 +263,17 @@ const Header: React.FC<HeaderProps> = ({
               onClick={closeMobileMenu}
             >
               ☕ Coffee
+            </Link>
+
+            <Link
+              to="/rising-stars-main"
+              className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive('/rising-stars-main')
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              onClick={closeMobileMenu}
+            >
+              ⭐ Rising Stars Main
             </Link>
 
             <Link
