@@ -12,6 +12,7 @@ interface RisingStarsMainEntry {
   royalroadId: string;
   imageUrl?: string;
   daysOnList: number;
+  highestPosition: number;
   lastMove: 'up' | 'down' | 'same' | 'new';
   lastPosition?: number;
   lastMoveDate?: string;
@@ -203,6 +204,9 @@ const RisingStarsMain: React.FC = () => {
                 <div className="w-20 text-center">
                   <div className="text-sm font-semibold text-gray-700">Days</div>
                 </div>
+                <div className="w-20 text-center">
+                  <div className="text-sm font-semibold text-gray-700">Highest</div>
+                </div>
                 <div className="w-32 text-center">
                   <div className="text-sm font-semibold text-gray-700">Movement</div>
                 </div>
@@ -264,6 +268,13 @@ const RisingStarsMain: React.FC = () => {
                     <div className="w-20 text-center">
                       <div className="text-lg font-semibold text-gray-900">
                         {entry.daysOnList}
+                      </div>
+                    </div>
+
+                    {/* Highest Position */}
+                    <div className="w-20 text-center">
+                      <div className="text-lg font-semibold text-gray-900">
+                        #{entry.highestPosition}
                       </div>
                     </div>
 

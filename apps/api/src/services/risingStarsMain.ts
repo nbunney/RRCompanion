@@ -9,6 +9,7 @@ export interface RisingStarsMainEntry {
   royalroadId: string;
   imageUrl?: string;
   daysOnList: number;
+  highestPosition: number;
   lastMove: 'up' | 'down' | 'same' | 'new';
   lastPosition?: number;
   lastMoveDate?: string;
@@ -114,6 +115,23 @@ export class RisingStarsMainService {
         firstAppearanceMap.set(entry.fiction_id, entry.first_seen_at);
       });
 
+      // Get highest position data for each fiction
+      const highestPositionQuery = `
+        SELECT 
+          fiction_id,
+          MIN(position) as highest_position
+        FROM risingStars 
+        WHERE genre = 'main'
+        GROUP BY fiction_id
+      `;
+      const highestPositions = await this.dbClient.query(highestPositionQuery);
+      const highestPositionMap = new Map<number, number>();
+      highestPositions.forEach((entry: any) => {
+        highestPositionMap.set(entry.fiction_id, entry.highest_position);
+      });
+
+      console.log(`🔍 Rising Stars Main - Found highest positions for ${highestPositionMap.size} fictions`);
+
       // Process the data
       const result: RisingStarsMainEntry[] = mainFictions.map((fiction: any) => {
         const previousData = previousPositions.get(fiction.fiction_id);
@@ -143,6 +161,9 @@ export class RisingStarsMainService {
           (new Date(fiction.last_seen_at).getTime() - new Date(firstSeenAt).getTime()) / (1000 * 60 * 60 * 24)
         ) + 1;
 
+        // Get highest position
+        const highestPosition = highestPositionMap.get(fiction.fiction_id) || fiction.position;
+
         return {
           position: fiction.position,
           fictionId: fiction.fiction_id,
@@ -151,6 +172,7 @@ export class RisingStarsMainService {
           royalroadId: fiction.royalroad_id,
           imageUrl: fiction.image_url,
           daysOnList,
+          highestPosition,
           lastMove,
           lastPosition,
           lastMoveDate,
