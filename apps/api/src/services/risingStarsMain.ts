@@ -54,30 +54,32 @@ export class RisingStarsMainService {
       console.log(`🔍 Rising Stars Main - Found ${mainFictions.length} fictions`);
       console.log(`🔍 Rising Stars Main - Position range: ${mainFictions.length > 0 ? `${mainFictions[0].position}-${mainFictions[mainFictions.length - 1].position}` : 'none'}`);
 
-      // Get previous day's data to calculate movement
-      // Find the most recent scrape from the previous day
-      const previousDayQuery = `
-        SELECT 
-          rs.position,
-          rs.fiction_id,
-          rs.captured_at
-        FROM risingStars rs
-        WHERE DATE(rs.captured_at) = DATE_SUB(DATE(?), INTERVAL 1 DAY)
-          AND rs.position BETWEEN 1 AND 50
-          AND rs.captured_at = (
-            SELECT MAX(captured_at) 
-            FROM risingStars 
-            WHERE DATE(captured_at) = DATE_SUB(DATE(?), INTERVAL 1 DAY)
-          )
-      `;
-      const previousDayData = await this.dbClient.query(previousDayQuery, [latestScrape, latestScrape]);
-      console.log(`🔍 Rising Stars Main - Previous day data: ${previousDayData.length} entries`);
-
-      // Create a map of previous positions for quick lookup
+      // Get previous positions for movement calculation
+      // For each fiction, find the most recent different position
       const previousPositions = new Map<number, number>();
-      previousDayData.forEach((entry: any) => {
-        previousPositions.set(entry.fiction_id, entry.position);
-      });
+      
+      for (const fiction of mainFictions) {
+        const previousPositionQuery = `
+          SELECT position 
+          FROM risingStars 
+          WHERE fiction_id = ? 
+            AND position != ? 
+            AND captured_at < ?
+          ORDER BY captured_at DESC 
+          LIMIT 1
+        `;
+        const previousPositionResult = await this.dbClient.query(previousPositionQuery, [
+          fiction.fiction_id, 
+          fiction.position, 
+          latestScrape
+        ]);
+        
+        if (previousPositionResult.length > 0) {
+          previousPositions.set(fiction.fiction_id, previousPositionResult[0].position);
+        }
+      }
+      
+      console.log(`🔍 Rising Stars Main - Found previous positions for ${previousPositions.size} fictions`);
 
       // Get first appearance data for each fiction
       const firstAppearanceQuery = `
