@@ -57,7 +57,7 @@ export class RisingStarsMainService {
       // Get previous positions for movement calculation
       // For each fiction, find the most recent different position
       const previousPositions = new Map<number, number>();
-      
+
       for (const fiction of mainFictions) {
         const previousPositionQuery = `
           SELECT position 
@@ -65,21 +65,20 @@ export class RisingStarsMainService {
           WHERE fiction_id = ? 
             AND genre = 'main'
             AND position != ? 
-            AND captured_at < ?
           ORDER BY captured_at DESC 
           LIMIT 1
         `;
         const previousPositionResult = await this.dbClient.query(previousPositionQuery, [
-          fiction.fiction_id, 
-          fiction.position, 
+          fiction.fiction_id,
+          fiction.position,
           latestScrape
         ]);
-        
+
         if (previousPositionResult.length > 0) {
           previousPositions.set(fiction.fiction_id, previousPositionResult[0].position);
         }
       }
-      
+
       console.log(`🔍 Rising Stars Main - Found previous positions for ${previousPositions.size} fictions`);
 
       // Get first appearance data for each fiction
@@ -88,7 +87,7 @@ export class RisingStarsMainService {
           fiction_id,
           MIN(captured_at) as first_seen_at
         FROM risingStars 
-        WHERE position BETWEEN 1 AND 50
+        WHERE genre = 'main'
         GROUP BY fiction_id
       `;
       const firstAppearances = await this.dbClient.query(firstAppearanceQuery);
