@@ -81,9 +81,8 @@ export class RisingStarsMainService {
           LIMIT 1
         `;
         const previousPositionResult = await this.dbClient.query(previousPositionQuery, [
-          fiction.fiction_id,
-          fiction.position,
-          latestScrape
+          fiction.fiction_id, 
+          fiction.position
         ]);
 
         if (previousPositionResult.length > 0) {
