@@ -1,4 +1,5 @@
 import { client } from '../config/database.ts';
+import { cacheService } from './cache.ts';
 
 export interface RisingStarsMainEntry {
   position: number;
@@ -17,10 +18,18 @@ export interface RisingStarsMainEntry {
 
 export class RisingStarsMainService {
   private dbClient = client;
+  private readonly CACHE_KEY = 'rising-stars-main';
+  private readonly CACHE_TTL = 60 * 1000; // 1 minute
 
   async getRisingStarsMainList(): Promise<RisingStarsMainEntry[]> {
     try {
-      console.log('🔄 Rising Stars Main - Fetching fresh data');
+      // Check cache first
+      const cachedData = cacheService.getWithCleanup<RisingStarsMainEntry[]>(this.CACHE_KEY);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      console.log('🔄 Rising Stars Main - Cache miss, fetching fresh data');
 
       // Get the most recent Rising Stars Main data
       const latestScrapeQuery = `
@@ -150,7 +159,9 @@ export class RisingStarsMainService {
         };
       });
 
-      console.log('✅ Rising Stars Main - Data fetched successfully');
+      // Cache the result
+      cacheService.set(this.CACHE_KEY, result, this.CACHE_TTL);
+      console.log('✅ Rising Stars Main - Data fetched and cached successfully');
       return result;
     } catch (error) {
       console.error('Error getting Rising Stars Main list:', error);

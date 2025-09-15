@@ -88,7 +88,7 @@ const RisingStarsMain: React.FC = () => {
     const now = new Date();
     const date = new Date(dateString);
     const diffInMs = now.getTime() - date.getTime();
-    
+
     // Handle negative time (future dates) - likely timezone issue
     if (diffInMs < 0) {
       // If the difference is more than 1 hour in the future, it's likely a timezone issue
@@ -104,11 +104,11 @@ const RisingStarsMain: React.FC = () => {
         return 'Just now';
       }
     }
-    
+
     const diffInMinutes = Math.floor(Math.abs(diffInMs) / (1000 * 60));
     const diffInHours = Math.floor(Math.abs(diffInMs) / (1000 * 60 * 60));
     const diffInDays = Math.floor(Math.abs(diffInMs) / (1000 * 60 * 60 * 24));
-    
+
     if (diffInMinutes < 1) {
       return 'Just now';
     } else if (diffInMinutes < 60) {

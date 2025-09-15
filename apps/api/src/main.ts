@@ -18,6 +18,7 @@ import risingStarsMainRoutes from './routes/risingStarsMain.ts';
 import stripeRoutes from './routes/stripe.ts';
 import adminRoutes from './routes/admin.ts';
 import couponRoutes from './routes/coupon.ts';
+import cacheRoutes from './routes/cache.ts';
 import campaignRoutes from './routes/campaign.ts';
 import retentionRoutes from './routes/retention.ts';
 import { risingStarsPositionRoutes } from './routes/risingStarsPosition.ts';
@@ -161,6 +162,7 @@ router.use('/api', risingStarsRoutes.routes(), risingStarsRoutes.allowedMethods(
 router.use('/api', risingStarsMainRoutes.routes(), risingStarsMainRoutes.allowedMethods());
 router.use('/api/stripe', stripeRoutes.routes(), stripeRoutes.allowedMethods());
 router.use('/api/admin', adminRoutes.routes(), adminRoutes.allowedMethods());
+router.use('/api/cache', cacheRoutes.routes(), cacheRoutes.allowedMethods());
 router.use('/api/coupons', couponRoutes.routes(), couponRoutes.allowedMethods());
 router.use('/api/campaigns', campaignRoutes.routes(), campaignRoutes.allowedMethods());
 router.use('/api/retention', retentionRoutes.routes(), retentionRoutes.allowedMethods());
