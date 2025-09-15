@@ -13,6 +13,7 @@ interface RisingStarsMainEntry {
   daysOnList: number;
   lastMove: 'up' | 'down' | 'same' | 'new';
   lastPosition?: number;
+  lastMoveDate?: string;
   firstSeenAt: string;
   lastSeenAt: string;
 }
@@ -66,9 +67,9 @@ const RisingStarsMain: React.FC = () => {
   const getMovementText = (lastMove: string, lastPosition?: number) => {
     switch (lastMove) {
       case 'up':
-        return `Moved up from #${lastPosition}`;
+        return `Moved up<br />from #${lastPosition}`;
       case 'down':
-        return `Moved down from #${lastPosition}`;
+        return `Moved down<br />from #${lastPosition}`;
       case 'same':
         return 'No change';
       case 'new':
@@ -85,6 +86,24 @@ const RisingStarsMain: React.FC = () => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMs = now.getTime() - date.getTime();
+
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes}m ago`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h ago`;
+    } else {
+      return `${diffInDays}d ago`;
+    }
   };
 
   if (loading) {
@@ -157,6 +176,25 @@ const RisingStarsMain: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900">Current Rising Stars Main List</h2>
             </div>
 
+            {/* Column Headers */}
+            <div className="px-6 py-3 bg-gray-100 border-b border-gray-200">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 text-center">
+                  <div className="text-sm font-semibold text-gray-700">Position</div>
+                </div>
+                <div className="flex-shrink-0">
+                  <div className="text-sm font-semibold text-gray-700">Fiction</div>
+                </div>
+                <div className="flex-1"></div>
+                <div className="w-20 text-center">
+                  <div className="text-sm font-semibold text-gray-700">Days</div>
+                </div>
+                <div className="w-32 text-center">
+                  <div className="text-sm font-semibold text-gray-700">Movement</div>
+                </div>
+              </div>
+            </div>
+
             <div className="divide-y divide-gray-200">
               {entries.map((entry) => (
                 <div key={entry.fictionId} className="p-6 hover:bg-gray-50 transition-colors">
@@ -209,21 +247,27 @@ const RisingStarsMain: React.FC = () => {
                     </div>
 
                     {/* Days on List */}
-                    <div className="flex-shrink-0 text-center">
-                      <div className="text-sm text-gray-500">Days on List</div>
+                    <div className="w-20 text-center">
                       <div className="text-lg font-semibold text-gray-900">
                         {entry.daysOnList}
                       </div>
                     </div>
 
                     {/* Movement */}
-                    <div className="flex-shrink-0 text-center">
-                      <div className="text-sm text-gray-500">Movement</div>
-                      <div className="flex items-center justify-center space-x-1">
-                        {getMovementIcon(entry.lastMove)}
-                        <span className="text-xs text-gray-600">
-                          {getMovementText(entry.lastMove, entry.lastPosition)}
-                        </span>
+                    <div className="w-32 text-center">
+                      <div className="flex flex-col items-center space-y-1">
+                        <div className="flex items-center justify-center space-x-1">
+                          {getMovementIcon(entry.lastMove)}
+                          <span
+                            className="text-xs text-gray-600"
+                            dangerouslySetInnerHTML={{ __html: getMovementText(entry.lastMove, entry.lastPosition) }}
+                          />
+                        </div>
+                        {entry.lastMoveDate && entry.lastMove !== 'new' && (
+                          <div className="text-xs text-gray-400">
+                            {getTimeAgo(entry.lastMoveDate)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
