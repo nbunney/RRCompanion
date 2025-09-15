@@ -86,9 +86,13 @@ export class RisingStarsMainService {
         ]);
 
         if (previousPositionResult.length > 0) {
+          // Ensure timestamp is properly formatted for frontend
+          const capturedAt = previousPositionResult[0].captured_at;
+          const formattedDate = new Date(capturedAt).toISOString();
+          
           previousPositions.set(fiction.fiction_id, {
             position: previousPositionResult[0].position,
-            date: previousPositionResult[0].captured_at
+            date: formattedDate
           });
         }
       }
