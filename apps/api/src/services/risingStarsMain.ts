@@ -10,6 +10,7 @@ export interface RisingStarsMainEntry {
   daysOnList: number;
   lastMove: 'up' | 'down' | 'same' | 'new';
   lastPosition?: number;
+  lastMoveDate?: string;
   firstSeenAt: string;
   lastSeenAt: string;
 }
@@ -56,11 +57,11 @@ export class RisingStarsMainService {
 
       // Get previous positions for movement calculation
       // For each fiction, find the most recent different position
-      const previousPositions = new Map<number, number>();
+      const previousPositions = new Map<number, { position: number; date: string }>();
 
       for (const fiction of mainFictions) {
         const previousPositionQuery = `
-          SELECT position 
+          SELECT position, captured_at
           FROM risingStars 
           WHERE fiction_id = ? 
             AND genre = 'main'
@@ -75,7 +76,10 @@ export class RisingStarsMainService {
         ]);
 
         if (previousPositionResult.length > 0) {
-          previousPositions.set(fiction.fiction_id, previousPositionResult[0].position);
+          previousPositions.set(fiction.fiction_id, {
+            position: previousPositionResult[0].position,
+            date: previousPositionResult[0].captured_at
+          });
         }
       }
 
@@ -98,13 +102,18 @@ export class RisingStarsMainService {
 
       // Process the data
       const result: RisingStarsMainEntry[] = mainFictions.map((fiction: any) => {
-        const previousPosition = previousPositions.get(fiction.fiction_id);
+        const previousData = previousPositions.get(fiction.fiction_id);
         let lastMove: 'up' | 'down' | 'same' | 'new' = 'new';
+        let lastPosition: number | undefined;
+        let lastMoveDate: string | undefined;
 
-        if (previousPosition !== undefined) {
-          if (fiction.position < previousPosition) {
+        if (previousData !== undefined) {
+          lastPosition = previousData.position;
+          lastMoveDate = previousData.date;
+
+          if (fiction.position < previousData.position) {
             lastMove = 'up'; // Better position (lower number)
-          } else if (fiction.position > previousPosition) {
+          } else if (fiction.position > previousData.position) {
             lastMove = 'down'; // Worse position (higher number)
           } else {
             lastMove = 'same';
@@ -126,7 +135,8 @@ export class RisingStarsMainService {
           imageUrl: fiction.image_url,
           daysOnList,
           lastMove,
-          lastPosition: previousPosition,
+          lastPosition,
+          lastMoveDate,
           firstSeenAt,
           lastSeenAt: fiction.last_seen_at
         };
