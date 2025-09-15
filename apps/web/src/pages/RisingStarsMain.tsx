@@ -92,17 +92,26 @@ const RisingStarsMain: React.FC = () => {
     const now = new Date();
     const date = new Date(dateString);
     const diffInMs = now.getTime() - date.getTime();
-    
+
+    // Debug logging
+    console.log('Time calculation:', {
+      dateString,
+      now: now.toISOString(),
+      date: date.toISOString(),
+      diffInMs,
+      diffInMinutes: Math.floor(diffInMs / (1000 * 60))
+    });
+
     // Handle negative time (future dates)
     if (diffInMs < 0) {
       console.warn('Future date detected:', dateString, 'Current time:', now.toISOString());
       return 'Just now';
     }
-    
+
     const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
     const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    
+
     if (diffInMinutes < 1) {
       return 'Just now';
     } else if (diffInMinutes < 60) {

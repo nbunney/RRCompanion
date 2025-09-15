@@ -120,7 +120,10 @@ export class RisingStarsMainService {
         if (previousData !== undefined) {
           lastPosition = previousData.position;
           lastMoveDate = previousData.date;
-
+          
+          // Debug logging
+          console.log(`🔍 Fiction ${fiction.fiction_id}: current position ${fiction.position}, previous position ${previousData.position}, lastMoveDate: ${previousData.date}`);
+          
           if (fiction.position < previousData.position) {
             lastMove = 'up'; // Better position (lower number)
           } else if (fiction.position > previousData.position) {
