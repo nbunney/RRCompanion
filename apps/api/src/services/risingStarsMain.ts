@@ -17,9 +17,20 @@ export interface RisingStarsMainEntry {
 
 export class RisingStarsMainService {
   private dbClient = client;
+  private cache: { data: RisingStarsMainEntry[]; timestamp: number } | null = null;
+  private readonly CACHE_TTL = 60 * 1000; // 1 minute in milliseconds
 
   async getRisingStarsMainList(): Promise<RisingStarsMainEntry[]> {
     try {
+      // Check cache first
+      const now = Date.now();
+      if (this.cache && (now - this.cache.timestamp) < this.CACHE_TTL) {
+        console.log('📦 Rising Stars Main - Returning cached data');
+        return this.cache.data;
+      }
+
+      console.log('🔄 Rising Stars Main - Cache expired or missing, fetching fresh data');
+
       // Get the most recent Rising Stars Main data
       const latestScrapeQuery = `
         SELECT MAX(captured_at) as latest_scrape 
@@ -141,6 +152,13 @@ export class RisingStarsMainService {
           lastSeenAt: fiction.last_seen_at
         };
       });
+
+      // Update cache
+      this.cache = {
+        data: result,
+        timestamp: now
+      };
+      console.log('💾 Rising Stars Main - Data cached for 1 minute');
 
       return result;
     } catch (error) {
