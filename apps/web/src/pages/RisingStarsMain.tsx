@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import api from '@/services/api';
@@ -19,35 +20,30 @@ interface RisingStarsMainEntry {
 }
 
 const RisingStarsMain: React.FC = () => {
-  const [entries, setEntries] = useState<RisingStarsMainEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchRisingStarsMain();
-  }, []);
-
-  const fetchRisingStarsMain = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
+  const {
+    data: response,
+    isLoading: loading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['rising-stars-main'],
+    queryFn: async () => {
       const response = await api.get('/rising-stars-main');
-
       if (response.data.success) {
-        setEntries(response.data.data);
-        setLastUpdated(new Date().toISOString());
+        return response.data;
       } else {
-        setError(response.data.error || 'Failed to fetch Rising Stars Main data');
+        throw new Error(response.data.error || 'Failed to fetch Rising Stars Main data');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Network error occurred');
-      console.error('Error fetching Rising Stars Main:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    staleTime: 60 * 1000, // 1 minute - data is fresh for 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache for 5 minutes
+    refetchInterval: 60 * 1000, // Refetch every 1 minute
+    retry: 3,
+    retryDelay: 1000
+  });
+
+  const entries = response?.data || [];
+  const lastUpdated = response ? new Date().toISOString() : null;
 
   const getMovementIcon = (lastMove: string) => {
     switch (lastMove) {
@@ -154,9 +150,9 @@ const RisingStarsMain: React.FC = () => {
               <div className="text-center">
                 <div className="text-red-600 text-6xl mb-4">⚠️</div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">Error</h1>
-                <p className="text-gray-600 mb-6">{error}</p>
+                <p className="text-gray-600 mb-6">{error?.message || 'An error occurred'}</p>
                 <button
-                  onClick={fetchRisingStarsMain}
+                  onClick={() => refetch()}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Try Again
@@ -214,7 +210,7 @@ const RisingStarsMain: React.FC = () => {
             </div>
 
             <div className="divide-y divide-gray-200">
-              {entries.map((entry) => (
+              {entries.map((entry: RisingStarsMainEntry) => (
                 <div key={entry.fictionId} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center space-x-4">
                     {/* Position */}

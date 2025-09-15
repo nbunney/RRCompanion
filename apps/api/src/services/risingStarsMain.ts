@@ -17,19 +17,10 @@ export interface RisingStarsMainEntry {
 
 export class RisingStarsMainService {
   private dbClient = client;
-  private cache: { data: RisingStarsMainEntry[]; timestamp: number } | null = null;
-  private readonly CACHE_TTL = 60 * 1000; // 1 minute in milliseconds
 
   async getRisingStarsMainList(): Promise<RisingStarsMainEntry[]> {
     try {
-      // Check cache first
-      const now = Date.now();
-      if (this.cache && (now - this.cache.timestamp) < this.CACHE_TTL) {
-        console.log('📦 Rising Stars Main - Returning cached data');
-        return this.cache.data;
-      }
-
-      console.log('🔄 Rising Stars Main - Cache expired or missing, fetching fresh data');
+      console.log('🔄 Rising Stars Main - Fetching fresh data');
 
       // Get the most recent Rising Stars Main data
       const latestScrapeQuery = `
@@ -81,7 +72,7 @@ export class RisingStarsMainService {
           LIMIT 1
         `;
         const previousPositionResult = await this.dbClient.query(previousPositionQuery, [
-          fiction.fiction_id, 
+          fiction.fiction_id,
           fiction.position
         ]);
 
@@ -89,7 +80,7 @@ export class RisingStarsMainService {
           // Ensure timestamp is properly formatted for frontend
           const capturedAt = previousPositionResult[0].captured_at;
           const formattedDate = new Date(capturedAt).toISOString();
-          
+
           previousPositions.set(fiction.fiction_id, {
             position: previousPositionResult[0].position,
             date: formattedDate
@@ -124,10 +115,10 @@ export class RisingStarsMainService {
         if (previousData !== undefined) {
           lastPosition = previousData.position;
           lastMoveDate = previousData.date;
-          
+
           // Debug logging
           console.log(`🔍 Fiction ${fiction.fiction_id}: current position ${fiction.position}, previous position ${previousData.position}, lastMoveDate: ${previousData.date}`);
-          
+
           if (fiction.position < previousData.position) {
             lastMove = 'up'; // Better position (lower number)
           } else if (fiction.position > previousData.position) {
@@ -159,13 +150,7 @@ export class RisingStarsMainService {
         };
       });
 
-      // Update cache
-      this.cache = {
-        data: result,
-        timestamp: now
-      };
-      console.log('💾 Rising Stars Main - Data cached for 1 minute');
-
+      console.log('✅ Rising Stars Main - Data fetched successfully');
       return result;
     } catch (error) {
       console.error('Error getting Rising Stars Main list:', error);
