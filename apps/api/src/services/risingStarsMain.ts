@@ -63,6 +63,7 @@ export class RisingStarsMainService {
           SELECT position 
           FROM risingStars 
           WHERE fiction_id = ? 
+            AND genre = 'main'
             AND position != ? 
             AND captured_at < ?
           ORDER BY captured_at DESC 
