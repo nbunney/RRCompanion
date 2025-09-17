@@ -1,0 +1,43 @@
+{
+  "name": "rrcompanion-scraping",
+  "version": "1.0.0",
+  "description": "Serverless scraping functions for RRCompanion",
+  "main": "src/handlers/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "serverless deploy",
+    "deploy:dev": "serverless deploy --stage dev",
+    "deploy:prod": "serverless deploy --stage prod",
+    "offline": "serverless offline",
+    "invoke:local": "serverless invoke local",
+    "logs": "serverless logs",
+    "remove": "serverless remove",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "serverless",
+    "scraping",
+    "lambda",
+    "royalroad"
+  ],
+  "author": "RRCompanion",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-rds": "^3.890.0",
+    "@aws-sdk/client-s3": "^3.890.0",
+    "axios": "^1.12.2",
+    "cheerio": "^1.1.2",
+    "puppeteer-core": "^24.22.0",
+    "mysql2": "^3.11.4"
+  },
+  "devDependencies": {
+    "serverless": "^4.14.3",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "ts-node": "^10.9.2",
+    "serverless-offline": "^14.4.0",
+    "serverless-webpack": "^5.15.3",
+    "ts-loader": "^9.5.4",
+    "webpack": "^5.101.3"
+  }
+}

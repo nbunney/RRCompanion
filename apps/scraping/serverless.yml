@@ -1,0 +1,108 @@
+service: rrcompanion-scraping
+
+frameworkVersion: "4"
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  timeout: 900 # Maximum Lambda timeout (15 minutes)
+  memorySize: 2048 # 2GB memory for better performance
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    DATABASE_URL: ${env:DATABASE_URL}
+    AWS_REGION: ${self:provider.region}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - rds:*
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource: "arn:aws:s3:::rrcompanion-scraping-${self:provider.stage}/*"
+
+functions:
+  # Rising Stars scraping - main page
+  scrapeRisingStarsMain:
+    handler: src/handlers/risingStarsMain.handler
+    timeout: 900
+    memorySize: 2048
+    events:
+      - schedule:
+          rate: rate(6 hours)
+          enabled: true
+    environment:
+      SCRAPING_TYPE: "rising-stars-main"
+
+  # Rising Stars scraping - all genres
+  scrapeRisingStarsAll:
+    handler: src/handlers/risingStarsAll.handler
+    timeout: 900
+    memorySize: 2048
+    events:
+      - schedule:
+          rate: rate(6 hours)
+          enabled: true
+    environment:
+      SCRAPING_TYPE: "rising-stars-all"
+
+  # Individual fiction scraping
+  scrapeFiction:
+    handler: src/handlers/fiction.handler
+    timeout: 300
+    memorySize: 1024
+    environment:
+      SCRAPING_TYPE: "fiction"
+
+  # Fiction history scraping
+  scrapeFictionHistory:
+    handler: src/handlers/fictionHistory.handler
+    timeout: 600
+    memorySize: 1536
+    events:
+      - schedule:
+          rate: rate(12 hours)
+          enabled: true
+    environment:
+      SCRAPING_TYPE: "fiction-history"
+
+  # Campaign data scraping (for authenticated users)
+  scrapeCampaigns:
+    handler: src/handlers/campaigns.handler
+    timeout: 300
+    memorySize: 1024
+    environment:
+      SCRAPING_TYPE: "campaigns"
+
+  # Retention analytics scraping
+  scrapeRetention:
+    handler: src/handlers/retention.handler
+    timeout: 300
+    memorySize: 1024
+    environment:
+      SCRAPING_TYPE: "retention"
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+
+custom:
+  webpack:
+    webpackConfig: webpack.config.js
+    includeModules: true
+    packager: npm
+    excludeFiles: src/**/*.test.js
+
+package:
+  exclude:
+    - node_modules/**
+    - .git/**
+    - .env*
+    - README.md
+    - "*.md"
