@@ -9,7 +9,6 @@ import {
 import { CronService } from './services/cron.ts';
 import authRoutes from './routes/auth.ts';
 import oauthRoutes from './routes/oauth.ts';
-import royalroadRoutes from './routes/royalroad.ts';
 import fictionRoutes from './routes/fiction.ts';
 import userFictionRoutes from './routes/userFiction.ts';
 import fictionHistoryRoutes from './routes/fictionHistory.ts';
@@ -150,11 +149,6 @@ router.get('/health', (ctx) => {
 // API routes - mount under /api prefix
 router.use('/api/auth', authRoutes.routes(), authRoutes.allowedMethods());
 router.use('/api/oauth', oauthRoutes.routes(), oauthRoutes.allowedMethods());
-router.use(
-  '/api/royalroad',
-  royalroadRoutes.routes(),
-  royalroadRoutes.allowedMethods(),
-);
 router.use('/api', fictionRoutes.routes(), fictionRoutes.allowedMethods());
 router.use('/api', userFictionRoutes.routes(), userFictionRoutes.allowedMethods());
 router.use('/api', fictionHistoryRoutes.routes(), fictionHistoryRoutes.allowedMethods());

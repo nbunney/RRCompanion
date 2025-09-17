@@ -1,5 +1,4 @@
 import { client } from '../config/database.ts';
-import { RoyalRoadService } from './royalroad.ts';
 import { FictionService } from './fiction.ts';
 import { cacheService } from './cache.ts';
 import type { CreateFictionRequest } from '../types/index.ts';
@@ -24,61 +23,6 @@ export class RisingStarsPositionService {
   private dbClient = client;
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  /**
-   * Try to scrape a fiction from Royal Road and add it to our database
-   */
-  private async scrapeAndCreateFiction(royalroadId: string): Promise<any | null> {
-    try {
-      console.log(`🔍 Attempting to scrape fiction ${royalroadId} from Royal Road...`);
-
-      const royalroadService = new RoyalRoadService();
-      const fictionResponse = await royalroadService.getFiction(royalroadId);
-
-      if (!fictionResponse.success || !fictionResponse.data) {
-        console.log(`❌ Failed to scrape fiction ${royalroadId}: ${fictionResponse.message || 'No data returned'}`);
-        return null;
-      }
-
-      const fictionData = fictionResponse.data;
-
-      // Convert Royal Road fiction data to our CreateFictionRequest format
-      const createFictionData: CreateFictionRequest = {
-        royalroad_id: royalroadId,
-        title: fictionData.title,
-        author_name: fictionData.author.name,
-        author_id: fictionData.author.id,
-        author_avatar: fictionData.author.avatar || undefined,
-        description: fictionData.description,
-        image_url: fictionData.image || undefined,
-        status: fictionData.status,
-        type: fictionData.type,
-        tags: fictionData.tags,
-        warnings: fictionData.warnings,
-        pages: fictionData.stats.pages,
-        ratings: fictionData.stats.ratings,
-        followers: fictionData.stats.followers,
-        favorites: fictionData.stats.favorites,
-        views: fictionData.stats.views,
-        score: fictionData.stats.score,
-        overall_score: fictionData.stats.overall_score,
-        style_score: fictionData.stats.style_score,
-        story_score: fictionData.stats.story_score,
-        grammar_score: fictionData.stats.grammar_score,
-        character_score: fictionData.stats.character_score,
-        total_views: fictionData.stats.total_views,
-        average_views: fictionData.stats.average_views,
-      };
-
-      // Create the fiction in our database
-      const createdFiction = await FictionService.createFiction(createFictionData);
-      console.log(`✅ Successfully created fiction ${royalroadId} in database`);
-
-      return createdFiction;
-    } catch (error) {
-      console.error(`❌ Error scraping fiction ${royalroadId}:`, error);
-      return null;
-    }
-  }
 
   /**
    * Calculate how close a fiction is to being on Rising Stars main page
@@ -104,22 +48,9 @@ export class RisingStarsPositionService {
 
       let fiction;
       if (fictionResult.length === 0) {
-        // Fiction not found in database, try to scrape it from Royal Road
-        console.log(`📚 Fiction ${royalroadId} not found in database, attempting to scrape...`);
-        const scrapedFiction = await this.scrapeAndCreateFiction(royalroadId);
-
-        if (!scrapedFiction) {
-          console.log(`❌ Could not scrape fiction ${royalroadId} from Royal Road`);
-          return null;
-        }
-
-        // Use the scraped fiction data
-        fiction = {
-          id: scrapedFiction.id,
-          title: scrapedFiction.title,
-          author_name: scrapedFiction.author_name,
-          royalroad_id: scrapedFiction.royalroad_id
-        };
+        // Fiction not found in database - scraping is now handled by serverless functions
+        console.log(`📚 Fiction ${royalroadId} not found in database. Please ensure the serverless scraping functions are running.`);
+        return null;
       } else {
         fiction = fictionResult[0];
       }
@@ -182,7 +113,7 @@ export class RisingStarsPositionService {
         // Cache the result
         cacheService.set(cacheKey, result, this.CACHE_TTL);
         console.log(`✅ Rising Stars Position - Data fetched and cached for fiction ${royalroadId} (on main page)`);
-        
+
         return result;
       }
 
@@ -208,7 +139,7 @@ export class RisingStarsPositionService {
       // Cache the result
       cacheService.set(cacheKey, result, this.CACHE_TTL);
       console.log(`✅ Rising Stars Position - Data fetched and cached for fiction ${royalroadId}`);
-      
+
       return result;
 
     } catch (error) {

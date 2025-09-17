@@ -20,23 +20,23 @@ export const handler = async (
   try {
     await dbService.connect();
 
-    // Get fictions that need history updates
+    // Get fictions that need history updates (haven't been processed today)
     const fictionsToUpdate = await dbService.getFictionsToUpdate(50);
 
     if (fictionsToUpdate.length === 0) {
-      console.log('⚠️ No fictions need history updates');
+      console.log('✅ All fictions have been processed today - no updates needed');
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
-          message: 'No fictions need history updates',
+          message: 'All fictions have been processed today',
           processedCount: 0,
           executionTime: Date.now() - startTime
         } as ScrapingResponse)
       };
     }
 
-    console.log(`🔍 Found ${fictionsToUpdate.length} fictions to update`);
+    console.log(`🔍 Found ${fictionsToUpdate.length} fictions that need processing today`);
 
     let processedCount = 0;
     let savedCount = 0;
@@ -77,9 +77,17 @@ export const handler = async (
 
             // Add delay between requests
             await new Promise(resolve => setTimeout(resolve, 1000));
-          } catch (error) {
-            console.error(`❌ Error processing fiction ${fiction.royalroad_id}:`, error);
-            // Continue with next fiction
+          } catch (error: any) {
+            // Handle different types of errors
+            if (error.response?.status === 404) {
+              console.log(`📚 Fiction ${fiction.royalroad_id} not found (likely deleted): ${fiction.title}`);
+            } else if (error.response?.status === 429) {
+              console.warn(`⏰ Rate limited for fiction ${fiction.royalroad_id}, adding extra delay`);
+              await new Promise(resolve => setTimeout(resolve, 5000)); // Extra delay for rate limiting
+            } else {
+              console.error(`❌ Error processing fiction ${fiction.royalroad_id}:`, error.message || error);
+            }
+            // Continue with next fiction regardless of error type
           }
         }
 
@@ -102,7 +110,7 @@ export const handler = async (
       }
     }
 
-    console.log(`✅ Fiction History scraping completed: ${processedCount} processed, ${savedCount} saved`);
+    console.log(`✅ Fiction History scraping completed: ${processedCount} processed, ${savedCount} saved (${fictionsToUpdate.length - processedCount} remaining)`);
 
     return {
       statusCode: 200,
@@ -111,6 +119,7 @@ export const handler = async (
         processedCount,
         savedCount,
         totalCount: fictionsToUpdate.length,
+        remainingCount: fictionsToUpdate.length - processedCount,
         executionTime: Date.now() - startTime
       } as ScrapingResponse)
     };

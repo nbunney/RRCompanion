@@ -1,6 +1,5 @@
 import { Context } from 'oak';
 import { FictionService } from '../services/fiction.ts';
-import { RoyalRoadService } from '../services/royalroad.ts';
 import { FictionHistoryService } from '../services/fictionHistory.ts';
 import type { ApiResponse, CreateFictionRequest, UpdateFictionRequest, Fiction } from '../types/index.ts';
 
@@ -641,85 +640,18 @@ export async function refreshFiction(ctx: Context): Promise<void> {
       }
     }
 
-    // Fetch fresh data from Royal Road
-    const royalroadService = new RoyalRoadService();
-    const response = await royalroadService.getFiction(royalroadId);
-
-    if (!response.success || !response.data) {
-      ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        error: 'Failed to fetch fiction from Royal Road',
-      } as ApiResponse;
-      return;
-    }
-
-    // Debug: Log the data being passed to updateFiction
-    console.log('🔄 Refresh fiction data:', JSON.stringify(response.data, null, 2));
-
-    // Update the fiction with fresh data
-    const updatedFiction = await FictionService.updateFiction(royalroadId, {
-      title: response.data.title,
-      author_name: response.data.author.name,
-      author_id: response.data.author.id,
-      author_avatar: response.data.author.avatar,
-      description: response.data.description,
-      image_url: response.data.image,
-      status: response.data.status,
-      type: response.data.type,
-      tags: response.data.tags,
-      warnings: response.data.warnings,
-      pages: response.data.stats.pages,
-      ratings: response.data.stats.ratings,
-      followers: response.data.stats.followers,
-      favorites: response.data.stats.favorites,
-      views: response.data.stats.views,
-      score: response.data.stats.score,
-    });
-
-    if (!updatedFiction) {
-      ctx.response.status = 500;
-      ctx.response.body = {
-        success: false,
-        error: 'Failed to update fiction',
-      } as ApiResponse;
-      return;
-    }
-
-    // Create a new fictionHistory entry
-    await fictionHistoryService.saveFictionToHistory(
-      existingFiction.id,
-      royalroadId,
-      {
-        description: response.data.description,
-        status: response.data.status,
-        type: response.data.type,
-        tags: response.data.tags,
-        warnings: response.data.warnings,
-        pages: response.data.stats.pages,
-        ratings: response.data.stats.ratings,
-        followers: response.data.stats.followers,
-        favorites: response.data.stats.favorites,
-        views: response.data.stats.views,
-        score: response.data.stats.score,
-        overall_score: response.data.stats.overall_score || response.data.stats.score || 0,
-        style_score: response.data.stats.style_score || 0,
-        story_score: response.data.stats.story_score || 0,
-        grammar_score: response.data.stats.grammar_score || 0,
-        character_score: response.data.stats.character_score || 0,
-        total_views: response.data.stats.views || 0,
-        average_views: response.data.stats.views || 0,
-      }
-    );
-
-    ctx.response.status = 200;
+    // Royal Road scraping has been moved to serverless functions
+    ctx.response.status = 410; // Gone - functionality moved
     ctx.response.body = {
-      success: true,
-      data: updatedFiction,
-      message: 'Fiction refreshed successfully',
+      success: false,
+      error: 'Fiction scraping has been moved to serverless functions. Please use the serverless scraping endpoints.',
+      migration: {
+        newEndpoint: 'Use serverless scraping functions',
+        documentation: 'See apps/scraping/README.md for details'
+      }
     } as ApiResponse;
   } catch (error) {
-    console.error('Refresh fiction error:', error);
+    console.error('Error refreshing fiction:', error);
     ctx.response.status = 500;
     ctx.response.body = {
       success: false,

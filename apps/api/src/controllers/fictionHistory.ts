@@ -21,7 +21,10 @@ export async function getFictionHistory(ctx: Context) {
       endDate = new Date(endDateStr);
     }
 
-    const data = await fictionHistoryService.getFictionHistoryData(startDate, endDate);
+    const data = await fictionHistoryService.getFictionHistoryData(
+      startDate?.toISOString() || new Date().toISOString(),
+      endDate?.toISOString() || new Date().toISOString()
+    );
 
     ctx.response.status = 200;
     ctx.response.body = {

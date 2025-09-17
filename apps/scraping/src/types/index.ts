@@ -71,6 +71,7 @@ export interface RisingStarEntry {
   title?: string;
   author_name?: string;
   royalroad_id?: string;
+  image_url?: string; // Added missing property
 }
 
 export interface FictionHistoryEntry {

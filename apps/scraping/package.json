@@ -27,17 +27,15 @@
     "@aws-sdk/client-s3": "^3.890.0",
     "axios": "^1.12.2",
     "cheerio": "^1.1.2",
-    "puppeteer-core": "^24.22.0",
-    "mysql2": "^3.11.4"
+    "mysql2": "^3.11.4",
+    "puppeteer-core": "^24.22.0"
   },
   "devDependencies": {
-    "serverless": "^4.14.3",
+    "@types/aws-lambda": "^8.10.152",
     "@types/node": "^22.10.2",
-    "typescript": "^5.7.2",
-    "ts-node": "^10.9.2",
+    "serverless": "^4.14.3",
     "serverless-offline": "^14.4.0",
-    "serverless-webpack": "^5.15.3",
-    "ts-loader": "^9.5.4",
-    "webpack": "^5.101.3"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
   }
 }

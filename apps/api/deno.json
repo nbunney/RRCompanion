@@ -18,7 +18,6 @@
     "cheerio": "https://esm.sh/cheerio@1.0.0-rc.12",
     "got": "https://esm.sh/got@14.4.3",
     "tough-cookie": "https://esm.sh/tough-cookie@5.0.0",
-    "royalroad-api": "https://esm.sh/@fsoc/royalroadl-api",
     "stripe": "https://esm.sh/stripe@14.21.0"
   },
   "compilerOptions": {

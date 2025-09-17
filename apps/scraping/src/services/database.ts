@@ -18,10 +18,7 @@ export class DatabaseService {
         user: this.config.user,
         password: this.config.password,
         database: this.config.database,
-        ssl: this.config.ssl,
-        acquireTimeout: 60000,
-        timeout: 60000,
-        reconnect: true
+        ssl: this.config.ssl ? 'Amazon RDS' : undefined
       });
 
       console.log('✅ Database connected successfully');
@@ -67,6 +64,11 @@ export class DatabaseService {
     }
   }
 
+  // Convert ISO string to MySQL datetime format
+  private formatDateTime(isoString: string): string {
+    return new Date(isoString).toISOString().slice(0, 19).replace('T', ' ');
+  }
+
   // Rising Stars operations
   async saveRisingStarEntry(entry: RisingStarEntry): Promise<void> {
     const query = `
@@ -78,7 +80,7 @@ export class DatabaseService {
       entry.fiction_id,
       entry.genre,
       entry.position,
-      entry.captured_at || new Date().toISOString()
+      this.formatDateTime(entry.captured_at || new Date().toISOString())
     ]);
   }
 
@@ -94,7 +96,7 @@ export class DatabaseService {
       entry.fiction_id,
       entry.genre,
       entry.position,
-      entry.captured_at || new Date().toISOString()
+      this.formatDateTime(entry.captured_at || new Date().toISOString())
     ]);
 
     await this.execute(query, params);
@@ -241,8 +243,9 @@ export class DatabaseService {
     const query = `
       SELECT f.id, f.royalroad_id, f.title, f.author_name
       FROM fiction f
-      LEFT JOIN fictionHistory fh ON f.id = fh.fiction_id
-      WHERE fh.fiction_id IS NULL OR fh.captured_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
+      LEFT JOIN fictionHistory fh ON f.id = fh.fiction_id 
+        AND DATE(fh.captured_at) = CURDATE()
+      WHERE fh.fiction_id IS NULL
       ORDER BY f.updated_at ASC
       LIMIT ?
     `;

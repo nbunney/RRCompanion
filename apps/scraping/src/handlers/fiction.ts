@@ -65,7 +65,8 @@ export const handler = async (
         statusCode: 404,
         body: JSON.stringify({
           success: false,
-          error: 'Fiction not found or could not be scraped',
+          error: 'Fiction not found - may have been deleted or moved',
+          royalroadId,
           executionTime: Date.now() - startTime
         } as ScrapingResponse)
       };

@@ -72,7 +72,7 @@ export class RoyalRoadScrapingService {
     try {
       console.log('🔍 Scraping Rising Stars main page...');
 
-      const response = await this.httpClient.get('/browse/story/rising-stars');
+      const response = await this.httpClient.get('/fictions/rising-stars');
       const $ = cheerio.load(response.data);
 
       const entries: RisingStarEntry[] = [];
@@ -101,6 +101,7 @@ export class RoyalRoadScrapingService {
         const imageUrl = $el.find('img').attr('src');
 
         entries.push({
+          fiction_id: 0, // Will be set when fiction is created in database
           royalroad_id: royalroadId,
           title,
           author_name: authorName,
@@ -137,7 +138,7 @@ export class RoyalRoadScrapingService {
         try {
           console.log(`🔍 Scraping Rising Stars for genre: ${genre}`);
 
-          const response = await this.httpClient.get(`/browse/story/rising-stars/${genre}`);
+          const response = await this.httpClient.get(`/fictions/rising-stars/${genre}`);
           const $ = cheerio.load(response.data);
 
           $('.fiction-list-item').each((index, element) => {
@@ -155,6 +156,7 @@ export class RoyalRoadScrapingService {
             const imageUrl = $el.find('img').attr('src');
 
             allEntries.push({
+              fiction_id: 0, // Will be set when fiction is created in database
               royalroad_id: royalroadId,
               title,
               author_name: authorName,
@@ -360,7 +362,12 @@ export class RoyalRoadScrapingService {
 
       console.log(`✅ Successfully scraped fiction: ${fiction.title}`);
       return fiction;
-    } catch (error) {
+    } catch (error: any) {
+      // Handle 404s (deleted stories) more gracefully
+      if (error.response?.status === 404) {
+        console.log(`📚 Fiction ${royalroadId} not found (likely deleted)`);
+        return null; // Return null instead of throwing for deleted stories
+      }
       console.error(`❌ Error scraping fiction ${royalroadId}:`, error);
       throw handleScrapingError(error);
     }
