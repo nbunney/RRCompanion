@@ -1,6 +1,7 @@
 import { client } from '../config/database.ts';
 import { RoyalRoadService } from './royalroad.ts';
 import { FictionService } from './fiction.ts';
+import { cacheService } from './cache.ts';
 import type { CreateFictionRequest } from '../types/index.ts';
 
 export interface RisingStarsPosition {
@@ -21,6 +22,7 @@ export interface RisingStarsPosition {
 
 export class RisingStarsPositionService {
   private dbClient = client;
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   /**
    * Try to scrape a fiction from Royal Road and add it to our database
@@ -83,6 +85,15 @@ export class RisingStarsPositionService {
    */
   async calculateRisingStarsPosition(royalroadId: string): Promise<RisingStarsPosition | null> {
     try {
+      // Check cache first
+      const cacheKey = `rising-stars-position-${royalroadId}`;
+      const cachedData = cacheService.getWithCleanup<RisingStarsPosition>(cacheKey);
+      if (cachedData) {
+        console.log(`📦 Rising Stars Position - Cache hit for fiction ${royalroadId}`);
+        return cachedData;
+      }
+
+      console.log(`🔄 Rising Stars Position - Cache miss for fiction ${royalroadId}, fetching fresh data`);
       // Get fiction details by Royal Road ID
       const fictionQuery = `
         SELECT id, title, author_name, royalroad_id, image_url 
@@ -153,7 +164,7 @@ export class RisingStarsPositionService {
         // Fiction is already on main page
         const genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
 
-        return {
+        const result = {
           fictionId: fiction.id,
           title: fiction.title,
           authorName: fiction.author_name,
@@ -167,13 +178,19 @@ export class RisingStarsPositionService {
           lastUpdated: latestScrape,
           genrePositions
         };
+
+        // Cache the result
+        cacheService.set(cacheKey, result, this.CACHE_TTL);
+        console.log(`✅ Rising Stars Position - Data fetched and cached for fiction ${royalroadId} (on main page)`);
+        
+        return result;
       }
 
       // Fiction is not on main page - calculate position
       const positionData = await this.calculateEstimatedPosition(fiction.id, latestScrape);
       const genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
 
-      return {
+      const result = {
         fictionId: fiction.id,
         title: fiction.title,
         authorName: fiction.author_name,
@@ -187,6 +204,12 @@ export class RisingStarsPositionService {
         genrePositions,
         fictionsAheadDetails: positionData.fictionsAheadDetails
       };
+
+      // Cache the result
+      cacheService.set(cacheKey, result, this.CACHE_TTL);
+      console.log(`✅ Rising Stars Position - Data fetched and cached for fiction ${royalroadId}`);
+      
+      return result;
 
     } catch (error) {
       console.error('Error calculating Rising Stars position:', error);
