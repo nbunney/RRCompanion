@@ -196,8 +196,8 @@
       "invoke"
     ],
     "options": {
-      "function": "testFiction",
-      "data": "{\"queryStringParameters\": {\"fictionId\": \"1\"}}"
+      "function": "scrapeRisingStarsAll",
+      "data": "{}"
     },
     "orgId": "15f2cf7b-b141-47be-a3b0-4f98cfb65d0c",
     "orgName": "rrcompanion",

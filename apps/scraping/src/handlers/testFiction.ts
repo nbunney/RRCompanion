@@ -69,7 +69,7 @@ export const handler = async (
       followers: scrapedData.stats?.followers || 0,
       favorites: scrapedData.stats?.favorites || 0,
       views: scrapedData.stats?.views || 0,
-      score: scrapedData.stats?.score || 0,
+      score: scrapedData.stats?.overall_score || 0, // Use overall_score as the main score
       overall_score: scrapedData.stats?.overall_score || 0,
       style_score: scrapedData.stats?.style_score || 0,
       story_score: scrapedData.stats?.story_score || 0,

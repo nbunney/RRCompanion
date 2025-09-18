@@ -68,7 +68,7 @@ export const handler = async (
                 followers: historyData.followers,
                 favorites: historyData.favorites,
                 views: historyData.views,
-                score: historyData.score,
+                score: historyData.overall_score, // Use overall_score as the main score
                 overall_score: historyData.overall_score,
                 style_score: historyData.style_score,
                 story_score: historyData.story_score,

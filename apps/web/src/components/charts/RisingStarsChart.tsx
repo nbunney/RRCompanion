@@ -98,7 +98,7 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
             />
             <Tooltip
               formatter={(value: any, name: any) => [
-                `Position ${value}`,
+                `${value}`,
                 name === 'main' ? 'Main' : name.charAt(0).toUpperCase() + name.slice(1)
               ]}
               labelFormatter={(label) => `Date: ${label}`}
@@ -151,7 +151,7 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
                 {genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}:
               </span>
               <span className="text-gray-600">
-                Position {latestEntry?.position || 'N/A'}
+                {latestEntry?.position || 'N/A'}
               </span>
             </div>
           );

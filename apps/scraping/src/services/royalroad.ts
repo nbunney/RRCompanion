@@ -125,10 +125,11 @@ export class RoyalRoadScrapingService {
     try {
       console.log('🔍 Scraping Rising Stars for all genres...');
 
+      // Updated genres based on current Royal Road filter options
       const genres = [
-        'fantasy', 'sci-fi', 'romance', 'action', 'adventure', 'comedy', 'drama',
-        'horror', 'mystery', 'psychological', 'slice-of-life', 'tragedy', 'xianxia',
-        'xuanhuan', 'wuxia', 'system', 'litrpg', 'game', 'virtual-reality'
+        'action', 'adventure', 'comedy', 'contemporary', 'drama', 'fantasy',
+        'historical', 'horror', 'mystery', 'psychological', 'romance',
+        'satire', 'sci-fi', 'short-story', 'tragedy'
       ];
 
       const allEntries: RisingStarEntry[] = [];
@@ -138,7 +139,8 @@ export class RoyalRoadScrapingService {
         try {
           console.log(`🔍 Scraping Rising Stars for genre: ${genre}`);
 
-          const response = await this.httpClient.get(`/fictions/rising-stars/${genre}`);
+          // Updated URL format to use query parameter
+          const response = await this.httpClient.get(`/fictions/rising-stars?genre=${genre}`);
           const $ = cheerio.load(response.data);
 
           $('.fiction-list-item').each((index, element) => {
@@ -330,7 +332,7 @@ export class RoyalRoadScrapingService {
           fiction.stats.views = parseInt(viewsMatch[1]);
         }
 
-        // Extract score from data-content attribute (4.61 / 5)
+        // Extract overall score from data-content attribute (4.61 / 5)
         const scoreElement = statsContainer.find('[data-content*="/ 5"]').first();
         if (scoreElement.length) {
           const dataContent = scoreElement.attr('data-content');
@@ -338,16 +340,16 @@ export class RoyalRoadScrapingService {
           if (scoreMatch) {
             const score = parseFloat(scoreMatch[1]);
             // Royal Road scores are 0-5, cap to that range
-            fiction.stats.score = Math.min(Math.max(score, 0), 5);
+            fiction.stats.overall_score = Math.min(Math.max(score, 0), 5);
           }
         }
 
-        // Fallback: try to find score in text
-        if (fiction.stats.score === 0) {
+        // Fallback: try to find overall score in text
+        if (fiction.stats.overall_score === 0) {
           const scoreMatch = statsText.match(/(\d+\.\d+)\s*\/\s*5/i);
           if (scoreMatch) {
             const score = parseFloat(scoreMatch[1]);
-            fiction.stats.score = Math.min(Math.max(score, 0), 5);
+            fiction.stats.overall_score = Math.min(Math.max(score, 0), 5);
           }
         }
       }
