@@ -76,12 +76,25 @@ export interface RisingStarEntry {
 
 export interface FictionHistoryEntry {
   fiction_id: number;
+  royalroad_id: string;
   pages: number;
   ratings: number;
   followers: number;
   favorites: number;
   views: number;
   score: number;
+  overall_score?: number;
+  style_score?: number;
+  story_score?: number;
+  grammar_score?: number;
+  character_score?: number;
+  total_views?: number;
+  average_views?: number;
+  description?: string;
+  status?: string;
+  type?: string;
+  tags?: string[];
+  warnings?: string[];
   captured_at: string;
 }
 

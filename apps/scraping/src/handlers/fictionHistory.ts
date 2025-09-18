@@ -62,12 +62,25 @@ export const handler = async (
             if (historyData) {
               historyEntries.push({
                 fiction_id: fiction.id,
+                royalroad_id: fiction.royalroad_id,
                 pages: historyData.pages,
                 ratings: historyData.ratings,
                 followers: historyData.followers,
                 favorites: historyData.favorites,
                 views: historyData.views,
                 score: historyData.score,
+                overall_score: historyData.overall_score,
+                style_score: historyData.style_score,
+                story_score: historyData.story_score,
+                grammar_score: historyData.grammar_score,
+                character_score: historyData.character_score,
+                total_views: historyData.total_views,
+                average_views: historyData.average_views,
+                description: historyData.description,
+                status: historyData.status,
+                type: historyData.type,
+                tags: historyData.tags,
+                warnings: historyData.warnings,
                 captured_at: historyData.captured_at
               });
             }

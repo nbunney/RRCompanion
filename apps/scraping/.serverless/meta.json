@@ -108,6 +108,26 @@
             "SCRAPING_TYPE": "fiction-history"
           },
           "name": "rrcompanion-scraping-dev-scrapeFictionHistory"
+        },
+        "testFiction": {
+          "handler": "src/handlers/testFiction.handler",
+          "timeout": 300,
+          "memorySize": 1024,
+          "environment": {
+            "SCRAPING_TYPE": "test-fiction"
+          },
+          "events": [],
+          "name": "rrcompanion-scraping-dev-testFiction"
+        },
+        "debugHtml": {
+          "handler": "src/handlers/debugHtml.handler",
+          "timeout": 300,
+          "memorySize": 1024,
+          "environment": {
+            "SCRAPING_TYPE": "debug-html"
+          },
+          "events": [],
+          "name": "rrcompanion-scraping-dev-debugHtml"
         }
       },
       "plugins": [
@@ -171,12 +191,13 @@
       "serviceProvider": null,
       "instanceParameters": null
     },
-    "serviceRawFile": "service: rrcompanion-scraping\n\nframeworkVersion: \"4\"\n\nprovider:\n  name: aws\n  runtime: nodejs20.x\n  stage: ${opt:stage, 'dev'}\n  region: ${opt:region, 'us-west-2'}\n  timeout: 900 # Maximum Lambda timeout (15 minutes)\n  memorySize: 2048 # 2GB memory for better performance\n  environment:\n    NODE_ENV: ${self:provider.stage}\n    DATABASE_URL: ${env:DATABASE_URL}\n  iam:\n    role:\n      statements:\n        - Effect: Allow\n          Action:\n            - rds:*\n          Resource: \"*\"\n        - Effect: Allow\n          Action:\n            - s3:GetObject\n            - s3:PutObject\n            - s3:DeleteObject\n          Resource: \"arn:aws:s3:::rrcompanion-scraping-${self:provider.stage}/*\"\n\nfunctions:\n  # Rising Stars scraping - main page\n  scrapeRisingStarsMain:\n    handler: src/handlers/risingStarsMain.handler\n    timeout: 900\n    memorySize: 2048\n    events:\n      - schedule:\n          rate: rate(15 minutes)\n          enabled: true\n    environment:\n      SCRAPING_TYPE: \"rising-stars-main\"\n\n  # Rising Stars scraping - all genres\n  scrapeRisingStarsAll:\n    handler: src/handlers/risingStarsAll.handler\n    timeout: 900\n    memorySize: 2048\n    events:\n      - schedule:\n          rate: rate(15 minutes)\n          enabled: true\n    environment:\n      SCRAPING_TYPE: \"rising-stars-all\"\n\n  # Individual fiction scraping\n  scrapeFiction:\n    handler: src/handlers/fiction.handler\n    timeout: 300\n    memorySize: 1024\n    environment:\n      SCRAPING_TYPE: \"fiction\"\n\n  # Fiction history scraping\n  scrapeFictionHistory:\n    handler: src/handlers/fictionHistory.handler\n    timeout: 600\n    memorySize: 1536\n    events:\n      - schedule:\n          rate: rate(10 minutes)\n          enabled: true\n    environment:\n      SCRAPING_TYPE: \"fiction-history\"\n\nplugins:\n  - serverless-offline\n\nbuild:\n  esbuild: true\n\npackage:\n  exclude:\n    - node_modules/**\n    - .git/**\n    - .env*\n    - README.md\n    - \"*.md\"\n",
+    "serviceRawFile": "service: rrcompanion-scraping\n\nframeworkVersion: \"4\"\n\nprovider:\n  name: aws\n  runtime: nodejs20.x\n  stage: ${opt:stage, 'dev'}\n  region: ${opt:region, 'us-west-2'}\n  timeout: 900 # Maximum Lambda timeout (15 minutes)\n  memorySize: 2048 # 2GB memory for better performance\n  environment:\n    NODE_ENV: ${self:provider.stage}\n    DATABASE_URL: ${env:DATABASE_URL}\n  iam:\n    role:\n      statements:\n        - Effect: Allow\n          Action:\n            - rds:*\n          Resource: \"*\"\n        - Effect: Allow\n          Action:\n            - s3:GetObject\n            - s3:PutObject\n            - s3:DeleteObject\n          Resource: \"arn:aws:s3:::rrcompanion-scraping-${self:provider.stage}/*\"\n\nfunctions:\n  # Rising Stars scraping - main page\n  scrapeRisingStarsMain:\n    handler: src/handlers/risingStarsMain.handler\n    timeout: 900\n    memorySize: 2048\n    events:\n      - schedule:\n          rate: rate(15 minutes)\n          enabled: true\n    environment:\n      SCRAPING_TYPE: \"rising-stars-main\"\n\n  # Rising Stars scraping - all genres\n  scrapeRisingStarsAll:\n    handler: src/handlers/risingStarsAll.handler\n    timeout: 900\n    memorySize: 2048\n    events:\n      - schedule:\n          rate: rate(15 minutes)\n          enabled: true\n    environment:\n      SCRAPING_TYPE: \"rising-stars-all\"\n\n  # Individual fiction scraping\n  scrapeFiction:\n    handler: src/handlers/fiction.handler\n    timeout: 300\n    memorySize: 1024\n    environment:\n      SCRAPING_TYPE: \"fiction\"\n\n  # Fiction history scraping\n  scrapeFictionHistory:\n    handler: src/handlers/fictionHistory.handler\n    timeout: 600\n    memorySize: 1536\n    events:\n      - schedule:\n          rate: rate(10 minutes)\n          enabled: true\n    environment:\n      SCRAPING_TYPE: \"fiction-history\"\n\n  # Test fiction scraping (for debugging/auditing)\n  testFiction:\n    handler: src/handlers/testFiction.handler\n    timeout: 300\n    memorySize: 1024\n    environment:\n      SCRAPING_TYPE: \"test-fiction\"\n\n  # Debug HTML structure (for debugging scraping issues)\n  debugHtml:\n    handler: src/handlers/debugHtml.handler\n    timeout: 300\n    memorySize: 1024\n    environment:\n      SCRAPING_TYPE: \"debug-html\"\n\nplugins:\n  - serverless-offline\n\nbuild:\n  esbuild: true\n\npackage:\n  exclude:\n    - node_modules/**\n    - .git/**\n    - .env*\n    - README.md\n    - \"*.md\"\n",
     "command": [
-      "info"
+      "invoke"
     ],
     "options": {
-      "stage": "dev"
+      "function": "testFiction",
+      "data": "{\"queryStringParameters\": {\"fictionId\": \"1\"}}"
     },
     "orgId": "15f2cf7b-b141-47be-a3b0-4f98cfb65d0c",
     "orgName": "rrcompanion",
@@ -186,30 +207,42 @@
     "serviceProviderAwsCfStackName": "rrcompanion-scraping-dev",
     "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-west-2:192863343258:stack/rrcompanion-scraping-dev/58bc4b80-93ee-11f0-b2f9-0a22aee99741",
     "serviceProviderAwsCfStackCreated": "2025-09-17T17:47:15.218Z",
-    "serviceProviderAwsCfStackUpdated": "2025-09-17T20:57:52.268Z",
+    "serviceProviderAwsCfStackUpdated": "2025-09-17T22:15:50.284Z",
     "serviceProviderAwsCfStackStatus": "UPDATE_COMPLETE",
     "serviceProviderAwsCfStackOutputs": [
       {
+        "OutputKey": "TestFictionLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-testFiction:2",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rrcompanion-scraping-dev-TestFictionLambdaFunctionQualifiedArn"
+      },
+      {
         "OutputKey": "ScrapeRisingStarsAllLambdaFunctionQualifiedArn",
-        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeRisingStarsAll:11",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeRisingStarsAll:13",
         "Description": "Current Lambda function version",
         "ExportName": "sls-rrcompanion-scraping-dev-ScrapeRisingStarsAllLambdaFunctionQualifiedArn"
       },
       {
         "OutputKey": "ScrapeRisingStarsMainLambdaFunctionQualifiedArn",
-        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeRisingStarsMain:11",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeRisingStarsMain:13",
         "Description": "Current Lambda function version",
         "ExportName": "sls-rrcompanion-scraping-dev-ScrapeRisingStarsMainLambdaFunctionQualifiedArn"
       },
       {
         "OutputKey": "ScrapeFictionHistoryLambdaFunctionQualifiedArn",
-        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeFictionHistory:11",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeFictionHistory:13",
         "Description": "Current Lambda function version",
         "ExportName": "sls-rrcompanion-scraping-dev-ScrapeFictionHistoryLambdaFunctionQualifiedArn"
       },
       {
+        "OutputKey": "DebugHtmlLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-debugHtml:1",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rrcompanion-scraping-dev-DebugHtmlLambdaFunctionQualifiedArn"
+      },
+      {
         "OutputKey": "ScrapeFictionLambdaFunctionQualifiedArn",
-        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeFiction:11",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeFiction:13",
         "Description": "Current Lambda function version",
         "ExportName": "sls-rrcompanion-scraping-dev-ScrapeFictionLambdaFunctionQualifiedArn"
       },

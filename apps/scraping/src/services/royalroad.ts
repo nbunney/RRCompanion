@@ -282,59 +282,150 @@ export class RoyalRoadScrapingService {
         fiction.type = typeEl.text().trim();
       }
 
-      // Extract stats
-      $('.stats .stat').each((_, element) => {
-        const $stat = $(element);
-        const label = $stat.find('.label').text().trim().toLowerCase();
-        const value = $stat.find('.value').text().trim();
+      // Extract stats - Updated for current Royal Road HTML structure
+      const statsContainer = $('.fiction-stats');
+      if (statsContainer.length) {
+        // Look for stats in the fiction-stats container
+        const statsText = statsContainer.text();
 
-        switch (label) {
-          case 'pages':
-            fiction.stats.pages = this.extractNumber(value);
-            break;
-          case 'ratings':
-            fiction.stats.ratings = this.extractNumber(value);
-            break;
-          case 'followers':
-            fiction.stats.followers = this.extractNumber(value);
-            break;
-          case 'favorites':
-            fiction.stats.favorites = this.extractNumber(value);
-            break;
-          case 'views':
-            fiction.stats.views = this.extractNumber(value);
-            break;
-          case 'score':
-            fiction.stats.score = this.extractScore(value);
-            break;
+        // Extract pages (look for "Pages :" pattern)
+        const pagesMatch = statsText.match(/Pages\s*:\s*(\d+)/i);
+        if (pagesMatch) {
+          fiction.stats.pages = parseInt(pagesMatch[1]);
+        }
+
+        // Extract ratings count (look for "Ratings :" pattern)
+        const ratingsMatch = statsText.match(/Ratings\s*:\s*(\d+)/i);
+        if (ratingsMatch) {
+          fiction.stats.ratings = parseInt(ratingsMatch[1]);
+        }
+
+        // Extract followers (look for "Followers :" pattern)
+        const followersMatch = statsText.match(/Followers\s*:\s*(\d+)/i);
+        if (followersMatch) {
+          fiction.stats.followers = parseInt(followersMatch[1]);
+        }
+
+        // Extract favorites (look for "Favorites :" pattern)
+        const favoritesMatch = statsText.match(/Favorites\s*:\s*(\d+)/i);
+        if (favoritesMatch) {
+          fiction.stats.favorites = parseInt(favoritesMatch[1]);
+        }
+
+        // Extract average views (look for "Average Views :" pattern)
+        const avgViewsMatch = statsText.match(/Average\s*Views\s*:\s*(\d+)/i);
+        if (avgViewsMatch) {
+          fiction.stats.average_views = parseInt(avgViewsMatch[1]);
+        }
+
+        // Extract total views (look for "Total Views :" pattern)
+        const totalViewsMatch = statsText.match(/Total\s*Views\s*:\s*([\d,]+)/i);
+        if (totalViewsMatch) {
+          fiction.stats.total_views = parseInt(totalViewsMatch[1].replace(/,/g, ''));
+        }
+
+        // Extract views (if present)
+        const viewsMatch = statsText.match(/(\d+)\s*Views?/i);
+        if (viewsMatch) {
+          fiction.stats.views = parseInt(viewsMatch[1]);
+        }
+
+        // Extract score from data-content attribute (4.61 / 5)
+        const scoreElement = statsContainer.find('[data-content*="/ 5"]').first();
+        if (scoreElement.length) {
+          const dataContent = scoreElement.attr('data-content');
+          const scoreMatch = dataContent?.match(/(\d+\.\d+)\s*\/\s*5/);
+          if (scoreMatch) {
+            const score = parseFloat(scoreMatch[1]);
+            // Royal Road scores are 0-5, cap to that range
+            fiction.stats.score = Math.min(Math.max(score, 0), 5);
+          }
+        }
+
+        // Fallback: try to find score in text
+        if (fiction.stats.score === 0) {
+          const scoreMatch = statsText.match(/(\d+\.\d+)\s*\/\s*5/i);
+          if (scoreMatch) {
+            const score = parseFloat(scoreMatch[1]);
+            fiction.stats.score = Math.min(Math.max(score, 0), 5);
+          }
+        }
+      }
+
+      // Extract detailed scores from data-content attributes
+      const scoreElements = statsContainer.find('[data-content*="/ 5"]');
+      scoreElements.each((_, element) => {
+        const $el = $(element);
+        const dataContent = $el.attr('data-content');
+        const ariaLabel = $el.attr('aria-label');
+
+        if (dataContent && ariaLabel) {
+          const scoreMatch = dataContent.match(/(\d+\.?\d*)\s*\/\s*5/);
+          if (scoreMatch) {
+            const score = parseFloat(scoreMatch[1]);
+
+            // Determine score type from aria-label
+            if (ariaLabel.includes('Overall')) {
+              fiction.stats.overall_score = score;
+            } else if (ariaLabel.includes('Style')) {
+              fiction.stats.style_score = score;
+            } else if (ariaLabel.includes('Story')) {
+              fiction.stats.story_score = score;
+            } else if (ariaLabel.includes('Grammar')) {
+              fiction.stats.grammar_score = score;
+            } else if (ariaLabel.includes('Character')) {
+              fiction.stats.character_score = score;
+            }
+          }
         }
       });
 
-      // Extract detailed scores
-      $('.rating-breakdown .rating').each((_, element) => {
-        const $rating = $(element);
-        const label = $rating.find('.label').text().trim().toLowerCase();
-        const value = $rating.find('.value').text().trim();
-        const score = this.extractScore(value);
+      // Extract metadata (description, status, type, tags, warnings)
+      // Description
+      const description = $('.description').text().trim();
+      if (description) {
+        fiction.description = this.decodeHtmlEntities(description);
+      }
 
-        switch (label) {
-          case 'overall':
-            fiction.stats.overall_score = score;
-            break;
-          case 'style':
-            fiction.stats.style_score = score;
-            break;
-          case 'story':
-            fiction.stats.story_score = score;
-            break;
-          case 'grammar':
-            fiction.stats.grammar_score = score;
-            break;
-          case 'character':
-            fiction.stats.character_score = score;
-            break;
+      // Extract fiction cover image
+      const coverImage = $('img[src*="covers-large"]').first().attr('src');
+      if (coverImage) {
+        fiction.image = coverImage;
+      }
+
+      // Status and Type - look for elements containing these values
+      $('*').each((_, el) => {
+        const $el = $(el);
+        const text = $el.text().trim();
+
+        if (text === 'ONGOING' || text === 'COMPLETED' || text === 'HIATUS' || text === 'DROPPED') {
+          fiction.status = text;
+        }
+
+        if (text === 'Original' || text === 'Fanfiction') {
+          fiction.type = text;
         }
       });
+
+      // Tags
+      const tags: string[] = [];
+      $('.tags a').each((_, element) => {
+        const tag = $(element).text().trim();
+        if (tag) {
+          tags.push(tag);
+        }
+      });
+      fiction.tags = tags;
+
+      // Warnings
+      const warnings: string[] = [];
+      $('.warnings a').each((_, element) => {
+        const warning = $(element).text().trim();
+        if (warning) {
+          warnings.push(warning);
+        }
+      });
+      fiction.warnings = warnings;
 
       // Extract chapters
       $('.chapter-row').each((_, element) => {

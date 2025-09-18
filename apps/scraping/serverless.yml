@@ -71,6 +71,22 @@ functions:
     environment:
       SCRAPING_TYPE: "fiction-history"
 
+  # Test fiction scraping (for debugging/auditing)
+  testFiction:
+    handler: src/handlers/testFiction.handler
+    timeout: 300
+    memorySize: 1024
+    environment:
+      SCRAPING_TYPE: "test-fiction"
+
+  # Debug HTML structure (for debugging scraping issues)
+  debugHtml:
+    handler: src/handlers/debugHtml.handler
+    timeout: 300
+    memorySize: 1024
+    environment:
+      SCRAPING_TYPE: "debug-html"
+
 plugins:
   - serverless-offline
 

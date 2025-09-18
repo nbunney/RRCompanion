@@ -177,19 +177,36 @@ export class DatabaseService {
     if (entries.length === 0) return;
 
     const query = `
-      INSERT INTO fictionHistory (fiction_id, pages, ratings, followers, favorites, views, score, captured_at)
-      VALUES ${entries.map(() => '(?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}
+      INSERT INTO fictionHistory (
+        fiction_id, royalroad_id, pages, ratings, followers, favorites, views, score,
+        overall_score, style_score, story_score, grammar_score, character_score,
+        total_views, average_views, description, status, type, tags, warnings, captured_at
+      )
+      VALUES ${entries.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}
     `;
 
     const params = entries.flatMap(entry => [
       entry.fiction_id,
+      entry.royalroad_id,
       entry.pages,
       entry.ratings,
       entry.followers,
       entry.favorites,
       entry.views,
       entry.score,
-      entry.captured_at
+      entry.overall_score || 0,
+      entry.style_score || 0,
+      entry.story_score || 0,
+      entry.grammar_score || 0,
+      entry.character_score || 0,
+      entry.total_views || 0,
+      entry.average_views || 0,
+      entry.description || null,
+      entry.status || null,
+      entry.type || null,
+      entry.tags ? JSON.stringify(entry.tags) : null,
+      entry.warnings ? JSON.stringify(entry.warnings) : null,
+      this.formatDateTime(entry.captured_at)
     ]);
 
     await this.execute(query, params);
@@ -261,5 +278,124 @@ export class DatabaseService {
 
     const results = await this.query(query);
     return results[0]?.latest_scrape || null;
+  }
+
+  // Update main fiction record with latest data
+  async updateFictionRecord(fictionId: number, updateData: {
+    image_url?: string;
+    description?: string;
+    status?: string;
+    type?: string;
+    tags?: string[];
+    warnings?: string[];
+    pages?: number;
+    ratings?: number;
+    followers?: number;
+    favorites?: number;
+    views?: number;
+    score?: number;
+    overall_score?: number;
+    style_score?: number;
+    story_score?: number;
+    grammar_score?: number;
+    character_score?: number;
+    total_views?: number;
+    average_views?: number;
+  }): Promise<void> {
+    const fields = [];
+    const values = [];
+
+    if (updateData.image_url !== undefined) {
+      fields.push('image_url = ?');
+      values.push(updateData.image_url);
+    }
+    if (updateData.description !== undefined) {
+      fields.push('description = ?');
+      values.push(updateData.description);
+    }
+    if (updateData.status !== undefined) {
+      fields.push('status = ?');
+      values.push(updateData.status);
+    }
+    if (updateData.type !== undefined) {
+      fields.push('type = ?');
+      values.push(updateData.type);
+    }
+    if (updateData.tags !== undefined) {
+      fields.push('tags = ?');
+      values.push(JSON.stringify(updateData.tags));
+    }
+    if (updateData.warnings !== undefined) {
+      fields.push('warnings = ?');
+      values.push(JSON.stringify(updateData.warnings));
+    }
+    if (updateData.pages !== undefined) {
+      fields.push('pages = ?');
+      values.push(updateData.pages);
+    }
+    if (updateData.ratings !== undefined) {
+      fields.push('ratings = ?');
+      values.push(updateData.ratings);
+    }
+    if (updateData.followers !== undefined) {
+      fields.push('followers = ?');
+      values.push(updateData.followers);
+    }
+    if (updateData.favorites !== undefined) {
+      fields.push('favorites = ?');
+      values.push(updateData.favorites);
+    }
+    if (updateData.views !== undefined) {
+      fields.push('views = ?');
+      values.push(updateData.views);
+    }
+    if (updateData.score !== undefined) {
+      fields.push('score = ?');
+      values.push(updateData.score);
+    }
+    if (updateData.overall_score !== undefined) {
+      fields.push('overall_score = ?');
+      values.push(updateData.overall_score);
+    }
+    if (updateData.style_score !== undefined) {
+      fields.push('style_score = ?');
+      values.push(updateData.style_score);
+    }
+    if (updateData.story_score !== undefined) {
+      fields.push('story_score = ?');
+      values.push(updateData.story_score);
+    }
+    if (updateData.grammar_score !== undefined) {
+      fields.push('grammar_score = ?');
+      values.push(updateData.grammar_score);
+    }
+    if (updateData.character_score !== undefined) {
+      fields.push('character_score = ?');
+      values.push(updateData.character_score);
+    }
+    if (updateData.total_views !== undefined) {
+      fields.push('total_views = ?');
+      values.push(updateData.total_views);
+    }
+    if (updateData.average_views !== undefined) {
+      fields.push('average_views = ?');
+      values.push(updateData.average_views);
+    }
+
+    if (fields.length === 0) {
+      return; // Nothing to update
+    }
+
+    // Add updated_at timestamp
+    fields.push('updated_at = NOW()');
+    values.push(fictionId);
+
+    const query = `
+      UPDATE fiction 
+      SET ${fields.join(', ')}
+      WHERE id = ?
+    `;
+
+    await this.execute(query, values);
   }
 }
