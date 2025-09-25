@@ -675,6 +675,18 @@ export class RoyalRoadScrapingService {
         favorites: fiction.stats.favorites,
         views: fiction.stats.views,
         score: fiction.stats.score,
+        overall_score: fiction.stats.overall_score,
+        style_score: fiction.stats.style_score,
+        story_score: fiction.stats.story_score,
+        grammar_score: fiction.stats.grammar_score,
+        character_score: fiction.stats.character_score,
+        total_views: fiction.stats.total_views,
+        average_views: fiction.stats.average_views,
+        description: fiction.description,
+        status: fiction.status,
+        type: fiction.type,
+        tags: fiction.tags,
+        warnings: fiction.warnings,
         captured_at: new Date().toISOString()
       };
     } catch (error) {

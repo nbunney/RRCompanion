@@ -47,12 +47,12 @@
             "Runtime": "nodejs20.x",
             "Role": "arn:aws:iam::192863343258:role/rrcompanion-scraping-dev-us-west-2-lambdaRole",
             "Handler": "src/handlers/fictionHistory.handler",
-            "CodeSize": 2900192,
+            "CodeSize": 2900194,
             "Description": "",
             "Timeout": 600,
             "MemorySize": 1536,
-            "LastModified": "2025-09-25T16:10:21.000+0000",
-            "CodeSha256": "AdAzsg+6jKAltfWTDJPs52tpzjfHURl8N22N6WrAYnA=",
+            "LastModified": "2025-09-25T17:28:06.000+0000",
+            "CodeSha256": "1KHpxIvL7NeXB20JpT4NGOp4TaVZU3EGEKFedUgR18k=",
             "Version": "$LATEST",
             "Environment": {
               "Variables": {
@@ -67,7 +67,7 @@
               "Mode": "PassThrough"
             },
             "MasterArn": null,
-            "RevisionId": "8a64144f-082c-4f50-90dd-a7435f7b67d6",
+            "RevisionId": "0867aa65-1c88-4e8a-8c9a-8a7901af7d50",
             "State": "Active",
             "StateReason": null,
             "StateReasonCode": null,
@@ -100,7 +100,7 @@
           },
           "Code": {
             "RepositoryType": "S3",
-            "Location": "https://awslambda-us-west-2-tasks.s3.us-west-2.amazonaws.com/snapshots/192863343258/rrcompanion-scraping-dev-scrapeFictionHistory-92d77a04-511b-4940-8993-5db10b8db6c3?versionId=ntmTRvLaHnFMSx8dm1ONEaDU0Yv7otFN&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEOz%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDv4VOoFn0JKks%2BmrzLZ6RMOl127te3%2BZfaV4kWNPLs9gIgNLRTE447EI43VCpip%2FDlOr6BNy5dwMQLj1L64LM8OFgqiQIIdRAFGgw1MDIyOTcwNzYxNjMiDCOCz0ElaKC2HgbmqyrmARcSZ4C1%2FVdMcZdiY2Aa9mVkyvqXFx307CoCh8HHqZB2M3Zrr0LmPYveB%2BFOFQPbWEj8EATHztw8Fync%2Fo%2Bn%2BmsqA5by9jqg1PSdDtvFS8tHU2%2BN5SNzxxW%2BTpykOilxJlCctNAweEqAZMo03Wyt0YdhuXIkbAyuN87HgHTKtafmXyCWvSN1zPMhYECfOSXJ2gUyIY06WUnKp65wHatJJZwYosX6Jod0sHk7QoHI1O51ev1J6J7mVgfOWPMxpFDWjQu1aWO5LB2%2FA8BAVsmRq2nCGAix1tYiZeiEnEv7m%2BRBYmzR43KfMLXg1MYGOo8BZx51esMbVrNBux1Svsz%2BfUrluF4h9jfLH8SNE8lTXpgajvyKzG0GvqiLsdXnKH3AaoNBG2k3tpNoUxjf3Cb1d8jblvBPt4%2F1SclI4toJ7vOwVjUGPFOUbhD8XeFG7eIIqSS0MmgceUsrb3dTYJm8TtiUooOpTcXeJxGFm%2FxyDYnRsZ05jmO9Z4i4E%2BLD1oc%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20250925T172759Z&X-Amz-SignedHeaders=host&X-Amz-Expires=600&X-Amz-Credential=ASIAXJ4Z5EHBV3XTHPKG%2F20250925%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=853d285f1cda370e6a3aa55b5bfcd3f103054a1924245bca7dd061aaabb7c0f0",
+            "Location": "https://awslambda-us-west-2-tasks.s3.us-west-2.amazonaws.com/snapshots/192863343258/rrcompanion-scraping-dev-scrapeFictionHistory-2f43f05e-c33a-42fe-a06b-9b00f455f64f?versionId=gF0UgACHkkrZtDErb3DFZSSiDoTzXWai&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEO%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDNonFNwekHm8uEK71uiFpNn7gRMIIjbtXb6wRQ84CkSQIgBySVLbt3t23iNd%2B1UjNJ%2BiDZS8L9t299Da0VJ%2FpQ61AqiQIIeBAFGgw1MDIyOTcwNzYxNjMiDMxbq2K2ZAw84wVRvCrmAaAgdxvCa2KbGI0d2VhYbQhl5BzcbK%2FrStUxne37QoWa63NOSztWKUi6vhzc3TqDwPd6wjNbhIvFTD9%2FfKCJpswH1MKYfpLU72mqpeYnyWQxpAZX7hQpHvmLEykKq2bPHK4HLyKKUYwbsIBHH9LFY3CRpJQ8THInYy3fpspcSrsvZSMLAHyYkIaUDBTpLAtf7eoqbJwEmSXm7bU1xegK5cH367HktWcoPjgF2ygLhjGONx4zZkx8jNeFK5tSGW9XoVw1g21eA99M3d8ersiVePxKA1nTmjz%2FxsiTVh8fF093%2FmCnG3uBMKGo1cYGOo8BOwROobGlhE9HaWEhUF1zEFAb1emUsDdg%2BrDHqH7ybragdHyIjFPIQVx%2Btvk%2FuBZzW91OOCqqcwCAOxiBu4brTVxX2T4p%2F%2BksX6aM%2BD6pyQyrCTDePxvxDZilpkL7UhzUSn8NTB3AFFk539jmhHZIZe9i9WEtwGxCyg3%2Fea6ayEjAEK3PBCVCteqy3ZiFqCU%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20250925T174132Z&X-Amz-SignedHeaders=host&X-Amz-Expires=600&X-Amz-Credential=ASIAXJ4Z5EHBZ4YZSCAU%2F20250925%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=1aa01b9d5c982af062a33d0503b566defc420216188f44c6bf604312ec2161af",
             "ImageUri": null,
             "ResolvedImageUri": null
           },
@@ -261,12 +261,12 @@
           "Runtime": "nodejs20.x",
           "Role": "arn:aws:iam::192863343258:role/rrcompanion-scraping-dev-us-west-2-lambdaRole",
           "Handler": "src/handlers/fictionHistory.handler",
-          "CodeSize": 2900192,
+          "CodeSize": 2900194,
           "Description": "",
           "Timeout": 600,
           "MemorySize": 1536,
-          "LastModified": "2025-09-25T16:10:21.000+0000",
-          "CodeSha256": "AdAzsg+6jKAltfWTDJPs52tpzjfHURl8N22N6WrAYnA=",
+          "LastModified": "2025-09-25T17:28:06.000+0000",
+          "CodeSha256": "1KHpxIvL7NeXB20JpT4NGOp4TaVZU3EGEKFedUgR18k=",
           "Version": "$LATEST",
           "Environment": {
             "Variables": {
@@ -281,7 +281,7 @@
             "Mode": "PassThrough"
           },
           "MasterArn": null,
-          "RevisionId": "8a64144f-082c-4f50-90dd-a7435f7b67d6",
+          "RevisionId": "0867aa65-1c88-4e8a-8c9a-8a7901af7d50",
           "State": "Active",
           "StateReason": null,
           "StateReasonCode": null,
@@ -314,7 +314,7 @@
         },
         "Code": {
           "RepositoryType": "S3",
-          "Location": "https://awslambda-us-west-2-tasks.s3.us-west-2.amazonaws.com/snapshots/192863343258/rrcompanion-scraping-dev-scrapeFictionHistory-92d77a04-511b-4940-8993-5db10b8db6c3?versionId=ntmTRvLaHnFMSx8dm1ONEaDU0Yv7otFN&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEOz%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDv4VOoFn0JKks%2BmrzLZ6RMOl127te3%2BZfaV4kWNPLs9gIgNLRTE447EI43VCpip%2FDlOr6BNy5dwMQLj1L64LM8OFgqiQIIdRAFGgw1MDIyOTcwNzYxNjMiDCOCz0ElaKC2HgbmqyrmARcSZ4C1%2FVdMcZdiY2Aa9mVkyvqXFx307CoCh8HHqZB2M3Zrr0LmPYveB%2BFOFQPbWEj8EATHztw8Fync%2Fo%2Bn%2BmsqA5by9jqg1PSdDtvFS8tHU2%2BN5SNzxxW%2BTpykOilxJlCctNAweEqAZMo03Wyt0YdhuXIkbAyuN87HgHTKtafmXyCWvSN1zPMhYECfOSXJ2gUyIY06WUnKp65wHatJJZwYosX6Jod0sHk7QoHI1O51ev1J6J7mVgfOWPMxpFDWjQu1aWO5LB2%2FA8BAVsmRq2nCGAix1tYiZeiEnEv7m%2BRBYmzR43KfMLXg1MYGOo8BZx51esMbVrNBux1Svsz%2BfUrluF4h9jfLH8SNE8lTXpgajvyKzG0GvqiLsdXnKH3AaoNBG2k3tpNoUxjf3Cb1d8jblvBPt4%2F1SclI4toJ7vOwVjUGPFOUbhD8XeFG7eIIqSS0MmgceUsrb3dTYJm8TtiUooOpTcXeJxGFm%2FxyDYnRsZ05jmO9Z4i4E%2BLD1oc%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20250925T172759Z&X-Amz-SignedHeaders=host&X-Amz-Expires=600&X-Amz-Credential=ASIAXJ4Z5EHBV3XTHPKG%2F20250925%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=853d285f1cda370e6a3aa55b5bfcd3f103054a1924245bca7dd061aaabb7c0f0",
+          "Location": "https://awslambda-us-west-2-tasks.s3.us-west-2.amazonaws.com/snapshots/192863343258/rrcompanion-scraping-dev-scrapeFictionHistory-2f43f05e-c33a-42fe-a06b-9b00f455f64f?versionId=gF0UgACHkkrZtDErb3DFZSSiDoTzXWai&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEO%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDNonFNwekHm8uEK71uiFpNn7gRMIIjbtXb6wRQ84CkSQIgBySVLbt3t23iNd%2B1UjNJ%2BiDZS8L9t299Da0VJ%2FpQ61AqiQIIeBAFGgw1MDIyOTcwNzYxNjMiDMxbq2K2ZAw84wVRvCrmAaAgdxvCa2KbGI0d2VhYbQhl5BzcbK%2FrStUxne37QoWa63NOSztWKUi6vhzc3TqDwPd6wjNbhIvFTD9%2FfKCJpswH1MKYfpLU72mqpeYnyWQxpAZX7hQpHvmLEykKq2bPHK4HLyKKUYwbsIBHH9LFY3CRpJQ8THInYy3fpspcSrsvZSMLAHyYkIaUDBTpLAtf7eoqbJwEmSXm7bU1xegK5cH367HktWcoPjgF2ygLhjGONx4zZkx8jNeFK5tSGW9XoVw1g21eA99M3d8ersiVePxKA1nTmjz%2FxsiTVh8fF093%2FmCnG3uBMKGo1cYGOo8BOwROobGlhE9HaWEhUF1zEFAb1emUsDdg%2BrDHqH7ybragdHyIjFPIQVx%2Btvk%2FuBZzW91OOCqqcwCAOxiBu4brTVxX2T4p%2F%2BksX6aM%2BD6pyQyrCTDePxvxDZilpkL7UhzUSn8NTB3AFFk539jmhHZIZe9i9WEtwGxCyg3%2Fea6ayEjAEK3PBCVCteqy3ZiFqCU%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20250925T174132Z&X-Amz-SignedHeaders=host&X-Amz-Expires=600&X-Amz-Credential=ASIAXJ4Z5EHBZ4YZSCAU%2F20250925%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=1aa01b9d5c982af062a33d0503b566defc420216188f44c6bf604312ec2161af",
           "ImageUri": null,
           "ResolvedImageUri": null
         },
