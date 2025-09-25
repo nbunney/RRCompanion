@@ -228,7 +228,7 @@ export const royalroadAPI = {
   },
 
   getFiction: async (id: string): Promise<ApiResponse<RoyalRoadFiction>> => {
-    const response = await api.get(`/royalroad/fiction/${id}`);
+    const response = await api.get(`/fictions/${id}`);
     return response.data;
   },
 
