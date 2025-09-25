@@ -54,18 +54,20 @@ const FictionDetail: React.FC = () => {
   }, [id, isAuthenticated]);
 
   useEffect(() => {
-    if (fictionWithHistory?.id && isAuthenticated) {
+    if (fictionWithHistory?.id) {
       loadRisingStarsData();
     }
-  }, [fictionWithHistory?.id, isAuthenticated]);
+  }, [fictionWithHistory?.id]);
 
   const loadFiction = async () => {
     try {
       setIsLoading(true);
 
       // First, try to load from our database (only for authenticated users)
+      console.log('🔗 Authentication status:', isAuthenticated);
       if (isAuthenticated) {
         try {
+          console.log('🔗 Attempting to load fiction from database for ID:', id);
           let fictionResponse = await fictionAPI.getFictionByRoyalRoadId(id!);
 
           if (fictionResponse.success && fictionResponse.data) {
@@ -98,6 +100,7 @@ const FictionDetail: React.FC = () => {
               },
               chapters: [],
             };
+            console.log('🔗 Converted fiction object:', fiction);
             setFiction(fiction);
 
             // Redirect to the proper URL with slug if not already there
@@ -115,17 +118,52 @@ const FictionDetail: React.FC = () => {
       }
 
       // Fall back to Royal Road API (for non-authenticated users or when database fails)
+      console.log('🔗 Falling back to Royal Road API for ID:', id);
       const royalroadResponse = await royalroadAPI.getFiction(id!);
+      console.log('🔗 Royal Road API response:', royalroadResponse);
+
       if (royalroadResponse.success && royalroadResponse.data) {
-        setFiction(royalroadResponse.data);
+        const apiData = royalroadResponse.data as any; // Type assertion for raw API data
+        console.log('🔗 Royal Road API data received:', apiData);
+        console.log('🔗 Royal Road API data keys:', Object.keys(apiData));
+        console.log('🔗 Royal Road API image field:', apiData.image);
+        console.log('🔗 Royal Road API image_url field:', apiData.image_url);
+        // Transform the data to match RoyalRoadFiction type
+        const transformedData = {
+          ...apiData,
+          id: apiData.royalroad_id, // Use RoyalRoad ID, not internal database ID
+          image: apiData.image_url || apiData.image,
+          author: {
+            name: apiData.author_name,
+            id: apiData.author_id || '',
+            avatar: apiData.author_avatar,
+          },
+          stats: {
+            pages: apiData.pages || 0,
+            ratings: apiData.ratings || 0,
+            followers: apiData.followers || 0,
+            favorites: apiData.favorites || 0,
+            views: apiData.views || 0,
+            score: apiData.overall_score || apiData.score || 0,
+          },
+        };
+        console.log('🔗 Transformed data:', transformedData);
+        setFiction(transformedData);
+
+        // Also set fictionWithHistory for graphs if we have history data
+        if (apiData.history && apiData.history.length > 0) {
+          console.log('🔗 Setting fictionWithHistory for graphs:', apiData);
+          setFictionWithHistory(apiData);
+        }
 
         // Redirect to the proper URL with slug if not already there
-        const expectedSlug = createFictionUrl(royalroadResponse.data.title, royalroadResponse.data.id).split('/').pop();
+        const expectedSlug = createFictionUrl(apiData.title, apiData.royalroad_id).split('/').pop();
         if (slug !== expectedSlug) {
-          const properUrl = createFictionUrl(royalroadResponse.data.title, royalroadResponse.data.id);
+          const properUrl = createFictionUrl(apiData.title, apiData.royalroad_id);
           navigate(properUrl, { replace: true });
         }
       } else {
+        console.log('🔗 Royal Road API failed:', royalroadResponse);
         setError(royalroadResponse.message || 'Failed to load fiction');
       }
     } catch (err: any) {
@@ -401,9 +439,9 @@ const FictionDetail: React.FC = () => {
       <main className="flex-1 max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <Card className="p-6">
-            <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-8">
+            <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-6">
               {/* Fiction Image */}
-              {fiction.image && (
+              {fiction?.image && (
                 <div className="flex-shrink-0 flex justify-center lg:justify-start">
                   <a
                     href={getRoyalRoadUrl()}
@@ -413,15 +451,15 @@ const FictionDetail: React.FC = () => {
                   >
                     <img
                       src={fiction.image}
-                      alt={fiction.title}
-                      className="w-48 h-72 object-cover rounded-lg shadow-md"
+                      alt={fiction?.title || 'Fiction cover'}
+                      className="w-32 h-48 sm:w-40 sm:h-60 lg:w-48 lg:h-72 object-cover rounded-lg shadow-md"
                     />
                   </a>
                 </div>
               )}
 
               {/* Fiction Details */}
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-4 space-y-4 lg:space-y-0">
                   <div className="flex-1">
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
@@ -431,50 +469,63 @@ const FictionDetail: React.FC = () => {
                         rel="noopener noreferrer"
                         className="text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
                       >
-                        {fiction.title}
+                        {fiction?.title || 'Unknown Title'}
                       </a>
                     </h1>
                     <p className="text-base sm:text-lg text-gray-600 mb-3">
                       by{' '}
                       <a
-                        href={`https://www.royalroad.com/profile/${fiction.author.id}`}
+                        href={`https://www.royalroad.com/profile/${fiction?.author?.id || ''}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
                       >
-                        {fiction.author.name}
+                        {fiction?.author?.name || 'Unknown Author'}
                       </a>
                     </p>
 
                   </div>
                   <div className="flex flex-col space-y-2">
-                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                      {userFiction ? (
+                    {isAuthenticated && (
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                        {userFiction ? (
+                          <Button
+                            onClick={handleToggleFavorite}
+                            disabled={isAddingToFavorites}
+                            variant={userFiction.is_favorite ? "primary" : "outline"}
+                            className="w-full sm:w-auto"
+                          >
+                            {isAddingToFavorites ? '...' : (userFiction.is_favorite ? '❤️ Favorited' : '🤍 Add to Favorites')}
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={handleAddToFavorites}
+                            disabled={isAddingToFavorites}
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                          >
+                            {isAddingToFavorites ? 'Adding...' : '🤍 Add to Favorites'}
+                          </Button>
+                        )}
                         <Button
-                          onClick={handleToggleFavorite}
-                          disabled={isAddingToFavorites}
-                          variant={userFiction.is_favorite ? "primary" : "outline"}
-                          className="w-full sm:w-auto"
-                        >
-                          {isAddingToFavorites ? '...' : (userFiction.is_favorite ? '❤️ Favorited' : '🤍 Add to Favorites')}
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={handleAddToFavorites}
-                          disabled={isAddingToFavorites}
+                          onClick={handleDownloadCSV}
+                          disabled={false}
                           variant="outline"
                           className="w-full sm:w-auto"
                         >
-                          {isAddingToFavorites ? 'Adding...' : '🤍 Add to Favorites'}
+                          📦 Data
                         </Button>
-                      )}
+                      </div>
+                    )}
+
+                    {/* Position Calculator Button - Always visible */}
+                    <div className="mt-2">
                       <Button
-                        onClick={handleDownloadCSV}
-                        disabled={false}
+                        onClick={() => navigate(`/rising-stars-position/${id}`)}
                         variant="outline"
-                        className="w-full sm:w-auto"
+                        className="w-full"
                       >
-                        📦 Data
+                        📊 Rising Stars Position Calculator
                       </Button>
                     </div>
 
@@ -523,6 +574,7 @@ const FictionDetail: React.FC = () => {
                   />
                 )}
 
+
                 {/* Current Charts Section */}
                 {fictionWithHistory?.history && fictionWithHistory.history.length > 0 && (
                   <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -545,7 +597,7 @@ const FictionDetail: React.FC = () => {
                 )}
 
                 {/* Description */}
-                {fiction.description && (
+                {fiction?.description && (
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
                     <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">{fiction.description}</div>
@@ -554,10 +606,10 @@ const FictionDetail: React.FC = () => {
 
                 {/* Tags, Warnings, Status, and Type */}
                 <Tags
-                  tags={fiction.tags || []}
-                  warnings={fiction.warnings || []}
-                  status={fiction.status}
-                  type={fiction.type}
+                  tags={fiction?.tags || []}
+                  warnings={fiction?.warnings || []}
+                  status={fiction?.status}
+                  type={fiction?.type}
                 />
               </div>
             </div>

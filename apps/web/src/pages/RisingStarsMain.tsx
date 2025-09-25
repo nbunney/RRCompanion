@@ -1,7 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { createFictionUrl } from '@/utils';
 import api from '@/services/api';
 
 interface RisingStarsMainEntry {
@@ -21,6 +23,7 @@ interface RisingStarsMainEntry {
 }
 
 const RisingStarsMain: React.FC = () => {
+  const navigate = useNavigate();
   const {
     data: response,
     isLoading: loading,
@@ -227,10 +230,12 @@ const RisingStarsMain: React.FC = () => {
                     {/* Image */}
                     <div className="flex-shrink-0">
                       <a
-                        href={`https://www.royalroad.com/fiction/${entry.royalroadId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:opacity-80 transition-opacity"
+                        href={createFictionUrl(entry.title, entry.royalroadId)}
+                        className="hover:opacity-80 transition-opacity cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(createFictionUrl(entry.title, entry.royalroadId));
+                        }}
                       >
                         {entry.imageUrl ? (
                           <img
@@ -252,10 +257,12 @@ const RisingStarsMain: React.FC = () => {
                     {/* Title and Author */}
                     <div className="flex-1 min-w-0">
                       <a
-                        href={`https://www.royalroad.com/fiction/${entry.royalroadId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-blue-600 transition-colors"
+                        href={createFictionUrl(entry.title, entry.royalroadId)}
+                        className="hover:text-blue-600 transition-colors cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(createFictionUrl(entry.title, entry.royalroadId));
+                        }}
                       >
                         <h3 className="text-lg font-semibold text-gray-900 truncate">
                           {entry.title}

@@ -17,6 +17,6 @@ router.get('/rising-stars/latest', authMiddleware, getLatestRisingStars);
 router.get('/rising-stars/top', getTopRisingStars);
 
 // Get rising stars data for a specific fiction
-router.get('/rising-stars/fiction/:fictionId', authMiddleware, getRisingStarsForFiction);
+router.get('/rising-stars/fiction/:fictionId', getRisingStarsForFiction);
 
 export { router as risingStarsRoutes }; 

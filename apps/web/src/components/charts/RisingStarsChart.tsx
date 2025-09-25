@@ -78,8 +78,22 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
     });
   };
 
-  // Get unique genres
-  const genres = Array.from(new Set(risingStarsData.map(entry => entry.genre)));
+  // Get unique genres, sort with Main first, then by best position
+  const allGenres = Array.from(new Set(risingStarsData.map(entry => entry.genre)));
+  const genres = allGenres.sort((a, b) => {
+    // Always put 'main' first
+    if (a === 'main') return -1;
+    if (b === 'main') return 1;
+
+    // For other genres, sort by highest position (lowest number)
+    const aEntries = risingStarsData.filter(entry => entry.genre === a);
+    const bEntries = risingStarsData.filter(entry => entry.genre === b);
+
+    const aBestPosition = aEntries.length > 0 ? Math.min(...aEntries.map(entry => entry.position)) : 999;
+    const bBestPosition = bEntries.length > 0 ? Math.min(...bEntries.map(entry => entry.position)) : 999;
+
+    return aBestPosition - bBestPosition;
+  });
   const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000', '#8B4513', '#000000'];
 
   return (
@@ -127,12 +141,15 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
       </div>
 
       {/* Clickable Legend with genre breakdown */}
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+      <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
         {genres.map((genre, index) => {
           const color = colors[index % colors.length];
-          const latestEntry = risingStarsData
-            .filter(entry => entry.genre === genre)
+          const genreEntries = risingStarsData.filter(entry => entry.genre === genre);
+          const currentEntry = genreEntries
             .sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime())[0];
+          const highestPosition = genreEntries.length > 0
+            ? Math.min(...genreEntries.map(entry => entry.position))
+            : null;
           const isVisible = visibleLines.has(genre);
 
           return (
@@ -151,8 +168,13 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
                 {genre === 'main' ? 'Main' : genre.charAt(0).toUpperCase() + genre.slice(1)}:
               </span>
               <span className="text-gray-600">
-                {latestEntry?.position || 'N/A'}
+                {currentEntry?.position ? `#${currentEntry.position}` : 'N/A'}
               </span>
+              {highestPosition && (
+                <span className="text-xs text-gray-500">
+                  (best: #{highestPosition})
+                </span>
+              )}
             </div>
           );
         })}
