@@ -262,7 +262,10 @@ export class DatabaseService {
       FROM fiction f
       LEFT JOIN fictionHistory fh ON f.id = fh.fiction_id 
         AND DATE(fh.captured_at) = CURDATE()
+      LEFT JOIN risingStars rs ON f.id = rs.fiction_id
+        AND rs.captured_at > DATE_SUB(NOW(), INTERVAL 2 WEEK)
       WHERE fh.fiction_id IS NULL
+        AND rs.fiction_id IS NOT NULL
       ORDER BY f.id ASC
       LIMIT ?
     `;

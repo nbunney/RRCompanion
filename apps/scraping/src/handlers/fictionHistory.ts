@@ -21,7 +21,7 @@ export const handler = async (
     await dbService.connect();
 
     // Get fictions that need history updates (haven't been processed today)
-    const fictionsToUpdate = await dbService.getFictionsToUpdate(50);
+    const fictionsToUpdate = await dbService.getFictionsToUpdate(100);
 
     if (fictionsToUpdate.length === 0) {
       console.log('✅ All fictions have been processed today - no updates needed');
