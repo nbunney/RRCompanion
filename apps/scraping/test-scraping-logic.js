@@ -46,33 +46,33 @@ async function testScraping() {
       const statsText = statsContainer.text();
       
       // Extract pages
-      const pagesMatch = statsText.match(/Pages\s*:\s*(\d+)/i);
+      const pagesMatch = statsText.match(/Pages\s*:\s*([\d,]+)/i);
       if (pagesMatch) {
-        fiction.stats.pages = parseInt(pagesMatch[1]);
+        fiction.stats.pages = parseInt(pagesMatch[1].replace(/,/g, ''));
       }
 
       // Extract ratings
-      const ratingsMatch = statsText.match(/Ratings\s*:\s*(\d+)/i);
+      const ratingsMatch = statsText.match(/Ratings\s*:\s*([\d,]+)/i);
       if (ratingsMatch) {
-        fiction.stats.ratings = parseInt(ratingsMatch[1]);
+        fiction.stats.ratings = parseInt(ratingsMatch[1].replace(/,/g, ''));
       }
 
       // Extract followers
-      const followersMatch = statsText.match(/Followers\s*:\s*(\d+)/i);
+      const followersMatch = statsText.match(/Followers\s*:\s*([\d,]+)/i);
       if (followersMatch) {
-        fiction.stats.followers = parseInt(followersMatch[1]);
+        fiction.stats.followers = parseInt(followersMatch[1].replace(/,/g, ''));
       }
 
       // Extract favorites
-      const favoritesMatch = statsText.match(/Favorites\s*:\s*(\d+)/i);
+      const favoritesMatch = statsText.match(/Favorites\s*:\s*([\d,]+)/i);
       if (favoritesMatch) {
-        fiction.stats.favorites = parseInt(favoritesMatch[1]);
+        fiction.stats.favorites = parseInt(favoritesMatch[1].replace(/,/g, ''));
       }
 
       // Extract average views
-      const avgViewsMatch = statsText.match(/Average\s*Views\s*:\s*(\d+)/i);
+      const avgViewsMatch = statsText.match(/Average\s*Views\s*:\s*([\d,]+)/i);
       if (avgViewsMatch) {
-        fiction.stats.average_views = parseInt(avgViewsMatch[1]);
+        fiction.stats.average_views = parseInt(avgViewsMatch[1].replace(/,/g, ''));
       }
 
       // Extract total views
