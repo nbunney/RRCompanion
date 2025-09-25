@@ -258,7 +258,7 @@ export class DatabaseService {
   // Utility methods
   async getFictionsToUpdate(limit: number = 100): Promise<any[]> {
     const query = `
-      SELECT f.id, f.royalroad_id, f.title, f.author_name
+      SELECT DISTINCT f.id, f.royalroad_id, f.title, f.author_name
       FROM fiction f
       LEFT JOIN fictionHistory fh ON f.id = fh.fiction_id 
         AND DATE(fh.captured_at) = CURDATE()
