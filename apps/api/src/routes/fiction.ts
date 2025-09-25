@@ -24,10 +24,10 @@ router.get('/fictions/popular', getPopularFictions);
 router.get('/fictions/popular-by-users', getPopularFictionsBySiteUsers);
 router.get('/fictions/top', getTopFictions);
 router.get('/fictions/:id/exists', checkFictionExists);
+router.get('/fictions/:id', getFictionByRoyalRoadId);
 router.get('/cache/stats', getCacheStats);
 
 // Protected routes (require authentication)
-router.get('/fictions/:id', authMiddleware, getFictionByRoyalRoadId);
 router.get('/fictions/:id/csv', authMiddleware, downloadFictionHistoryCSV);
 router.post('/fictions', authMiddleware, createFiction);
 router.put('/fictions/:id', authMiddleware, updateFiction);

@@ -125,11 +125,25 @@ export class RoyalRoadScrapingService {
     try {
       console.log('🔍 Scraping Rising Stars for all genres...');
 
-      // Updated genres based on current Royal Road filter options
+      // All genres and tags that need to be scraped
       const genres = [
+        // Main Royal Road genres
         'action', 'adventure', 'comedy', 'contemporary', 'drama', 'fantasy',
         'historical', 'horror', 'mystery', 'psychological', 'romance',
-        'satire', 'sci-fi', 'short-story', 'tragedy'
+        'satire', 'sci-fi', 'short-story', 'tragedy',
+        // Additional tags/characteristics
+        'anti-hero_lead', 'artificial_intelligence', 'attractive_lead', 'cyberpunk',
+        'dungeon', 'dystopia', 'female_lead', 'first_contact', 'gamelit',
+        'gender_bender', "genetically_engineered%20", 'grimdark', 'harem',
+        'high_fantasy', 'litrpg', 'loop', 'low_fantasy', 'male_lead',
+        'martial_arts', 'multiple_lead', 'mythos', 'non-human_lead',
+        'post_apocalyptic', 'progression', 'reader_interactive', 'reincarnation',
+        'ruling_class', 'school_life', 'sci_fi', 'secret_identity',
+        'slice_of_life', 'soft_sci-fi', 'space_opera', 'sports',
+        'steampunk', 'strong_lead', 'summoned_hero', 'super_heroes',
+        'supernatural', 'technologically_engineered', 'time_travel',
+        'urban_fantasy', 'villainous_lead', 'virtual_reality',
+        'war_and_military', 'wuxia', 'xianxia', 'one_shot'
       ];
 
       const allEntries: RisingStarEntry[] = [];
@@ -285,7 +299,17 @@ export class RoyalRoadScrapingService {
       }
 
       // Extract stats - Updated for current Royal Road HTML structure
-      const statsContainer = $('.fiction-stats');
+      let statsContainer = $('.fiction-stats');
+      if (statsContainer.length === 0) {
+        // Try alternative selector
+        statsContainer = $('.stats-content');
+      }
+
+      console.log(`🔍 Stats container found: ${statsContainer.length} elements`);
+      if (statsContainer.length > 0) {
+        console.log(`📊 Stats container HTML:`, statsContainer.html());
+      }
+
       if (statsContainer.length) {
         // Look for stats in the fiction-stats container
         const statsText = statsContainer.text();
@@ -354,43 +378,153 @@ export class RoyalRoadScrapingService {
         }
       }
 
-      // Extract detailed scores from data-content attributes
-      const scoreElements = statsContainer.find('[data-content*="/ 5"]');
-      scoreElements.each((_, element) => {
+      // Extract detailed scores - Multiple approaches based on HTML structure
+
+      // Approach 1: Look for spans with data-original-title attributes
+      const scoreSpans = statsContainer.find('span[data-original-title]');
+
+      scoreSpans.each((_, element) => {
         const $el = $(element);
-        const dataContent = $el.attr('data-content');
+        const originalTitle = $el.attr('data-original-title');
         const ariaLabel = $el.attr('aria-label');
+        const dataContent = $el.attr('data-content');
 
-        if (dataContent && ariaLabel) {
-          const scoreMatch = dataContent.match(/(\d+\.?\d*)\s*\/\s*5/);
-          if (scoreMatch) {
-            const score = parseFloat(scoreMatch[1]);
+        // Try to extract score from aria-label first (e.g., "4.5 stars")
+        let score = 0;
+        if (ariaLabel) {
+          const ariaMatch = ariaLabel.match(/(\d+\.?\d*)\s*stars?/);
+          if (ariaMatch) {
+            score = parseFloat(ariaMatch[1]);
+          }
+        }
 
-            // Determine score type from aria-label
-            if (ariaLabel.includes('Overall')) {
-              fiction.stats.overall_score = score;
-            } else if (ariaLabel.includes('Style')) {
-              fiction.stats.style_score = score;
-            } else if (ariaLabel.includes('Story')) {
-              fiction.stats.story_score = score;
-            } else if (ariaLabel.includes('Grammar')) {
-              fiction.stats.grammar_score = score;
-            } else if (ariaLabel.includes('Character')) {
-              fiction.stats.character_score = score;
-            }
+        // Fallback to data-content if aria-label doesn't work
+        if (score === 0 && dataContent) {
+          const contentMatch = dataContent.match(/(\d+\.?\d*)\s*\/\s*5/);
+          if (contentMatch) {
+            score = parseFloat(contentMatch[1]);
+          }
+        }
+
+        if (score > 0) {
+          if (originalTitle === 'Style Score') {
+            fiction.stats.style_score = score;
+          } else if (originalTitle === 'Story Score') {
+            fiction.stats.story_score = score;
+          } else if (originalTitle === 'Grammar Score') {
+            fiction.stats.grammar_score = score;
+          } else if (originalTitle === 'Character Score') {
+            fiction.stats.character_score = score;
           }
         }
       });
 
+      // Approach 2: Direct regex on the stats container HTML
+      if (fiction.stats.style_score === 0) {
+        const statsHtml = statsContainer.html();
+
+        // Look for specific patterns in the HTML
+        const styleMatch = statsHtml.match(/data-original-title="Style Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+        if (styleMatch) {
+          fiction.stats.style_score = parseFloat(styleMatch[1]);
+        }
+
+        const storyMatch = statsHtml.match(/data-original-title="Story Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+        if (storyMatch) {
+          fiction.stats.story_score = parseFloat(storyMatch[1]);
+        }
+
+        const grammarMatch = statsHtml.match(/data-original-title="Grammar Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+        if (grammarMatch) {
+          fiction.stats.grammar_score = parseFloat(grammarMatch[1]);
+        }
+
+        const characterMatch = statsHtml.match(/data-original-title="Character Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+        if (characterMatch) {
+          fiction.stats.character_score = parseFloat(characterMatch[1]);
+        }
+      }
+
+      // Approach 3: Fallback to entire page HTML if stats container doesn't work
+      if (fiction.stats.style_score === 0) {
+        const pageHtml = $.html();
+
+        // Look for specific score patterns in the page HTML
+        const styleMatch = pageHtml.match(/data-original-title="Style Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+        if (styleMatch) {
+          fiction.stats.style_score = parseFloat(styleMatch[1]);
+        }
+
+        const storyMatch = pageHtml.match(/data-original-title="Story Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+        if (storyMatch) {
+          fiction.stats.story_score = parseFloat(storyMatch[1]);
+        }
+
+        const grammarMatch = pageHtml.match(/data-original-title="Grammar Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+        if (grammarMatch) {
+          fiction.stats.grammar_score = parseFloat(grammarMatch[1]);
+        }
+
+        const characterMatch = pageHtml.match(/data-original-title="Character Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+        if (characterMatch) {
+          fiction.stats.character_score = parseFloat(characterMatch[1]);
+        }
+      }
+
+      // If no detailed scores found, try to extract from the stats text
+      if (fiction.stats.overall_score === 0 && fiction.stats.style_score === 0) {
+        const statsText = statsContainer.text();
+
+        // Look for score patterns in the text
+        const overallMatch = statsText.match(/Overall\s*Score[:\s]*(\d+\.?\d*)/i);
+        if (overallMatch) {
+          fiction.stats.overall_score = parseFloat(overallMatch[1]);
+        }
+
+        const styleMatch = statsText.match(/Style\s*Score[:\s]*(\d+\.?\d*)/i);
+        if (styleMatch) {
+          fiction.stats.style_score = parseFloat(styleMatch[1]);
+        }
+
+        const storyMatch = statsText.match(/Story\s*Score[:\s]*(\d+\.?\d*)/i);
+        if (storyMatch) {
+          fiction.stats.story_score = parseFloat(storyMatch[1]);
+        }
+
+        const grammarMatch = statsText.match(/Grammar\s*Score[:\s]*(\d+\.?\d*)/i);
+        if (grammarMatch) {
+          fiction.stats.grammar_score = parseFloat(grammarMatch[1]);
+        }
+
+        const characterMatch = statsText.match(/Character\s*Score[:\s]*(\d+\.?\d*)/i);
+        if (characterMatch) {
+          fiction.stats.character_score = parseFloat(characterMatch[1]);
+        }
+      }
+
       // Extract metadata (description, status, type, tags, warnings)
-      // Description
-      const description = $('.description').text().trim();
+      // Description - try multiple selectors
+      let description = $('.description').text().trim();
+      if (!description) {
+        // Try alternative selectors for description
+        description = $('.fiction-description').text().trim();
+      }
+      if (!description) {
+        // Look for description in the main content area
+        description = $('.col-lg-8 .row .col-lg-8').text().trim();
+      }
       if (description) {
         fiction.description = this.decodeHtmlEntities(description);
       }
 
-      // Extract fiction cover image
-      const coverImage = $('img[src*="covers-large"]').first().attr('src');
+      // Extract fiction cover image - try multiple selectors
+      let coverImage = $('img[src*="covers-large"]').first().attr('src');
+      if (!coverImage) {
+        coverImage = $('.cover img').first().attr('src');
+      }
+      if (!coverImage) {
+        coverImage = $('img[src*="cover"]').first().attr('src');
+      }
       if (coverImage) {
         fiction.image = coverImage;
       }
@@ -409,7 +543,7 @@ export class RoyalRoadScrapingService {
         }
       });
 
-      // Tags
+      // Tags - try multiple selectors
       const tags: string[] = [];
       $('.tags a').each((_, element) => {
         const tag = $(element).text().trim();
@@ -417,16 +551,73 @@ export class RoyalRoadScrapingService {
           tags.push(tag);
         }
       });
+
+      // If no tags found with .tags a, try looking for tag-like elements
+      if (tags.length === 0) {
+        $('a[href*="/fictions/"]').each((_, element) => {
+          const $el = $(element);
+          const href = $el.attr('href');
+          const text = $el.text().trim();
+          // Skip if it's a chapter link or other non-tag link
+          if (href && href.includes('/fictions/') && !href.includes('/chapter/') && text) {
+            tags.push(text);
+          }
+        });
+      }
       fiction.tags = tags;
 
-      // Warnings
+      // Warnings - try multiple selectors based on current Royal Road structure
       const warnings: string[] = [];
-      $('.warnings a').each((_, element) => {
+
+      // Approach 1: Look for warnings in list items (current structure)
+      $('.list-inline li').each((_, element) => {
         const warning = $(element).text().trim();
-        if (warning) {
+        if (warning && warning !== 'Warning' && warning !== 'This fiction contains:') {
           warnings.push(warning);
         }
       });
+
+      // Approach 2: Look for warnings in warning-specific containers
+      if (warnings.length === 0) {
+        $('.warnings a').each((_, element) => {
+          const warning = $(element).text().trim();
+          if (warning) {
+            warnings.push(warning);
+          }
+        });
+      }
+
+      // Approach 3: Look for warning text patterns in the page
+      if (warnings.length === 0) {
+        $('*').each((_, el) => {
+          const $el = $(el);
+          const text = $el.text().trim();
+          if (text.includes('Warning') && text.includes('This fiction contains:')) {
+            // Extract warning text from the pattern
+            const warningMatch = text.match(/This fiction contains:\s*(.+)/i);
+            if (warningMatch) {
+              const warningText = warningMatch[1].trim();
+              // Split by common separators and clean up
+              const warningList = warningText.split(/[,;]/).map(w => w.trim()).filter(w => w);
+              warningList.forEach(warning => {
+                if (!warnings.includes(warning)) {
+                  warnings.push(warning);
+                }
+              });
+            }
+          }
+        });
+      }
+
+      // Approach 4: Look for specific warning types in the page
+      if (warnings.length === 0) {
+        const commonWarnings = ['Graphic Violence', 'Profanity', 'Sexual Content', 'Gore', 'Torture', 'Rape', 'Suicide'];
+        commonWarnings.forEach(warning => {
+          if ($(`*:contains("${warning}")`).length > 0) {
+            warnings.push(warning);
+          }
+        });
+      }
       fiction.warnings = warnings;
 
       // Extract chapters
