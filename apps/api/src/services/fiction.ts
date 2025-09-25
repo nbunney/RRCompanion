@@ -362,7 +362,13 @@ export class FictionService {
       favorites: row.favorites,
       views: row.views,
       score: row.score,
-
+      overall_score: row.overall_score,
+      style_score: row.style_score,
+      story_score: row.story_score,
+      grammar_score: row.grammar_score,
+      character_score: row.character_score,
+      total_views: row.total_views,
+      average_views: row.average_views,
       created_at: row.created_at,
       updated_at: row.updated_at,
     };

@@ -81,6 +81,13 @@ export interface Fiction {
   favorites: number;
   views: number;
   score: number;
+  overall_score?: number;
+  style_score?: number;
+  story_score?: number;
+  grammar_score?: number;
+  character_score?: number;
+  total_views?: number;
+  average_views?: number;
 
   created_at: Date;
   updated_at: Date;

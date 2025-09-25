@@ -263,7 +263,7 @@ export class DatabaseService {
       LEFT JOIN fictionHistory fh ON f.id = fh.fiction_id 
         AND DATE(fh.captured_at) = CURDATE()
       WHERE fh.fiction_id IS NULL
-      ORDER BY f.updated_at ASC
+      ORDER BY f.id ASC
       LIMIT ?
     `;
 
