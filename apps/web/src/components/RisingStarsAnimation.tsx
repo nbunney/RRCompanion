@@ -164,11 +164,11 @@ const RisingStarsAnimation: React.FC = () => {
       const dayData = groupedByDate[dateStr].filter(entry => entry.genre === selectedGenre);
       console.log('🎭 Date', dateStr, 'has', dayData.length, 'entries for genre', selectedGenre);
 
-      // Group by fiction_id and take the latest entry for each fiction
+      // Group by fiction_id and take the best (lowest position) entry for each fiction
       const fictionMap = new Map();
       dayData.forEach(entry => {
         const existing = fictionMap.get(entry.fiction_id);
-        if (!existing || new Date(entry.captured_at) > new Date(existing.captured_at)) {
+        if (!existing || entry.position < existing.position) {
           fictionMap.set(entry.fiction_id, entry);
         }
       });

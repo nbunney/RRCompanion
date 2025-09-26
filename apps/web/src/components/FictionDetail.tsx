@@ -205,7 +205,7 @@ const FictionDetail: React.FC = () => {
 
   // Process Rising Stars data to remove duplicates and simplify dates
   const processRisingStarsData = (data: any[]) => {
-    // Create a map to track the latest entry for each genre per day
+    // Create a map to track the best entry for each genre per day
     const dailyGenreMap = new Map<string, any>();
 
     data.forEach(entry => {
@@ -213,9 +213,9 @@ const FictionDetail: React.FC = () => {
       const dateOnly = new Date(entry.captured_at).toISOString().split('T')[0];
       const key = `${dateOnly}-${entry.genre}`;
 
-      // If we already have an entry for this genre on this day, keep the latest one
+      // If we already have an entry for this genre on this day, keep the best (lowest position) one
       if (!dailyGenreMap.has(key) ||
-        new Date(entry.captured_at) > new Date(dailyGenreMap.get(key).captured_at)) {
+        entry.position < dailyGenreMap.get(key).position) {
         dailyGenreMap.set(key, {
           ...entry,
           captured_at: dateOnly // Store just the date, not the full datetime
