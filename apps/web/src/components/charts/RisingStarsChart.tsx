@@ -48,16 +48,16 @@ const RisingStarsChart: React.FC<RisingStarsChartProps> = ({ risingStarsData }) 
       entry.captured_at.startsWith(date)
     );
 
-    // Group entries by genre and take the latest entry for each genre per day
+    // Group entries by genre and take the best (lowest position) entry for each genre per day
     const genreMap = new Map<string, RisingStarEntry>();
     entriesForDate.forEach(entry => {
       const existing = genreMap.get(entry.genre);
-      if (!existing || new Date(entry.captured_at) > new Date(existing.captured_at)) {
+      if (!existing || entry.position < existing.position) {
         genreMap.set(entry.genre, entry);
       }
     });
 
-    // Add the latest position for each genre to the data point
+    // Add the best position for each genre to the data point
     genreMap.forEach((entry, genre) => {
       dataPoint[genre] = entry.position;
     });

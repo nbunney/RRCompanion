@@ -137,7 +137,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1758838372281-2025-09-25T22:12:52.281Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/dev/1758838803347-2025-09-25T22:20:03.347Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/risingStarsMain.handler",
         "Runtime": "nodejs20.x",
@@ -168,7 +168,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1758838372281-2025-09-25T22:12:52.281Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/dev/1758838803347-2025-09-25T22:20:03.347Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/risingStarsAll.handler",
         "Runtime": "nodejs20.x",
@@ -199,7 +199,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1758838372281-2025-09-25T22:12:52.281Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/dev/1758838803347-2025-09-25T22:20:03.347Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/fiction.handler",
         "Runtime": "nodejs20.x",
@@ -230,7 +230,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1758838372281-2025-09-25T22:12:52.281Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/dev/1758838803347-2025-09-25T22:20:03.347Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/fictionHistory.handler",
         "Runtime": "nodejs20.x",
@@ -261,7 +261,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1758838372281-2025-09-25T22:12:52.281Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/dev/1758838803347-2025-09-25T22:20:03.347Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/testFiction.handler",
         "Runtime": "nodejs20.x",
@@ -292,7 +292,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1758838372281-2025-09-25T22:12:52.281Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/dev/1758838803347-2025-09-25T22:20:03.347Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/debugHtml.handler",
         "Runtime": "nodejs20.x",
@@ -318,64 +318,64 @@
         "DebugHtmlLogGroup"
       ]
     },
-    "ScrapeRisingStarsMainLambdaVersiongU6pu8d6z82rdfBkoPRUZxm8KYvOEK9yUL7EmgGW0PU": {
+    "ScrapeRisingStarsMainLambdaVersioneTMA5R7aWN7QUjQ9YxwGMEMesHOq21mTdlAeGG820": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ScrapeRisingStarsMainLambdaFunction"
         },
-        "CodeSha256": "Ty/L30Y2LkQwxSHlRQ9uOWmqVInGLHT+0bxyPxeU5N4="
+        "CodeSha256": "Ohd8c16UMQTh2rheW1JaTdRIuBL0TfOzfjiB7wiwFyg="
       }
     },
-    "ScrapeRisingStarsAllLambdaVersionYqJyOSOp0ThI4QYY5QhIWLHxvR41ijWcIStt5rP0": {
+    "ScrapeRisingStarsAllLambdaVersionWKojnBcLE8whxt1BAXv4ECAsO2WJf69vtuErYwETNTw": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ScrapeRisingStarsAllLambdaFunction"
         },
-        "CodeSha256": "Ty/L30Y2LkQwxSHlRQ9uOWmqVInGLHT+0bxyPxeU5N4="
+        "CodeSha256": "Ohd8c16UMQTh2rheW1JaTdRIuBL0TfOzfjiB7wiwFyg="
       }
     },
-    "ScrapeFictionLambdaVersionMM3ti0FIdUwSG7A7Bobu0jO2WTcpuVVDx7uwsLY4aY": {
+    "ScrapeFictionLambdaVersionxl79GVTPMoZGOP27AIfZFufqxpSO4xnQglDyJzBRkow": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ScrapeFictionLambdaFunction"
         },
-        "CodeSha256": "Ty/L30Y2LkQwxSHlRQ9uOWmqVInGLHT+0bxyPxeU5N4="
+        "CodeSha256": "Ohd8c16UMQTh2rheW1JaTdRIuBL0TfOzfjiB7wiwFyg="
       }
     },
-    "ScrapeFictionHistoryLambdaVersionLZPrxv2CFd032rIfRHnkWfSkOBFVNxKoSH3rI3DetSk": {
+    "ScrapeFictionHistoryLambdaVersionXnSZIGqdv2OkDLX2jlCgQAR4MMjFIzHUcoBeCkTME4": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ScrapeFictionHistoryLambdaFunction"
         },
-        "CodeSha256": "Ty/L30Y2LkQwxSHlRQ9uOWmqVInGLHT+0bxyPxeU5N4="
+        "CodeSha256": "Ohd8c16UMQTh2rheW1JaTdRIuBL0TfOzfjiB7wiwFyg="
       }
     },
-    "TestFictionLambdaVersionbNmRJWUGH2WGBTYQezyKDo9u3hD7KmUU9GMB5qQ3U": {
+    "TestFictionLambdaVersionh729V7ubZt8gqJPF43COYhd9omwi4h0CPVv6rJarQ": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "TestFictionLambdaFunction"
         },
-        "CodeSha256": "Ty/L30Y2LkQwxSHlRQ9uOWmqVInGLHT+0bxyPxeU5N4="
+        "CodeSha256": "Ohd8c16UMQTh2rheW1JaTdRIuBL0TfOzfjiB7wiwFyg="
       }
     },
-    "DebugHtmlLambdaVersionUuKtHeJXBJGf9seDWVz4R9WEFRzLrIQjChUm19sw": {
+    "DebugHtmlLambdaVersion3vyUnsluvlVGDlivnspMj71awqB2IXXpDi6WRjtUQs": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "DebugHtmlLambdaFunction"
         },
-        "CodeSha256": "Ty/L30Y2LkQwxSHlRQ9uOWmqVInGLHT+0bxyPxeU5N4="
+        "CodeSha256": "Ohd8c16UMQTh2rheW1JaTdRIuBL0TfOzfjiB7wiwFyg="
       }
     },
     "ScrapeRisingStarsMainEventsRuleSchedule1": {
@@ -500,7 +500,7 @@
     "ScrapeRisingStarsMainLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ScrapeRisingStarsMainLambdaVersiongU6pu8d6z82rdfBkoPRUZxm8KYvOEK9yUL7EmgGW0PU"
+        "Ref": "ScrapeRisingStarsMainLambdaVersioneTMA5R7aWN7QUjQ9YxwGMEMesHOq21mTdlAeGG820"
       },
       "Export": {
         "Name": "sls-rrcompanion-scraping-dev-ScrapeRisingStarsMainLambdaFunctionQualifiedArn"
@@ -509,7 +509,7 @@
     "ScrapeRisingStarsAllLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ScrapeRisingStarsAllLambdaVersionYqJyOSOp0ThI4QYY5QhIWLHxvR41ijWcIStt5rP0"
+        "Ref": "ScrapeRisingStarsAllLambdaVersionWKojnBcLE8whxt1BAXv4ECAsO2WJf69vtuErYwETNTw"
       },
       "Export": {
         "Name": "sls-rrcompanion-scraping-dev-ScrapeRisingStarsAllLambdaFunctionQualifiedArn"
@@ -518,7 +518,7 @@
     "ScrapeFictionLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ScrapeFictionLambdaVersionMM3ti0FIdUwSG7A7Bobu0jO2WTcpuVVDx7uwsLY4aY"
+        "Ref": "ScrapeFictionLambdaVersionxl79GVTPMoZGOP27AIfZFufqxpSO4xnQglDyJzBRkow"
       },
       "Export": {
         "Name": "sls-rrcompanion-scraping-dev-ScrapeFictionLambdaFunctionQualifiedArn"
@@ -527,7 +527,7 @@
     "ScrapeFictionHistoryLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ScrapeFictionHistoryLambdaVersionLZPrxv2CFd032rIfRHnkWfSkOBFVNxKoSH3rI3DetSk"
+        "Ref": "ScrapeFictionHistoryLambdaVersionXnSZIGqdv2OkDLX2jlCgQAR4MMjFIzHUcoBeCkTME4"
       },
       "Export": {
         "Name": "sls-rrcompanion-scraping-dev-ScrapeFictionHistoryLambdaFunctionQualifiedArn"
@@ -536,7 +536,7 @@
     "TestFictionLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "TestFictionLambdaVersionbNmRJWUGH2WGBTYQezyKDo9u3hD7KmUU9GMB5qQ3U"
+        "Ref": "TestFictionLambdaVersionh729V7ubZt8gqJPF43COYhd9omwi4h0CPVv6rJarQ"
       },
       "Export": {
         "Name": "sls-rrcompanion-scraping-dev-TestFictionLambdaFunctionQualifiedArn"
@@ -545,7 +545,7 @@
     "DebugHtmlLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "DebugHtmlLambdaVersionUuKtHeJXBJGf9seDWVz4R9WEFRzLrIQjChUm19sw"
+        "Ref": "DebugHtmlLambdaVersion3vyUnsluvlVGDlivnspMj71awqB2IXXpDi6WRjtUQs"
       },
       "Export": {
         "Name": "sls-rrcompanion-scraping-dev-DebugHtmlLambdaFunctionQualifiedArn"
