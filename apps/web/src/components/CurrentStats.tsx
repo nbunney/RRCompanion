@@ -78,22 +78,31 @@ const CurrentStats: React.FC<CurrentStatsProps> = ({ latestHistory }) => {
           <span className="font-medium text-gray-700">Overall Score:</span>
           <span className="text-gray-900">{latestHistory.overall_score && latestHistory.overall_score !== '' ? latestHistory.overall_score : 'N/A'}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="font-medium text-gray-700">Style Score:</span>
-          <span className="text-gray-900">{latestHistory?.style_score && latestHistory.style_score !== '' ? latestHistory.style_score : 'N/A'}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-medium text-gray-700">Story Score:</span>
-          <span className="text-gray-900">{latestHistory?.story_score && latestHistory.story_score !== '' ? latestHistory.story_score : 'N/A'}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-medium text-gray-700">Grammar Score:</span>
-          <span className="text-gray-900">{latestHistory?.grammar_score && latestHistory.grammar_score !== '' ? latestHistory.grammar_score : 'N/A'}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-medium text-gray-700">Character Score:</span>
-          <span className="text-gray-900">{latestHistory?.character_score && latestHistory.character_score !== '' ? latestHistory.character_score : 'N/A'}</span>
-        </div>
+        {/* Only show score fields if they have non-zero values */}
+        {latestHistory?.style_score && latestHistory.style_score !== '' && latestHistory.style_score !== '0.00' && latestHistory.style_score !== 0 && (
+          <div className="flex justify-between">
+            <span className="font-medium text-gray-700">Style Score:</span>
+            <span className="text-gray-900">{latestHistory.style_score}</span>
+          </div>
+        )}
+        {latestHistory?.story_score && latestHistory.story_score !== '' && latestHistory.story_score !== '0.00' && latestHistory.story_score !== 0 && (
+          <div className="flex justify-between">
+            <span className="font-medium text-gray-700">Story Score:</span>
+            <span className="text-gray-900">{latestHistory.story_score}</span>
+          </div>
+        )}
+        {latestHistory?.grammar_score && latestHistory.grammar_score !== '' && latestHistory.grammar_score !== '0.00' && latestHistory.grammar_score !== 0 && (
+          <div className="flex justify-between">
+            <span className="font-medium text-gray-700">Grammar Score:</span>
+            <span className="text-gray-900">{latestHistory.grammar_score}</span>
+          </div>
+        )}
+        {latestHistory?.character_score && latestHistory.character_score !== '' && latestHistory.character_score !== '0.00' && latestHistory.character_score !== 0 && (
+          <div className="flex justify-between">
+            <span className="font-medium text-gray-700">Character Score:</span>
+            <span className="text-gray-900">{latestHistory.character_score}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Total Views:</span>
           <span className="text-gray-900">{typeof latestHistory?.total_views === 'number' ? latestHistory.total_views.toLocaleString() : 'N/A'}</span>
