@@ -265,7 +265,7 @@ export class RoyalRoadScrapingService {
       }
 
       // Extract image
-      const imageEl = $('.cover img').first();
+      const imageEl = $('.cover-col img').first();
       if (imageEl.length) {
         fiction.image = imageEl.attr('src') || '';
       }
@@ -423,25 +423,27 @@ export class RoyalRoadScrapingService {
       if (fiction.stats.style_score === 0) {
         const statsHtml = statsContainer.html();
 
-        // Look for specific patterns in the HTML
-        const styleMatch = statsHtml.match(/data-original-title="Style Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
-        if (styleMatch) {
-          fiction.stats.style_score = parseFloat(styleMatch[1]);
-        }
+        if (statsHtml) {
+          // Look for specific patterns in the HTML
+          const styleMatch = statsHtml.match(/data-original-title="Style Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+          if (styleMatch) {
+            fiction.stats.style_score = parseFloat(styleMatch[1]);
+          }
 
-        const storyMatch = statsHtml.match(/data-original-title="Story Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
-        if (storyMatch) {
-          fiction.stats.story_score = parseFloat(storyMatch[1]);
-        }
+          const storyMatch = statsHtml.match(/data-original-title="Story Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+          if (storyMatch) {
+            fiction.stats.story_score = parseFloat(storyMatch[1]);
+          }
 
-        const grammarMatch = statsHtml.match(/data-original-title="Grammar Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
-        if (grammarMatch) {
-          fiction.stats.grammar_score = parseFloat(grammarMatch[1]);
-        }
+          const grammarMatch = statsHtml.match(/data-original-title="Grammar Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+          if (grammarMatch) {
+            fiction.stats.grammar_score = parseFloat(grammarMatch[1]);
+          }
 
-        const characterMatch = statsHtml.match(/data-original-title="Character Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
-        if (characterMatch) {
-          fiction.stats.character_score = parseFloat(characterMatch[1]);
+          const characterMatch = statsHtml.match(/data-original-title="Character Score"[^>]*aria-label="(\d+\.?\d*)\s*stars?"/);
+          if (characterMatch) {
+            fiction.stats.character_score = parseFloat(characterMatch[1]);
+          }
         }
       }
 

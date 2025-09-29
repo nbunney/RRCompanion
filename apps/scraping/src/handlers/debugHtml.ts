@@ -20,7 +20,7 @@ export const handler = async (
     console.log(`🔍 Fetching HTML for fiction ${royalroadId}...`);
 
     // Get the raw HTML response
-    const response = await scrapingService.httpClient.get(`/fiction/${royalroadId}`);
+    const response = await (scrapingService as any).httpClient.get(`/fiction/${royalroadId}`);
     console.log(`✅ Got HTML response (${response.data.length} characters)`);
 
     // Parse with cheerio
@@ -38,7 +38,7 @@ export const handler = async (
     const statsElements = $('.stats .stat');
     console.log(`Found ${statsElements.length} elements matching '.stats .stat'`);
 
-    statsElements.each((i, element) => {
+    statsElements.each((i: number, element: any) => {
       const $el = $(element);
       const label = $el.find('.label').text().trim();
       const value = $el.find('.value').text().trim();
@@ -64,7 +64,7 @@ export const handler = async (
       const elements = $(selector);
       if (elements.length > 0) {
         console.log(`Found ${elements.length} elements matching '${selector}'`);
-        elements.each((i, element) => {
+        elements.each((i: number, element: any) => {
           const $el = $(element);
           console.log(`  ${selector}[${i}]: ${$el.text().trim().substring(0, 100)}...`);
         });

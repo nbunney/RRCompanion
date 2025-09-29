@@ -64,8 +64,8 @@ export const handler = async (
     const historyEntry = {
       fiction_id: parseInt(fictionId),
       royalroad_id: fictionData.royalroad_id,
-      title: scrapedData.title || null,
-      image_url: scrapedData.image || null,
+      title: scrapedData.title || undefined,
+      image_url: scrapedData.image || undefined,
       pages: scrapedData.stats?.pages || 0,
       ratings: scrapedData.stats?.ratings || 0,
       followers: scrapedData.stats?.followers || 0,
@@ -79,11 +79,11 @@ export const handler = async (
       character_score: scrapedData.stats?.character_score || 0,
       total_views: scrapedData.stats?.total_views || 0,
       average_views: scrapedData.stats?.average_views || 0,
-      description: scrapedData.description || null,
-      status: scrapedData.status || null,
-      type: scrapedData.type || null,
-      tags: scrapedData.tags || null,
-      warnings: scrapedData.warnings || null,
+      description: scrapedData.description || undefined,
+      status: scrapedData.status || undefined,
+      type: scrapedData.type || undefined,
+      tags: scrapedData.tags || undefined,
+      warnings: scrapedData.warnings || undefined,
       captured_at: new Date().toISOString()
     };
 
