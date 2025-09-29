@@ -112,7 +112,25 @@ export class FictionService {
       return null;
     }
 
-    return this.mapDatabaseRowToFiction(result[0]);
+    const fiction = this.mapDatabaseRowToFiction(result[0]);
+
+    // Get the most recent title and image_url from fictionHistory if available
+    const historyResult = await client.query(
+      'SELECT title, image_url FROM fictionHistory WHERE fiction_id = ? ORDER BY captured_at DESC LIMIT 1',
+      [fiction.id]
+    );
+
+    // Prefer title and image_url from fictionHistory if they exist
+    if (historyResult.length > 0) {
+      if (historyResult[0].title) {
+        fiction.title = historyResult[0].title;
+      }
+      if (historyResult[0].image_url) {
+        fiction.image_url = historyResult[0].image_url;
+      }
+    }
+
+    return fiction;
   }
 
   // Get fiction by database ID
@@ -126,7 +144,25 @@ export class FictionService {
       return null;
     }
 
-    return this.mapDatabaseRowToFiction(result[0]);
+    const fiction = this.mapDatabaseRowToFiction(result[0]);
+
+    // Get the most recent title and image_url from fictionHistory if available
+    const historyResult = await client.query(
+      'SELECT title, image_url FROM fictionHistory WHERE fiction_id = ? ORDER BY captured_at DESC LIMIT 1',
+      [fiction.id]
+    );
+
+    // Prefer title and image_url from fictionHistory if they exist
+    if (historyResult.length > 0) {
+      if (historyResult[0].title) {
+        fiction.title = historyResult[0].title;
+      }
+      if (historyResult[0].image_url) {
+        fiction.image_url = historyResult[0].image_url;
+      }
+    }
+
+    return fiction;
   }
 
   // Update fiction

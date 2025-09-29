@@ -102,7 +102,7 @@ export class UserFictionService {
       ORDER BY uf.is_favorite DESC, uf.created_at DESC
     `, [userId]);
 
-    return result.map((row: any) => this.mapDatabaseRowToUserFictionWithJoins(row));
+    return Promise.all(result.map((row: any) => this.mapDatabaseRowToUserFictionWithJoins(row)));
   }
 
   // Get userFictions by status
@@ -127,7 +127,7 @@ export class UserFictionService {
       LIMIT ? OFFSET ?
     `, [userId, status, limit, offset]);
 
-    const userFictions = result.map((row: any) => this.mapDatabaseRowToUserFictionWithJoins(row));
+    const userFictions = await Promise.all(result.map((row: any) => this.mapDatabaseRowToUserFictionWithJoins(row)));
     const totalPages = Math.ceil(total / limit);
 
     return { userFictions, total, totalPages };
@@ -343,7 +343,7 @@ export class UserFictionService {
   }
 
   // Helper method to map database row to UserFiction object with joined data
-  private static mapDatabaseRowToUserFictionWithJoins(row: any): UserFiction {
+  private static async mapDatabaseRowToUserFictionWithJoins(row: any): Promise<UserFiction> {
     const userFiction = this.mapDatabaseRowToUserFiction(row);
 
     // Add fiction data if available
@@ -371,6 +371,22 @@ export class UserFictionService {
         created_at: row.fiction_created_at,
         updated_at: row.fiction_updated_at,
       };
+
+      // Get the most recent title and image_url from fictionHistory if available
+      const historyResult = await client.query(
+        'SELECT title, image_url FROM fictionHistory WHERE fiction_id = ? ORDER BY captured_at DESC LIMIT 1',
+        [row.fiction_id]
+      );
+
+      // Prefer title and image_url from fictionHistory if they exist
+      if (historyResult.length > 0) {
+        if (historyResult[0].title) {
+          userFiction.fiction.title = historyResult[0].title;
+        }
+        if (historyResult[0].image_url) {
+          userFiction.fiction.image_url = historyResult[0].image_url;
+        }
+      }
     }
 
     // Add user data if available
