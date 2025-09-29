@@ -283,6 +283,8 @@ export async function initializeDatabase(): Promise<void> {
         id INT AUTO_INCREMENT PRIMARY KEY,
         fiction_id INT NOT NULL,
         royalroad_id VARCHAR(255) NOT NULL,
+        title VARCHAR(500),
+        image_url TEXT,
         description TEXT,
         status VARCHAR(100),
         type VARCHAR(100),
@@ -499,6 +501,8 @@ async function runMigrations(client: Client): Promise<void> {
           id INT AUTO_INCREMENT PRIMARY KEY,
           fiction_id INT NOT NULL,
           royalroad_id VARCHAR(255) NOT NULL,
+          title VARCHAR(500),
+          image_url TEXT,
           description TEXT,
           status VARCHAR(100),
           type VARCHAR(100),
@@ -527,7 +531,15 @@ async function runMigrations(client: Client): Promise<void> {
       `
     },
     {
-      name: '006_create_risingStars_table',
+      name: '006_add_title_image_url_to_fictionHistory',
+      sql: `
+        ALTER TABLE fictionHistory 
+        ADD COLUMN IF NOT EXISTS title VARCHAR(500),
+        ADD COLUMN IF NOT EXISTS image_url TEXT
+      `
+    },
+    {
+      name: '007_create_risingStars_table',
       sql: `
         CREATE TABLE IF NOT EXISTS risingStars (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -821,8 +833,8 @@ async function migrateOldFictionHistoryStructure(client: Client): Promise<void> 
         WHERE genre IS NOT NULL AND position IS NOT NULL
       `);
 
-      // Drop old columns from fictionHistory
-      const oldColumns = ['title', 'author_name', 'position', 'author_id', 'author_avatar', 'image_url', 'genre'];
+      // Drop old columns from fictionHistory (but keep title and image_url)
+      const oldColumns = ['author_name', 'position', 'author_id', 'author_avatar', 'genre'];
       for (const column of oldColumns) {
         try {
           await client.execute(`ALTER TABLE fictionHistory DROP COLUMN ${column}`);

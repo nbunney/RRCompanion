@@ -77,6 +77,8 @@ export interface RisingStarEntry {
 export interface FictionHistoryEntry {
   fiction_id: number;
   royalroad_id: string;
+  title?: string;
+  image_url?: string;
   pages: number;
   ratings: number;
   followers: number;

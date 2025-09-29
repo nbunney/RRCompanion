@@ -55,6 +55,26 @@ export class RisingStarsPositionService {
         fiction = fictionResult[0];
       }
 
+      // Get the most recent fiction details from fictionHistory
+      const historyQuery = `
+        SELECT title, image_url 
+        FROM fictionHistory 
+        WHERE fiction_id = ? 
+        ORDER BY captured_at DESC 
+        LIMIT 1
+      `;
+      const historyResult = await this.dbClient.query(historyQuery, [fiction.id]);
+
+      // Use the most recent title and image_url if available
+      if (historyResult.length > 0) {
+        if (historyResult[0].title) {
+          fiction.title = historyResult[0].title;
+        }
+        if (historyResult[0].image_url) {
+          fiction.image_url = historyResult[0].image_url;
+        }
+      }
+
       // Get the most recent completed scrape timestamp
       const latestScrapeQuery = `
         SELECT MAX(captured_at) as latest_scrape 
@@ -455,8 +475,14 @@ export class RisingStarsPositionService {
    */
   async getFictionGenrePositions(fictionId: number, latestScrape: string): Promise<{ genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[]> {
     try {
-      // Get fiction tags
-      const fictionQuery = 'SELECT tags FROM fiction WHERE id = ?';
+      // Get fiction tags from the most recent fictionHistory entry
+      const fictionQuery = `
+        SELECT tags 
+        FROM fictionHistory 
+        WHERE fiction_id = ? 
+        ORDER BY captured_at DESC 
+        LIMIT 1
+      `;
       const fictionResult = await this.dbClient.query(fictionQuery, [fictionId]);
 
       if (fictionResult.length === 0) {
@@ -490,11 +516,11 @@ export class RisingStarsPositionService {
           FROM risingStars 
           WHERE fiction_id = ? 
           AND genre = ? 
-          AND captured_at = ?
+          ORDER BY captured_at DESC
           LIMIT 1
         `;
 
-        const positionResult = await this.dbClient.query(positionQuery, [fictionId, genre, latestScrape]);
+        const positionResult = await this.dbClient.query(positionQuery, [fictionId, genre]);
 
         genrePositions.push({
           genre,
