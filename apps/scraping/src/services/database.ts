@@ -178,16 +178,18 @@ export class DatabaseService {
 
     const query = `
       INSERT INTO fictionHistory (
-        fiction_id, royalroad_id, pages, ratings, followers, favorites, views, score,
+        fiction_id, royalroad_id, title, image_url, pages, ratings, followers, favorites, views, score,
         overall_score, style_score, story_score, grammar_score, character_score,
         total_views, average_views, description, status, type, tags, warnings, captured_at
       )
-      VALUES ${entries.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}
+      VALUES ${entries.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}
     `;
 
     const params = entries.flatMap(entry => [
       entry.fiction_id,
       entry.royalroad_id,
+      entry.title ?? null,
+      entry.image_url ?? null,
       entry.pages ?? 0,
       entry.ratings ?? 0,
       entry.followers ?? 0,

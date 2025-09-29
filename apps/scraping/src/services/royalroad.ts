@@ -669,6 +669,8 @@ export class RoyalRoadScrapingService {
 
       return {
         royalroad_id: royalroadId,
+        title: fiction.title,
+        image_url: fiction.image,
         pages: fiction.stats.pages,
         ratings: fiction.stats.ratings,
         followers: fiction.stats.followers,

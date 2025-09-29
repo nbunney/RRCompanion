@@ -63,6 +63,8 @@ export const handler = async (
               historyEntries.push({
                 fiction_id: fiction.id,
                 royalroad_id: fiction.royalroad_id,
+                title: historyData.title,
+                image_url: historyData.image_url,
                 pages: historyData.pages,
                 ratings: historyData.ratings,
                 followers: historyData.followers,

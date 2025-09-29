@@ -64,6 +64,8 @@ export const handler = async (
     const historyEntry = {
       fiction_id: parseInt(fictionId),
       royalroad_id: fictionData.royalroad_id,
+      title: scrapedData.title || null,
+      image_url: scrapedData.image || null,
       pages: scrapedData.stats?.pages || 0,
       ratings: scrapedData.stats?.ratings || 0,
       followers: scrapedData.stats?.followers || 0,
