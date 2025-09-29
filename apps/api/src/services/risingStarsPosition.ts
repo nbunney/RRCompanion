@@ -79,7 +79,6 @@ export class RisingStarsPositionService {
       const latestScrapeQuery = `
         SELECT MAX(captured_at) as latest_scrape 
         FROM risingStars 
-        WHERE captured_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE)
       `;
       const latestScrapeResult = await this.dbClient.query(latestScrapeQuery);
       const latestScrape = latestScrapeResult[0]?.latest_scrape;
