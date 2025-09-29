@@ -164,15 +164,15 @@ export class RisingStarsPositionService {
     const genresResult = await this.dbClient.query(genresQuery);
     const allGenres = genresResult.map((row: any) => row.genre);
 
-    // Step 1: Add all fictions from Rising Stars main (most recent)
+    // Step 1: Add all fictions from Rising Stars main (most recent scrape)
     const mainFictionsQuery = `
       SELECT DISTINCT fiction_id 
       FROM risingStars 
       WHERE genre = 'main' 
-      ORDER BY captured_at DESC
+      AND captured_at = ?
       LIMIT 50
     `;
-    const mainFictionsResult = await this.dbClient.query(mainFictionsQuery);
+    const mainFictionsResult = await this.dbClient.query(mainFictionsQuery, [scrapeTimestamp]);
     const fictionsAhead = new Set(mainFictionsResult.map((row: any) => row.fiction_id));
 
 
@@ -490,11 +490,11 @@ export class RisingStarsPositionService {
           FROM risingStars 
           WHERE fiction_id = ? 
           AND genre = ? 
-          ORDER BY captured_at DESC
+          AND captured_at = ?
           LIMIT 1
         `;
 
-        const positionResult = await this.dbClient.query(positionQuery, [fictionId, genre]);
+        const positionResult = await this.dbClient.query(positionQuery, [fictionId, genre, latestScrape]);
 
         genrePositions.push({
           genre,
