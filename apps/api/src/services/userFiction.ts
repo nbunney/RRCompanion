@@ -35,7 +35,39 @@ export class UserFictionService {
   // Get userFiction by ID
   static async getUserFictionById(id: number): Promise<UserFiction | null> {
     const result = await client.query(`
-      SELECT uf.*, f.*, u.email, u.name as user_name
+      SELECT 
+        uf.*,
+        f.id as fiction_id,
+        f.royalroad_id,
+        f.title,
+        f.author_name,
+        f.author_id,
+        f.author_avatar,
+        f.description,
+        f.image_url,
+        f.status as fiction_status,
+        f.type,
+        f.tags,
+        f.warnings,
+        f.pages,
+        f.ratings,
+        f.followers,
+        f.favorites,
+        f.views,
+        f.score,
+        f.overall_score,
+        f.style_score,
+        f.story_score,
+        f.grammar_score,
+        f.character_score,
+        f.total_views,
+        f.average_views,
+        f.created_at as fiction_created_at,
+        f.updated_at as fiction_updated_at,
+        u.email,
+        u.name as user_name,
+        u.created_at as user_created_at,
+        u.updated_at as user_updated_at
       FROM userFiction uf
       LEFT JOIN fiction f ON uf.fiction_id = f.id
       LEFT JOIN users u ON uf.user_id = u.id
@@ -76,7 +108,39 @@ export class UserFictionService {
 
     // Get userFictions for current page with joined data
     const result = await client.query(`
-      SELECT uf.*, f.*, u.email, u.name as user_name
+      SELECT 
+        uf.*,
+        f.id as fiction_id,
+        f.royalroad_id,
+        f.title,
+        f.author_name,
+        f.author_id,
+        f.author_avatar,
+        f.description,
+        f.image_url,
+        f.status as fiction_status,
+        f.type,
+        f.tags,
+        f.warnings,
+        f.pages,
+        f.ratings,
+        f.followers,
+        f.favorites,
+        f.views,
+        f.score,
+        f.overall_score,
+        f.style_score,
+        f.story_score,
+        f.grammar_score,
+        f.character_score,
+        f.total_views,
+        f.average_views,
+        f.created_at as fiction_created_at,
+        f.updated_at as fiction_updated_at,
+        u.email,
+        u.name as user_name,
+        u.created_at as user_created_at,
+        u.updated_at as user_updated_at
       FROM userFiction uf
       LEFT JOIN fiction f ON uf.fiction_id = f.id
       LEFT JOIN users u ON uf.user_id = u.id
@@ -94,7 +158,39 @@ export class UserFictionService {
   // Get all userFictions for a user without pagination
   static async getAllUserFictionsByUser(userId: number): Promise<UserFiction[]> {
     const result = await client.query(`
-      SELECT uf.*, f.*, u.email, u.name as user_name
+      SELECT 
+        uf.*,
+        f.id as fiction_id,
+        f.royalroad_id,
+        f.title,
+        f.author_name,
+        f.author_id,
+        f.author_avatar,
+        f.description,
+        f.image_url,
+        f.status as fiction_status,
+        f.type,
+        f.tags,
+        f.warnings,
+        f.pages,
+        f.ratings,
+        f.followers,
+        f.favorites,
+        f.views,
+        f.score,
+        f.overall_score,
+        f.style_score,
+        f.story_score,
+        f.grammar_score,
+        f.character_score,
+        f.total_views,
+        f.average_views,
+        f.created_at as fiction_created_at,
+        f.updated_at as fiction_updated_at,
+        u.email,
+        u.name as user_name,
+        u.created_at as user_created_at,
+        u.updated_at as user_updated_at
       FROM userFiction uf
       LEFT JOIN fiction f ON uf.fiction_id = f.id
       LEFT JOIN users u ON uf.user_id = u.id
@@ -118,7 +214,39 @@ export class UserFictionService {
 
     // Get userFictions for current page with joined data
     const result = await client.query(`
-      SELECT uf.*, f.*, u.email, u.name as user_name
+      SELECT 
+        uf.*,
+        f.id as fiction_id,
+        f.royalroad_id,
+        f.title,
+        f.author_name,
+        f.author_id,
+        f.author_avatar,
+        f.description,
+        f.image_url,
+        f.status as fiction_status,
+        f.type,
+        f.tags,
+        f.warnings,
+        f.pages,
+        f.ratings,
+        f.followers,
+        f.favorites,
+        f.views,
+        f.score,
+        f.overall_score,
+        f.style_score,
+        f.story_score,
+        f.grammar_score,
+        f.character_score,
+        f.total_views,
+        f.average_views,
+        f.created_at as fiction_created_at,
+        f.updated_at as fiction_updated_at,
+        u.email,
+        u.name as user_name,
+        u.created_at as user_created_at,
+        u.updated_at as user_updated_at
       FROM userFiction uf
       LEFT JOIN fiction f ON uf.fiction_id = f.id
       LEFT JOIN users u ON uf.user_id = u.id
@@ -146,7 +274,40 @@ export class UserFictionService {
 
     // Get userFictions with custom order if available, fallback to default order
     const result = await client.query(`
-      SELECT uf.*, f.*, u.email, u.name as user_name, ufo.position as custom_position
+      SELECT 
+        uf.*,
+        f.id as fiction_id,
+        f.royalroad_id,
+        f.title,
+        f.author_name,
+        f.author_id,
+        f.author_avatar,
+        f.description,
+        f.image_url,
+        f.status as fiction_status,
+        f.type,
+        f.tags,
+        f.warnings,
+        f.pages,
+        f.ratings,
+        f.followers,
+        f.favorites,
+        f.views,
+        f.score,
+        f.overall_score,
+        f.style_score,
+        f.story_score,
+        f.grammar_score,
+        f.character_score,
+        f.total_views,
+        f.average_views,
+        f.created_at as fiction_created_at,
+        f.updated_at as fiction_updated_at,
+        u.email,
+        u.name as user_name,
+        u.created_at as user_created_at,
+        u.updated_at as user_updated_at,
+        ufo.position as custom_position
       FROM userFiction uf
       LEFT JOIN fiction f ON uf.fiction_id = f.id
       LEFT JOIN users u ON uf.user_id = u.id
@@ -351,23 +512,29 @@ export class UserFictionService {
       userFiction.fiction = {
         id: row.fiction_id,
         royalroad_id: row.royalroad_id,
-        title: row.title,
-        author_name: row.author_name,
+        title: row.title || 'Unknown Title',
+        author_name: row.author_name || 'Unknown Author',
         author_id: row.author_id,
         author_avatar: row.author_avatar,
-        description: row.description,
+        description: row.description || 'No description available',
         image_url: row.image_url,
         status: row.fiction_status,
         type: row.type,
         tags: row.tags ? JSON.parse(row.tags) : [],
         warnings: row.warnings ? JSON.parse(row.warnings) : [],
-        pages: row.pages,
-        ratings: row.ratings,
-        followers: row.followers,
-        favorites: row.favorites,
-        views: row.views,
-        score: row.score,
-
+        pages: row.pages || 0,
+        ratings: row.ratings || 0,
+        followers: row.followers || 0,
+        favorites: row.favorites || 0,
+        views: row.views || 0,
+        score: row.score || 0,
+        overall_score: row.overall_score || 0,
+        style_score: row.style_score || 0,
+        story_score: row.story_score || 0,
+        grammar_score: row.grammar_score || 0,
+        character_score: row.character_score || 0,
+        total_views: row.total_views || 0,
+        average_views: row.average_views || 0,
         created_at: row.fiction_created_at,
         updated_at: row.fiction_updated_at,
       };
