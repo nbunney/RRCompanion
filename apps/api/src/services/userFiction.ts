@@ -2,6 +2,98 @@ import { client } from '../config/database.ts';
 import { cacheService } from './cache.ts';
 import type { UserFiction, CreateUserFictionRequest, UpdateUserFictionRequest, UserFictionStatus } from '../types/index.ts';
 
+// Database row types for JOIN queries
+interface UserFictionRow {
+  id: number;
+  user_id: number;
+  fiction_id: number;
+  status: UserFictionStatus;
+  rating: number | null;
+  review: string | null;
+  current_chapter: number;
+  total_chapters: number;
+  last_read_at: Date | null;
+  is_favorite: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface FictionRow {
+  id: number;
+  royalroad_id: string;
+  title: string;
+  author_name: string;
+  author_id: string | null;
+  author_avatar: string | null;
+  description: string | null;
+  image_url: string | null;
+  status: string | null;
+  type: string | null;
+  tags: string | null; // JSON string
+  warnings: string | null; // JSON string
+  pages: number;
+  ratings: number;
+  followers: number;
+  favorites: number;
+  views: number;
+  score: number;
+  overall_score: number;
+  style_score: number;
+  story_score: number;
+  grammar_score: number;
+  character_score: number;
+  total_views: number;
+  average_views: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface UserRow {
+  id: number;
+  email: string;
+  name: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface JoinedUserFictionRow extends UserFictionRow {
+  // Fiction table columns with aliases
+  fiction_id: number;
+  royalroad_id: string | null;
+  title: string | null;
+  author_name: string | null;
+  author_id: string | null;
+  author_avatar: string | null;
+  description: string | null;
+  image_url: string | null;
+  fiction_status: string | null;
+  type: string | null;
+  tags: string | null;
+  warnings: string | null;
+  pages: number | null;
+  ratings: number | null;
+  followers: number | null;
+  favorites: number | null;
+  views: number | null;
+  score: number | null;
+  overall_score: number | null;
+  style_score: number | null;
+  story_score: number | null;
+  grammar_score: number | null;
+  character_score: number | null;
+  total_views: number | null;
+  average_views: number | null;
+  fiction_created_at: Date | null;
+  fiction_updated_at: Date | null;
+  // User table columns with aliases
+  email: string | null;
+  user_name: string | null;
+  user_created_at: Date | null;
+  user_updated_at: Date | null;
+  // Optional custom position for favorites
+  custom_position?: number | null;
+}
+
 export class UserFictionService {
   // Create a new userFiction relationship
   static async createUserFiction(userId: number, fictionData: CreateUserFictionRequest): Promise<UserFiction> {
@@ -149,7 +241,7 @@ export class UserFictionService {
       LIMIT ? OFFSET ?
     `, [userId, limit, offset]);
 
-    const userFictions = result.map((row: any) => this.mapDatabaseRowToUserFictionWithJoins(row));
+    const userFictions = await Promise.all(result.map((row: JoinedUserFictionRow) => this.mapDatabaseRowToUserFictionWithJoins(row)));
     const totalPages = Math.ceil(total / limit);
 
     return { userFictions, total, totalPages };
@@ -198,7 +290,7 @@ export class UserFictionService {
       ORDER BY uf.is_favorite DESC, uf.created_at DESC
     `, [userId]);
 
-    return Promise.all(result.map((row: any) => this.mapDatabaseRowToUserFictionWithJoins(row)));
+    return Promise.all(result.map((row: JoinedUserFictionRow) => this.mapDatabaseRowToUserFictionWithJoins(row)));
   }
 
   // Get userFictions by status
@@ -255,7 +347,7 @@ export class UserFictionService {
       LIMIT ? OFFSET ?
     `, [userId, status, limit, offset]);
 
-    const userFictions = await Promise.all(result.map((row: any) => this.mapDatabaseRowToUserFictionWithJoins(row)));
+    const userFictions = await Promise.all(result.map((row: JoinedUserFictionRow) => this.mapDatabaseRowToUserFictionWithJoins(row)));
     const totalPages = Math.ceil(total / limit);
 
     return { userFictions, total, totalPages };
@@ -322,7 +414,7 @@ export class UserFictionService {
       LIMIT ? OFFSET ?
     `, [userId, limit, offset]);
 
-    const userFictions = result.map((row: any) => this.mapDatabaseRowToUserFictionWithJoins(row));
+    const userFictions = await Promise.all(result.map((row: JoinedUserFictionRow) => this.mapDatabaseRowToUserFictionWithJoins(row)));
     const totalPages = Math.ceil(total / limit);
 
     return { userFictions, total, totalPages };
@@ -331,7 +423,7 @@ export class UserFictionService {
   // Update userFiction
   static async updateUserFiction(userId: number, fictionId: number, userFictionData: UpdateUserFictionRequest): Promise<UserFiction | null> {
     const updates: string[] = [];
-    const params: any[] = [];
+    const params: (string | number | boolean)[] = [];
 
     // Build dynamic update query
     if (userFictionData.status !== undefined) {
@@ -486,17 +578,17 @@ export class UserFictionService {
   }
 
   // Helper method to map database row to UserFiction object
-  private static mapDatabaseRowToUserFiction(row: any): UserFiction {
+  private static mapDatabaseRowToUserFiction(row: UserFictionRow): UserFiction {
     return {
       id: row.id,
       user_id: row.user_id,
       fiction_id: row.fiction_id,
       status: row.status,
-      rating: row.rating,
-      review: row.review,
+      rating: row.rating ?? undefined,
+      review: row.review ?? undefined,
       current_chapter: row.current_chapter,
       total_chapters: row.total_chapters,
-      last_read_at: row.last_read_at,
+      last_read_at: row.last_read_at ?? undefined,
       is_favorite: row.is_favorite,
       created_at: row.created_at,
       updated_at: row.updated_at,
@@ -504,7 +596,7 @@ export class UserFictionService {
   }
 
   // Helper method to map database row to UserFiction object with joined data
-  private static async mapDatabaseRowToUserFictionWithJoins(row: any): Promise<UserFiction> {
+  private static async mapDatabaseRowToUserFictionWithJoins(row: JoinedUserFictionRow): Promise<UserFiction> {
     const userFiction = this.mapDatabaseRowToUserFiction(row);
 
     // Add fiction data if available
@@ -514,12 +606,12 @@ export class UserFictionService {
         royalroad_id: row.royalroad_id,
         title: row.title || 'Unknown Title',
         author_name: row.author_name || 'Unknown Author',
-        author_id: row.author_id,
-        author_avatar: row.author_avatar,
+        author_id: row.author_id ?? undefined,
+        author_avatar: row.author_avatar ?? undefined,
         description: row.description || 'No description available',
-        image_url: row.image_url,
-        status: row.fiction_status,
-        type: row.type,
+        image_url: row.image_url ?? undefined,
+        status: row.fiction_status ?? undefined,
+        type: row.type ?? undefined,
         tags: row.tags ? JSON.parse(row.tags) : [],
         warnings: row.warnings ? JSON.parse(row.warnings) : [],
         pages: row.pages || 0,
@@ -535,8 +627,8 @@ export class UserFictionService {
         character_score: row.character_score || 0,
         total_views: row.total_views || 0,
         average_views: row.average_views || 0,
-        created_at: row.fiction_created_at,
-        updated_at: row.fiction_updated_at,
+        created_at: row.fiction_created_at!,
+        updated_at: row.fiction_updated_at!,
       };
 
       // Get the most recent title and image_url from fictionHistory if available
@@ -546,7 +638,7 @@ export class UserFictionService {
       );
 
       // Prefer title and image_url from fictionHistory if they exist
-      if (historyResult.length > 0) {
+      if (historyResult.length > 0 && userFiction.fiction) {
         if (historyResult[0].title) {
           userFiction.fiction.title = historyResult[0].title;
         }
@@ -561,9 +653,9 @@ export class UserFictionService {
       userFiction.user = {
         id: row.user_id,
         email: row.email,
-        name: row.user_name,
-        created_at: row.user_created_at,
-        updated_at: row.user_updated_at,
+        name: row.user_name ?? undefined,
+        created_at: row.user_created_at!,
+        updated_at: row.user_updated_at!,
       };
     }
 
