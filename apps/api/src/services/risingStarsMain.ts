@@ -73,33 +73,42 @@ export class RisingStarsMainService {
 
       if (mainFictions.length > 0) {
         // For each fiction, find the most recent position that's DIFFERENT from current
-        // We'll process them individually to avoid complex joins that timeout
-        for (const fiction of mainFictions) {
-          const previousPositionQuery = `
-            SELECT position, captured_at
-            FROM risingStars
-            WHERE fiction_id = ?
-              AND genre = 'main'
-              AND captured_at < ?
-              AND position != ?
-            ORDER BY captured_at DESC
-            LIMIT 1
-          `;
+        // Use UNION ALL to combine all queries into one for better performance
+        const unionQueries: string[] = [];
+        const queryParams: any[] = [];
 
-          const previousPositionResult = await this.dbClient.query(
-            previousPositionQuery,
-            [fiction.fiction_id, latestScrape, fiction.position]
+        mainFictions.forEach((fiction: any) => {
+          unionQueries.push(`
+            (SELECT ? as fiction_id, position, captured_at
+             FROM risingStars
+             WHERE fiction_id = ?
+               AND genre = 'main'
+               AND captured_at < ?
+               AND position != ?
+             ORDER BY captured_at DESC
+             LIMIT 1)
+          `);
+          queryParams.push(
+            fiction.fiction_id,  // for SELECT
+            fiction.fiction_id,  // for WHERE
+            latestScrape,
+            fiction.position
           );
+        });
 
-          if (previousPositionResult.length > 0) {
-            const row = previousPositionResult[0];
-            const formattedDate = new Date(row.captured_at).toISOString();
-            previousPositions.set(fiction.fiction_id, {
-              position: row.position,
-              date: formattedDate
-            });
-          }
-        }
+        const previousPositionQuery = unionQueries.join(' UNION ALL ');
+        const previousPositionResult = await this.dbClient.query(
+          previousPositionQuery,
+          queryParams
+        );
+
+        previousPositionResult.forEach((row: any) => {
+          const formattedDate = new Date(row.captured_at).toISOString();
+          previousPositions.set(row.fiction_id, {
+            position: row.position,
+            date: formattedDate
+          });
+        });
       }
 
       console.log(`🔍 Rising Stars Main - Found previous positions for ${previousPositions.size} fictions`);
