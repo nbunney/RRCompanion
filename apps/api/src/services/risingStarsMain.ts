@@ -72,42 +72,52 @@ export class RisingStarsMainService {
       const previousPositions = new Map<number, { position: number; date: string }>();
 
       if (mainFictions.length > 0) {
-        // For each fiction, find the most recent position that's DIFFERENT from current
-        // Use UNION ALL to combine all queries into one for better performance
-        const unionQueries: string[] = [];
-        const queryParams: any[] = [];
-
+        // Create a map of current positions for easy lookup
+        const currentPositionMap = new Map<number, number>();
         mainFictions.forEach((fiction: any) => {
-          unionQueries.push(`
-            (SELECT ? as fiction_id, position, captured_at
-             FROM risingStars
-             WHERE fiction_id = ?
-               AND genre = 'main'
-               AND captured_at < ?
-               AND position != ?
-             ORDER BY captured_at DESC
-             LIMIT 1)
-          `);
-          queryParams.push(
-            fiction.fiction_id,  // for SELECT
-            fiction.fiction_id,  // for WHERE
-            latestScrape,
-            fiction.position
-          );
+          currentPositionMap.set(fiction.fiction_id, fiction.position);
         });
 
-        const previousPositionQuery = unionQueries.join(' UNION ALL ');
+        // Get all fiction IDs
+        const fictionIds = mainFictions.map((f: any) => f.fiction_id);
+        const placeholders = fictionIds.map(() => '?').join(',');
+
+        // For each fiction in our list, find the most recent record where position differs
+        // We'll get all records before latestScrape, then filter in JavaScript
+        const previousPositionQuery = `
+          SELECT 
+            rs.fiction_id,
+            rs.position,
+            rs.captured_at
+          FROM risingStars rs
+          INNER JOIN (
+            SELECT fiction_id, MAX(captured_at) as max_captured
+            FROM risingStars
+            WHERE fiction_id IN (${placeholders})
+              AND genre = 'main'
+              AND captured_at < ?
+            GROUP BY fiction_id, position
+          ) latest ON rs.fiction_id = latest.fiction_id 
+            AND rs.captured_at = latest.max_captured
+          WHERE rs.genre = 'main'
+          ORDER BY rs.fiction_id, rs.captured_at DESC
+        `;
+
         const previousPositionResult = await this.dbClient.query(
           previousPositionQuery,
-          queryParams
+          [...fictionIds, latestScrape]
         );
 
+        // For each fiction, find the first (most recent) position that differs from current
         previousPositionResult.forEach((row: any) => {
-          const formattedDate = new Date(row.captured_at).toISOString();
-          previousPositions.set(row.fiction_id, {
-            position: row.position,
-            date: formattedDate
-          });
+          const currentPosition = currentPositionMap.get(row.fiction_id);
+          if (currentPosition !== undefined && row.position !== currentPosition && !previousPositions.has(row.fiction_id)) {
+            const formattedDate = new Date(row.captured_at).toISOString();
+            previousPositions.set(row.fiction_id, {
+              position: row.position,
+              date: formattedDate
+            });
+          }
         });
       }
 
