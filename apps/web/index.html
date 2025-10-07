@@ -11,15 +11,24 @@
     })(window,document,'script','dataLayer','GTM-TNJVB5HR');</script>
     <!-- End Google Tag Manager -->
     
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KNCKYHNMT7"></script>
+    <!-- Google tag (gtag.js) with Consent Mode -->
     <script>
+      // Set default consent to 'denied' as a placeholder
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
+      
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'wait_for_update': 500
+      });
+      
       gtag('js', new Date());
-
       gtag('config', 'G-KNCKYHNMT7');
     </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KNCKYHNMT7"></script>
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/images/favicon/favicon.ico" />

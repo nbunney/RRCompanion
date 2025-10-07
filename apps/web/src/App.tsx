@@ -20,6 +20,7 @@ import RisingStarsAnimation from '@/pages/RisingStarsAnimation';
 import RisingStarsPositionCalculator from '@/pages/RisingStarsPositionCalculator';
 import RisingStarsPositionLanding from '@/pages/RisingStarsPositionLanding';
 import RisingStarsMain from '@/pages/RisingStarsMain';
+import CookieConsent from '@/components/CookieConsent';
 
 // Route change tracker component
 const RouteTracker: React.FC = () => {
@@ -70,6 +71,7 @@ const App: React.FC = () => {
   return (
     <>
       <RouteTracker />
+      <CookieConsent />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
