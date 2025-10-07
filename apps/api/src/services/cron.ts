@@ -1,4 +1,5 @@
 import { FictionHistoryService } from './fictionHistory.ts';
+import { risingStarsBestPositionsService } from './risingStarsBestPositions.ts';
 
 export class CronService {
   private fictionHistoryService: FictionHistoryService;
@@ -6,6 +7,7 @@ export class CronService {
   private lastTopFictionsRefresh: number = 0;
   private lastAllFictionsRunDate: string | null = null;
   private lastAllFictionsRunHour: number | null = null;
+  private lastBestPositionsUpdateDate: string | null = null;
 
   constructor() {
     this.fictionHistoryService = new FictionHistoryService();
@@ -107,6 +109,37 @@ export class CronService {
     }
   }
 
+  // Check if it's time to update Rising Stars best positions (once per day at 2am PST)
+  private shouldUpdateBestPositions(): boolean {
+    const now = new Date();
+
+    // Convert to PST (UTC-8)
+    const pstTime = new Date(now.getTime() - (8 * 60 * 60 * 1000));
+
+    const hour = pstTime.getHours();
+    const minute = pstTime.getMinutes();
+    const today = pstTime.toISOString().split('T')[0];
+
+    // Run at 2:00am PST daily
+    if (hour === 2 && minute === 0 && this.lastBestPositionsUpdateDate !== today) {
+      this.lastBestPositionsUpdateDate = today;
+      return true;
+    }
+
+    return false;
+  }
+
+  // Update Rising Stars best positions
+  private async updateBestPositions(): Promise<void> {
+    try {
+      console.log('🏆 Running daily Rising Stars best positions update...');
+      const result = await risingStarsBestPositionsService.updateAllBestPositions();
+      console.log(`✅ Best positions update completed: ${result.updated} updated, ${result.inserted} inserted`);
+    } catch (error) {
+      console.error('❌ Error updating Rising Stars best positions:', error);
+    }
+  }
+
 
 
   // Check and run collection if needed
@@ -169,6 +202,11 @@ export class CronService {
     if (this.shouldRefreshTopFictions()) {
       await this.refreshTopFictions();
     }
+
+    // Check if it's time to update Rising Stars best positions (daily at 2am PST)
+    if (this.shouldUpdateBestPositions()) {
+      await this.updateBestPositions();
+    }
   }
 
   // Start the cron service
@@ -184,5 +222,6 @@ export class CronService {
     console.log('📚 Cron service started - All Fictions collection at 1:24am, 7:24am, 1:24pm, and 7:24pm PST');
     console.log('🌐 Royal Road data collection runs every 6 hours');
     console.log('🔄 Top fictions data refreshes every 10 minutes');
+    console.log('🏆 Rising Stars best positions update runs daily at 2:00am PST');
   }
 } 

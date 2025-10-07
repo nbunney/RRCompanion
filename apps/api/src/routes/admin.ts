@@ -9,7 +9,9 @@ import {
   deactivateCouponCode,
   convertTimestampsToUTC,
   triggerRisingStarsScrape,
-  manualScrapeFiction
+  manualScrapeFiction,
+  updateRisingStarsBestPositions,
+  cleanupRisingStarsData
 } from '../controllers/admin.ts';
 import { adminMiddleware } from '../middleware/admin.ts';
 
@@ -27,5 +29,9 @@ router.put('/coupons/:id/deactivate', deactivateCouponCode);
 router.post('/migrate/timestamps-to-utc', convertTimestampsToUTC);
 router.post('/trigger/rising-stars-scrape', triggerRisingStarsScrape);
 router.post('/manual-scrape/:fictionId', manualScrapeFiction);
+
+// Rising Stars best positions management
+router.post('/rising-stars/update-best-positions', updateRisingStarsBestPositions);
+router.post('/rising-stars/cleanup', cleanupRisingStarsData); // Add ?dryRun=false to actually delete
 
 export default router;

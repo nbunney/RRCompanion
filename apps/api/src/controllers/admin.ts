@@ -2,6 +2,7 @@ import { Context } from 'oak';
 import { adminService } from '../services/admin.ts';
 import { client } from '../config/database.ts';
 import { FictionHistoryService } from '../services/fictionHistory.ts';
+import { risingStarsBestPositionsService } from '../services/risingStarsBestPositions.ts';
 import type { ApiResponse } from '../types/index.ts';
 
 // Get site statistics
@@ -262,4 +263,72 @@ export async function manualScrapeFiction(ctx: Context): Promise<void> {
       documentation: 'See apps/scraping/README.md for details'
     }
   } as ApiResponse;
+}
+
+/**
+ * Update Rising Stars best positions
+ * This scans all risingStars data and updates the risingStarsBestPositions table
+ */
+export async function updateRisingStarsBestPositions(ctx: Context): Promise<void> {
+  try {
+    console.log('🏆 Admin triggered: Updating Rising Stars best positions');
+
+    const result = await risingStarsBestPositionsService.updateAllBestPositions();
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      message: 'Rising Stars best positions updated successfully',
+      data: {
+        updated: result.updated,
+        inserted: result.inserted,
+        timestamp: new Date().toISOString()
+      }
+    } as ApiResponse;
+  } catch (error) {
+    console.error('❌ Error updating Rising Stars best positions:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Failed to update Rising Stars best positions'
+    } as ApiResponse;
+  }
+}
+
+/**
+ * Clean up old Rising Stars data (dry run by default)
+ * Keeps only noon scrapes for each day, preserving best positions first
+ */
+export async function cleanupRisingStarsData(ctx: Context): Promise<void> {
+  try {
+    // Get query parameter for dry run (defaults to true for safety)
+    const url = new URL(ctx.request.url);
+    const dryRunParam = url.searchParams.get('dryRun');
+    const dryRun = dryRunParam !== 'false'; // Only run for real if explicitly set to false
+
+    console.log(`🧹 Admin triggered: ${dryRun ? 'DRY RUN - ' : ''}Cleaning up Rising Stars data`);
+
+    const result = await risingStarsBestPositionsService.cleanupOldRisingStarsData(dryRun);
+
+    ctx.response.status = 200;
+    ctx.response.body = {
+      success: true,
+      message: dryRun
+        ? 'Dry run complete - no data was deleted'
+        : 'Rising Stars data cleanup completed successfully',
+      data: {
+        deleted: result.deleted,
+        kept: result.kept,
+        dryRun: dryRun,
+        timestamp: new Date().toISOString()
+      }
+    } as ApiResponse;
+  } catch (error) {
+    console.error('❌ Error cleaning up Rising Stars data:', error);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: 'Failed to clean up Rising Stars data'
+    } as ApiResponse;
+  }
 }

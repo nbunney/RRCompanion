@@ -1,6 +1,7 @@
 import { client } from '../config/database.ts';
 import { FictionService } from './fiction.ts';
 import { cacheService } from './cache.ts';
+import { risingStarsBestPositionsService } from './risingStarsBestPositions.ts';
 import type { CreateFictionRequest } from '../types/index.ts';
 
 export interface RisingStarsPosition {
@@ -15,7 +16,7 @@ export interface RisingStarsPosition {
   fictionsAhead: number;
   fictionsToClimb: number;
   lastUpdated: string;
-  genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
+  genrePositions: { genre: string; position: number | null; bestPosition: number | null; isOnList: boolean; lastScraped: string | null }[];
   fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string; imageUrl?: string }[];
 }
 
@@ -471,8 +472,9 @@ export class RisingStarsPositionService {
 
   /**
    * Get fiction's most recent position in each relevant genre
+   * Now includes best historical position from risingStarsBestPositions table
    */
-  async getFictionGenrePositions(fictionId: number, latestScrape: string): Promise<{ genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[]> {
+  async getFictionGenrePositions(fictionId: number, latestScrape: string): Promise<{ genre: string; position: number | null; bestPosition: number | null; isOnList: boolean; lastScraped: string | null }[]> {
     try {
       // Get fiction tags from the most recent fictionHistory entry
       const fictionQuery = `
@@ -506,10 +508,14 @@ export class RisingStarsPositionService {
         return [];
       }
 
+      // Get all best positions at once
+      const allBestPositions = await risingStarsBestPositionsService.getAllBestPositions(fictionId);
+
       // Get positions for each relevant genre
       const genrePositions = [];
 
       for (const genre of relevantGenres) {
+        // Get current position from risingStars table
         const positionQuery = `
           SELECT position, captured_at 
           FROM risingStars 
@@ -520,10 +526,15 @@ export class RisingStarsPositionService {
         `;
 
         const positionResult = await this.dbClient.query(positionQuery, [fictionId, genre]);
+        const currentPosition = positionResult.length > 0 ? positionResult[0].position : null;
+
+        // Get best position (checks both tables internally)
+        const bestPosition = allBestPositions.get(genre) || null;
 
         genrePositions.push({
           genre,
-          position: positionResult.length > 0 ? positionResult[0].position : null,
+          position: currentPosition,
+          bestPosition: bestPosition,
           isOnList: positionResult.length > 0,
           lastScraped: positionResult.length > 0 ? positionResult[0].captured_at : null
         });
