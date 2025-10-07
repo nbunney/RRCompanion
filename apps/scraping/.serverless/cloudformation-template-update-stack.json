@@ -5,37 +5,37 @@
     "ScrapeRisingStarsMainLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/rrcompanion-scraping-dev-scrapeRisingStarsMain"
+        "LogGroupName": "/aws/lambda/rrcompanion-scraping-prod-scrapeRisingStarsMain"
       }
     },
     "ScrapeRisingStarsAllLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/rrcompanion-scraping-dev-scrapeRisingStarsAll"
+        "LogGroupName": "/aws/lambda/rrcompanion-scraping-prod-scrapeRisingStarsAll"
       }
     },
     "ScrapeFictionLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/rrcompanion-scraping-dev-scrapeFiction"
+        "LogGroupName": "/aws/lambda/rrcompanion-scraping-prod-scrapeFiction"
       }
     },
     "ScrapeFictionHistoryLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/rrcompanion-scraping-dev-scrapeFictionHistory"
+        "LogGroupName": "/aws/lambda/rrcompanion-scraping-prod-scrapeFictionHistory"
       }
     },
     "TestFictionLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/rrcompanion-scraping-dev-testFiction"
+        "LogGroupName": "/aws/lambda/rrcompanion-scraping-prod-testFiction"
       }
     },
     "DebugHtmlLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/rrcompanion-scraping-dev-debugHtml"
+        "LogGroupName": "/aws/lambda/rrcompanion-scraping-prod-debugHtml"
       }
     },
     "IamRoleLambdaExecution": {
@@ -64,7 +64,7 @@
                 "-",
                 [
                   "rrcompanion-scraping",
-                  "dev",
+                  "prod",
                   "lambda"
                 ]
               ]
@@ -81,7 +81,7 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rrcompanion-scraping-dev*:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rrcompanion-scraping-prod*:*"
                     }
                   ]
                 },
@@ -92,7 +92,7 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rrcompanion-scraping-dev*:*:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rrcompanion-scraping-prod*:*:*"
                     }
                   ]
                 },
@@ -110,7 +110,7 @@
                     "s3:PutObject",
                     "s3:DeleteObject"
                   ],
-                  "Resource": "arn:aws:s3:::rrcompanion-scraping-dev/*"
+                  "Resource": "arn:aws:s3:::rrcompanion-scraping-prod/*"
                 }
               ]
             }
@@ -122,7 +122,7 @@
             "-",
             [
               "rrcompanion-scraping",
-              "dev",
+              "prod",
               {
                 "Ref": "AWS::Region"
               },
@@ -137,16 +137,16 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1759866214794-2025-10-07T19:43:34.794Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/prod/1759866939692-2025-10-07T19:55:39.692Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/risingStarsMain.handler",
         "Runtime": "nodejs20.x",
-        "FunctionName": "rrcompanion-scraping-dev-scrapeRisingStarsMain",
+        "FunctionName": "rrcompanion-scraping-prod-scrapeRisingStarsMain",
         "MemorySize": 2048,
         "Timeout": 900,
         "Environment": {
           "Variables": {
-            "NODE_ENV": "dev",
+            "NODE_ENV": "prod",
             "DATABASE_URL": "mysql://rrc_user:rrc123!!@inventaweb.c7r7edcimktc.us-west-1.rds.amazonaws.com:3306/RRCompanion",
             "SCRAPING_TYPE": "rising-stars-main",
             "NODE_OPTIONS": "--enable-source-maps"
@@ -168,16 +168,16 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1759866214794-2025-10-07T19:43:34.794Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/prod/1759866939692-2025-10-07T19:55:39.692Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/risingStarsAll.handler",
         "Runtime": "nodejs20.x",
-        "FunctionName": "rrcompanion-scraping-dev-scrapeRisingStarsAll",
+        "FunctionName": "rrcompanion-scraping-prod-scrapeRisingStarsAll",
         "MemorySize": 2048,
         "Timeout": 900,
         "Environment": {
           "Variables": {
-            "NODE_ENV": "dev",
+            "NODE_ENV": "prod",
             "DATABASE_URL": "mysql://rrc_user:rrc123!!@inventaweb.c7r7edcimktc.us-west-1.rds.amazonaws.com:3306/RRCompanion",
             "SCRAPING_TYPE": "rising-stars-all",
             "NODE_OPTIONS": "--enable-source-maps"
@@ -199,16 +199,16 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1759866214794-2025-10-07T19:43:34.794Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/prod/1759866939692-2025-10-07T19:55:39.692Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/fiction.handler",
         "Runtime": "nodejs20.x",
-        "FunctionName": "rrcompanion-scraping-dev-scrapeFiction",
+        "FunctionName": "rrcompanion-scraping-prod-scrapeFiction",
         "MemorySize": 1024,
         "Timeout": 300,
         "Environment": {
           "Variables": {
-            "NODE_ENV": "dev",
+            "NODE_ENV": "prod",
             "DATABASE_URL": "mysql://rrc_user:rrc123!!@inventaweb.c7r7edcimktc.us-west-1.rds.amazonaws.com:3306/RRCompanion",
             "SCRAPING_TYPE": "fiction",
             "NODE_OPTIONS": "--enable-source-maps"
@@ -230,16 +230,16 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1759866214794-2025-10-07T19:43:34.794Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/prod/1759866939692-2025-10-07T19:55:39.692Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/fictionHistory.handler",
         "Runtime": "nodejs20.x",
-        "FunctionName": "rrcompanion-scraping-dev-scrapeFictionHistory",
+        "FunctionName": "rrcompanion-scraping-prod-scrapeFictionHistory",
         "MemorySize": 1536,
         "Timeout": 270,
         "Environment": {
           "Variables": {
-            "NODE_ENV": "dev",
+            "NODE_ENV": "prod",
             "DATABASE_URL": "mysql://rrc_user:rrc123!!@inventaweb.c7r7edcimktc.us-west-1.rds.amazonaws.com:3306/RRCompanion",
             "SCRAPING_TYPE": "fiction-history",
             "NODE_OPTIONS": "--enable-source-maps"
@@ -261,16 +261,16 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1759866214794-2025-10-07T19:43:34.794Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/prod/1759866939692-2025-10-07T19:55:39.692Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/testFiction.handler",
         "Runtime": "nodejs20.x",
-        "FunctionName": "rrcompanion-scraping-dev-testFiction",
+        "FunctionName": "rrcompanion-scraping-prod-testFiction",
         "MemorySize": 1024,
         "Timeout": 300,
         "Environment": {
           "Variables": {
-            "NODE_ENV": "dev",
+            "NODE_ENV": "prod",
             "DATABASE_URL": "mysql://rrc_user:rrc123!!@inventaweb.c7r7edcimktc.us-west-1.rds.amazonaws.com:3306/RRCompanion",
             "SCRAPING_TYPE": "test-fiction",
             "NODE_OPTIONS": "--enable-source-maps"
@@ -292,16 +292,16 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-west-2-106ab456-34db",
-          "S3Key": "serverless/rrcompanion-scraping/dev/1759866214794-2025-10-07T19:43:34.794Z/rrcompanion-scraping.zip"
+          "S3Key": "serverless/rrcompanion-scraping/prod/1759866939692-2025-10-07T19:55:39.692Z/rrcompanion-scraping.zip"
         },
         "Handler": "src/handlers/debugHtml.handler",
         "Runtime": "nodejs20.x",
-        "FunctionName": "rrcompanion-scraping-dev-debugHtml",
+        "FunctionName": "rrcompanion-scraping-prod-debugHtml",
         "MemorySize": 1024,
         "Timeout": 300,
         "Environment": {
           "Variables": {
-            "NODE_ENV": "dev",
+            "NODE_ENV": "prod",
             "DATABASE_URL": "mysql://rrc_user:rrc123!!@inventaweb.c7r7edcimktc.us-west-1.rds.amazonaws.com:3306/RRCompanion",
             "SCRAPING_TYPE": "debug-html",
             "NODE_OPTIONS": "--enable-source-maps"
@@ -318,64 +318,64 @@
         "DebugHtmlLogGroup"
       ]
     },
-    "ScrapeRisingStarsMainLambdaVersion6bloy3NOfjThzmAq4ygIagdIuspSoRrYKjVDUalwE": {
+    "ScrapeRisingStarsMainLambdaVersionmMwuIby1PGb59MLAYdgjpwJq0Ts3UVsiyJRtWILWVFU": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ScrapeRisingStarsMainLambdaFunction"
         },
-        "CodeSha256": "mVfD5XnR2RM5gyM27yLEHWmt2Wf5DRhZq5WMZigmKPI="
+        "CodeSha256": "dZqEok8a1IJaRBLKMZLVMlxIWGh/mNW91ZvYUm/sVx4="
       }
     },
-    "ScrapeRisingStarsAllLambdaVersionBt4Mr4LEpucEyB27CRWA0yXGlEgDKLbLrorh3abM": {
+    "ScrapeRisingStarsAllLambdaVersiongx4Qn7dNJkaOQciOLIOK2N3xqmNSvVaw8ZGWR841k": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ScrapeRisingStarsAllLambdaFunction"
         },
-        "CodeSha256": "mVfD5XnR2RM5gyM27yLEHWmt2Wf5DRhZq5WMZigmKPI="
+        "CodeSha256": "dZqEok8a1IJaRBLKMZLVMlxIWGh/mNW91ZvYUm/sVx4="
       }
     },
-    "ScrapeFictionLambdaVersionh10OvxAGDM4ulHV47p8Kx7OpQUFAKqoI5pu1ESiFeg": {
+    "ScrapeFictionLambdaVersiong9PNKGPTeM3V25bnu6ccsF9b5DN6mRzLCpIqEc3uUM": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ScrapeFictionLambdaFunction"
         },
-        "CodeSha256": "mVfD5XnR2RM5gyM27yLEHWmt2Wf5DRhZq5WMZigmKPI="
+        "CodeSha256": "dZqEok8a1IJaRBLKMZLVMlxIWGh/mNW91ZvYUm/sVx4="
       }
     },
-    "ScrapeFictionHistoryLambdaVersionmz0KEHNnpGowG0QPEqKqBDu03yZxyCzgcqcswC9YI": {
+    "ScrapeFictionHistoryLambdaVersionwObTrPWfQ91WY185EEXH3FEZ56ZRBvMFQ4Rj9QDDxI": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ScrapeFictionHistoryLambdaFunction"
         },
-        "CodeSha256": "mVfD5XnR2RM5gyM27yLEHWmt2Wf5DRhZq5WMZigmKPI="
+        "CodeSha256": "dZqEok8a1IJaRBLKMZLVMlxIWGh/mNW91ZvYUm/sVx4="
       }
     },
-    "TestFictionLambdaVersionkwRjgaioy06Y0B7zBriGzprPZMcU3RowqnQs0jKgew": {
+    "TestFictionLambdaVersion3o8e8kpPK7DtMZlpnfnwIFArv5vkfbR4lPvUd1bXxGM": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "TestFictionLambdaFunction"
         },
-        "CodeSha256": "mVfD5XnR2RM5gyM27yLEHWmt2Wf5DRhZq5WMZigmKPI="
+        "CodeSha256": "dZqEok8a1IJaRBLKMZLVMlxIWGh/mNW91ZvYUm/sVx4="
       }
     },
-    "DebugHtmlLambdaVersion5uqldUA3MQaEVhgsdIH0vIGQMWPuxOaNJyjtMmUE": {
+    "DebugHtmlLambdaVersionpTBzuMLXh8WnlBoV6rBEx2HTGRVu3eXGdXiM0aWs": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "DebugHtmlLambdaFunction"
         },
-        "CodeSha256": "mVfD5XnR2RM5gyM27yLEHWmt2Wf5DRhZq5WMZigmKPI="
+        "CodeSha256": "dZqEok8a1IJaRBLKMZLVMlxIWGh/mNW91ZvYUm/sVx4="
       }
     },
     "ScrapeRisingStarsMainEventsRuleSchedule1": {
@@ -494,61 +494,61 @@
     "ServerlessDeploymentBucketName": {
       "Value": "serverless-framework-deployments-us-west-2-106ab456-34db",
       "Export": {
-        "Name": "sls-rrcompanion-scraping-dev-ServerlessDeploymentBucketName"
+        "Name": "sls-rrcompanion-scraping-prod-ServerlessDeploymentBucketName"
       }
     },
     "ScrapeRisingStarsMainLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ScrapeRisingStarsMainLambdaVersion6bloy3NOfjThzmAq4ygIagdIuspSoRrYKjVDUalwE"
+        "Ref": "ScrapeRisingStarsMainLambdaVersionmMwuIby1PGb59MLAYdgjpwJq0Ts3UVsiyJRtWILWVFU"
       },
       "Export": {
-        "Name": "sls-rrcompanion-scraping-dev-ScrapeRisingStarsMainLambdaFunctionQualifiedArn"
+        "Name": "sls-rrcompanion-scraping-prod-ScrapeRisingStarsMainLambdaFunctionQualifiedArn"
       }
     },
     "ScrapeRisingStarsAllLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ScrapeRisingStarsAllLambdaVersionBt4Mr4LEpucEyB27CRWA0yXGlEgDKLbLrorh3abM"
+        "Ref": "ScrapeRisingStarsAllLambdaVersiongx4Qn7dNJkaOQciOLIOK2N3xqmNSvVaw8ZGWR841k"
       },
       "Export": {
-        "Name": "sls-rrcompanion-scraping-dev-ScrapeRisingStarsAllLambdaFunctionQualifiedArn"
+        "Name": "sls-rrcompanion-scraping-prod-ScrapeRisingStarsAllLambdaFunctionQualifiedArn"
       }
     },
     "ScrapeFictionLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ScrapeFictionLambdaVersionh10OvxAGDM4ulHV47p8Kx7OpQUFAKqoI5pu1ESiFeg"
+        "Ref": "ScrapeFictionLambdaVersiong9PNKGPTeM3V25bnu6ccsF9b5DN6mRzLCpIqEc3uUM"
       },
       "Export": {
-        "Name": "sls-rrcompanion-scraping-dev-ScrapeFictionLambdaFunctionQualifiedArn"
+        "Name": "sls-rrcompanion-scraping-prod-ScrapeFictionLambdaFunctionQualifiedArn"
       }
     },
     "ScrapeFictionHistoryLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ScrapeFictionHistoryLambdaVersionmz0KEHNnpGowG0QPEqKqBDu03yZxyCzgcqcswC9YI"
+        "Ref": "ScrapeFictionHistoryLambdaVersionwObTrPWfQ91WY185EEXH3FEZ56ZRBvMFQ4Rj9QDDxI"
       },
       "Export": {
-        "Name": "sls-rrcompanion-scraping-dev-ScrapeFictionHistoryLambdaFunctionQualifiedArn"
+        "Name": "sls-rrcompanion-scraping-prod-ScrapeFictionHistoryLambdaFunctionQualifiedArn"
       }
     },
     "TestFictionLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "TestFictionLambdaVersionkwRjgaioy06Y0B7zBriGzprPZMcU3RowqnQs0jKgew"
+        "Ref": "TestFictionLambdaVersion3o8e8kpPK7DtMZlpnfnwIFArv5vkfbR4lPvUd1bXxGM"
       },
       "Export": {
-        "Name": "sls-rrcompanion-scraping-dev-TestFictionLambdaFunctionQualifiedArn"
+        "Name": "sls-rrcompanion-scraping-prod-TestFictionLambdaFunctionQualifiedArn"
       }
     },
     "DebugHtmlLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "DebugHtmlLambdaVersion5uqldUA3MQaEVhgsdIH0vIGQMWPuxOaNJyjtMmUE"
+        "Ref": "DebugHtmlLambdaVersionpTBzuMLXh8WnlBoV6rBEx2HTGRVu3eXGdXiM0aWs"
       },
       "Export": {
-        "Name": "sls-rrcompanion-scraping-dev-DebugHtmlLambdaFunctionQualifiedArn"
+        "Name": "sls-rrcompanion-scraping-prod-DebugHtmlLambdaFunctionQualifiedArn"
       }
     }
   }
