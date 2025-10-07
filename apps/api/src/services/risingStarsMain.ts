@@ -67,35 +67,52 @@ export class RisingStarsMainService {
       console.log(`🔍 Rising Stars Main - Found ${mainFictions.length} fictions`);
       console.log(`🔍 Rising Stars Main - Position range: ${mainFictions.length > 0 ? `${mainFictions[0].position}-${mainFictions[mainFictions.length - 1].position}` : 'none'}`);
 
-      // Get previous positions for movement calculation
+      // Get previous positions for movement calculation in a single query
       // For each fiction, find the most recent different position
       const previousPositions = new Map<number, { position: number; date: string }>();
 
-      for (const fiction of mainFictions) {
+      if (mainFictions.length > 0) {
+        // Build WHERE clause for all fictions at once
+        const fictionIds = mainFictions.map((f: any) => f.fiction_id);
+        const placeholders = fictionIds.map(() => '?').join(',');
+
+        // Use a subquery to get the most recent different position for each fiction
         const previousPositionQuery = `
-          SELECT position, captured_at
-          FROM risingStars 
-          WHERE fiction_id = ? 
-            AND genre = 'main'
-            AND position != ? 
-          ORDER BY captured_at DESC 
-          LIMIT 1
+          SELECT 
+            rs1.fiction_id,
+            rs1.position,
+            rs1.captured_at
+          FROM risingStars rs1
+          INNER JOIN (
+            SELECT 
+              fiction_id,
+              MAX(captured_at) as max_captured_at
+            FROM risingStars
+            WHERE fiction_id IN (${placeholders})
+              AND genre = 'main'
+              AND captured_at < ?
+            GROUP BY fiction_id
+          ) rs2 ON rs1.fiction_id = rs2.fiction_id 
+            AND rs1.captured_at = rs2.max_captured_at
+          WHERE rs1.genre = 'main'
         `;
-        const previousPositionResult = await this.dbClient.query(previousPositionQuery, [
-          fiction.fiction_id,
-          fiction.position
-        ]);
 
-        if (previousPositionResult.length > 0) {
-          // Ensure timestamp is properly formatted for frontend
-          const capturedAt = previousPositionResult[0].captured_at;
-          const formattedDate = new Date(capturedAt).toISOString();
+        const previousPositionResult = await this.dbClient.query(
+          previousPositionQuery,
+          [...fictionIds, latestScrape]
+        );
 
-          previousPositions.set(fiction.fiction_id, {
-            position: previousPositionResult[0].position,
-            date: formattedDate
-          });
-        }
+        previousPositionResult.forEach((row: any) => {
+          // Only add if the position is actually different
+          const currentFiction = mainFictions.find((f: any) => f.fiction_id === row.fiction_id);
+          if (currentFiction && currentFiction.position !== row.position) {
+            const formattedDate = new Date(row.captured_at).toISOString();
+            previousPositions.set(row.fiction_id, {
+              position: row.position,
+              date: formattedDate
+            });
+          }
+        });
       }
 
       console.log(`🔍 Rising Stars Main - Found previous positions for ${previousPositions.size} fictions`);

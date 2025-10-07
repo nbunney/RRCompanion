@@ -247,16 +247,63 @@ export class RoyalRoadScrapingService {
         fiction.title = this.decodeHtmlEntities(titleMatch);
       }
 
-      // Extract author information
-      const authorLink = $('a[href*="/profile/"]').first();
-      if (authorLink.length) {
-        fiction.author.name = this.decodeHtmlEntities(authorLink.text().trim());
-        const authorIdMatch = authorLink.attr('href')?.match(/\/profile\/(\d+)/);
-        if (authorIdMatch) {
-          fiction.author.id = authorIdMatch[1];
+      // Extract author information - try multiple selectors
+      // Royal Road shows author name in the page subtitle like "by [Author Name]"
+      // Method 1: Look for the pattern "by AuthorName" in h4 elements
+      const byAuthorH4 = $('h4').filter((_, el) => {
+        const text = $(el).text().trim();
+        return text.startsWith('by ');
+      }).first();
+
+      if (byAuthorH4.length) {
+        const authorText = byAuthorH4.text().trim();
+        const authorName = authorText.replace(/^by\s+/, '').trim();
+        if (authorName && authorName !== 'Unknown Author') {
+          fiction.author.name = this.decodeHtmlEntities(authorName);
         }
-        fiction.author.avatar = authorLink.find('img').attr('src') || '';
+
+        // Try to find the author profile link
+        const authorLink = byAuthorH4.find('a[href*="/profile/"]').first();
+        if (!authorLink.length) {
+          // Look for adjacent author link
+          const nextAuthorLink = byAuthorH4.next('a[href*="/profile/"]').first();
+          if (nextAuthorLink.length) {
+            const authorIdMatch = nextAuthorLink.attr('href')?.match(/\/profile\/(\d+)/);
+            if (authorIdMatch) {
+              fiction.author.id = authorIdMatch[1];
+            }
+          }
+        } else {
+          const authorIdMatch = authorLink.attr('href')?.match(/\/profile\/(\d+)/);
+          if (authorIdMatch) {
+            fiction.author.id = authorIdMatch[1];
+          }
+        }
+      } else {
+        // Method 2: Try standard profile link selector
+        const authorLink = $('a[href*="/profile/"]').first();
+        if (authorLink.length) {
+          const authorName = this.decodeHtmlEntities(authorLink.text().trim());
+          if (authorName && authorName !== 'Unknown Author') {
+            fiction.author.name = authorName;
+          }
+          const authorIdMatch = authorLink.attr('href')?.match(/\/profile\/(\d+)/);
+          if (authorIdMatch) {
+            fiction.author.id = authorIdMatch[1];
+          }
+        }
       }
+
+      // Try to get author avatar from profile link
+      const authorProfileLink = $('a[href*="/profile/"]').first();
+      if (authorProfileLink.length) {
+        const avatarImg = authorProfileLink.find('img').first();
+        if (avatarImg.length) {
+          fiction.author.avatar = avatarImg.attr('src') || '';
+        }
+      }
+
+      console.log(`📝 Extracted author: ${fiction.author.name} (ID: ${fiction.author.id})`);
 
       // Extract description
       const descriptionEl = $('.description').first();
