@@ -21,6 +21,7 @@ import cacheRoutes from './routes/cache.ts';
 import campaignRoutes from './routes/campaign.ts';
 import retentionRoutes from './routes/retention.ts';
 import { risingStarsPositionRoutes } from './routes/risingStarsPosition.ts';
+import royalroadRoutes from './routes/royalroad.ts';
 
 // Load environment variables with multiple path attempts
 console.log('🔍 Current working directory:', Deno.cwd());
@@ -161,6 +162,7 @@ router.use('/api/coupons', couponRoutes.routes(), couponRoutes.allowedMethods())
 router.use('/api/campaigns', campaignRoutes.routes(), campaignRoutes.allowedMethods());
 router.use('/api/retention', retentionRoutes.routes(), retentionRoutes.allowedMethods());
 router.use('/api/rising-stars-position', risingStarsPositionRoutes.routes(), risingStarsPositionRoutes.allowedMethods());
+router.use('/api/royalroad', royalroadRoutes.routes(), royalroadRoutes.allowedMethods());
 
 // Register router routes
 app.use(router.routes());
