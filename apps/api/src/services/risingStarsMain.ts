@@ -76,42 +76,46 @@ export class RisingStarsMainService {
         const fictionIds = mainFictions.map((f: any) => f.fiction_id);
         const placeholders = fictionIds.map(() => '?').join(',');
 
-        // Use a subquery to get the most recent different position for each fiction
+        // For each fiction, we need to find the most recent position that's DIFFERENT from current
+        // We'll do this by joining with the current position and filtering in SQL
         const previousPositionQuery = `
           SELECT 
-            rs1.fiction_id,
-            rs1.position,
-            rs1.captured_at
-          FROM risingStars rs1
+            rs_prev.fiction_id,
+            rs_prev.position,
+            rs_prev.captured_at
+          FROM risingStars rs_prev
           INNER JOIN (
             SELECT 
-              fiction_id,
-              MAX(captured_at) as max_captured_at
-            FROM risingStars
-            WHERE fiction_id IN (${placeholders})
-              AND genre = 'main'
-              AND captured_at < ?
-            GROUP BY fiction_id
-          ) rs2 ON rs1.fiction_id = rs2.fiction_id 
-            AND rs1.captured_at = rs2.max_captured_at
-          WHERE rs1.genre = 'main'
+              rs_curr.fiction_id,
+              rs_curr.position as current_position,
+              MAX(rs_hist.captured_at) as max_captured_at
+            FROM risingStars rs_curr
+            LEFT JOIN risingStars rs_hist 
+              ON rs_curr.fiction_id = rs_hist.fiction_id
+              AND rs_hist.genre = 'main'
+              AND rs_hist.captured_at < ?
+              AND rs_hist.position != rs_curr.position
+            WHERE rs_curr.fiction_id IN (${placeholders})
+              AND rs_curr.genre = 'main'
+              AND rs_curr.captured_at = ?
+            GROUP BY rs_curr.fiction_id, rs_curr.position
+            HAVING MAX(rs_hist.captured_at) IS NOT NULL
+          ) latest ON rs_prev.fiction_id = latest.fiction_id 
+            AND rs_prev.captured_at = latest.max_captured_at
+          WHERE rs_prev.genre = 'main'
         `;
 
         const previousPositionResult = await this.dbClient.query(
           previousPositionQuery,
-          [...fictionIds, latestScrape]
+          [latestScrape, ...fictionIds, latestScrape]
         );
 
         previousPositionResult.forEach((row: any) => {
-          // Only add if the position is actually different
-          const currentFiction = mainFictions.find((f: any) => f.fiction_id === row.fiction_id);
-          if (currentFiction && currentFiction.position !== row.position) {
-            const formattedDate = new Date(row.captured_at).toISOString();
-            previousPositions.set(row.fiction_id, {
-              position: row.position,
-              date: formattedDate
-            });
-          }
+          const formattedDate = new Date(row.captured_at).toISOString();
+          previousPositions.set(row.fiction_id, {
+            position: row.position,
+            date: formattedDate
+          });
         });
       }
 
