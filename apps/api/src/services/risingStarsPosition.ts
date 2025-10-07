@@ -4,6 +4,48 @@ import { cacheService } from './cache.ts';
 import { risingStarsBestPositionsService } from './risingStarsBestPositions.ts';
 import type { CreateFictionRequest } from '../types/index.ts';
 
+// Helper function to decode HTML entities
+function decodeHtmlEntities(text: string | null | undefined): string {
+  if (!text || typeof text !== 'string') return text || '';
+
+  // First, handle numeric entities (both decimal and hex)
+  text = text.replace(/&#x([0-9a-fA-F]+);/g, (_match, hex) => {
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+  
+  text = text.replace(/&#(\d+);/g, (_match, dec) => {
+    return String.fromCharCode(parseInt(dec, 10));
+  });
+
+  // Then handle named entities
+  const entities: { [key: string]: string } = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&apos;': "'",
+    '&nbsp;': ' ',
+    '&ndash;': '–',
+    '&mdash;': '—',
+    '&hellip;': '…',
+    '&copy;': '©',
+    '&reg;': '®',
+    '&trade;': '™',
+    '&lsquo;': '\u2018',
+    '&rsquo;': '\u2019',
+    '&ldquo;': '\u201C',
+    '&rdquo;': '\u201D',
+    '&bull;': '•',
+    '&middot;': '·',
+    '&deg;': '°'
+  };
+
+  return text.replace(/&[a-zA-Z0-9#]+;/g, (entity) => {
+    return entities[entity] || entity;
+  });
+}
+
 export interface RisingStarsPosition {
   fictionId: number;
   title: string;
@@ -116,8 +158,8 @@ export class RisingStarsPositionService {
 
         const result = {
           fictionId: fiction.id,
-          title: fiction.title,
-          authorName: fiction.author_name,
+          title: decodeHtmlEntities(fiction.title),
+          authorName: decodeHtmlEntities(fiction.author_name),
           royalroadId: fiction.royalroad_id,
           imageUrl: fiction.image_url,
           isOnMain: true,
@@ -142,8 +184,8 @@ export class RisingStarsPositionService {
 
       const result = {
         fictionId: fiction.id,
-        title: fiction.title,
-        authorName: fiction.author_name,
+        title: decodeHtmlEntities(fiction.title),
+        authorName: decodeHtmlEntities(fiction.author_name),
         royalroadId: fiction.royalroad_id,
         imageUrl: fiction.image_url,
         isOnMain: false,
@@ -305,8 +347,8 @@ export class RisingStarsPositionService {
         const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, filteredFictionIds);
         fictionsAheadDetails = fictionDetailsResult.map((row: any) => ({
           fictionId: row.id,
-          title: row.title,
-          authorName: row.author_name,
+          title: decodeHtmlEntities(row.title),
+          authorName: decodeHtmlEntities(row.author_name),
           royalroadId: row.royalroad_id,
           imageUrl: row.image_url
         }));
