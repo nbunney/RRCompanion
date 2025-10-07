@@ -19,7 +19,7 @@ export class RisingStarsBestPositionsService {
    */
   async updateAllBestPositions(): Promise<{ updated: number; inserted: number }> {
     console.log('🏆 Updating Rising Stars best positions...');
-    
+
     try {
       let updated = 0;
       let inserted = 0;
@@ -46,14 +46,15 @@ export class RisingStarsBestPositionsService {
           FROM risingStarsBestPositions
           WHERE fiction_id = ? AND genre = ?
         `;
-        
+
         const existing = await this.dbClient.query(existingQuery, [
           record.fiction_id,
           record.genre
         ]);
 
         if (existing.length > 0) {
-          // Update if the new position is better (lower number)
+          // ONLY update if the new position is better (lower number)
+          // NEVER allow a worse (higher) position to replace a better one
           const currentBest = existing[0];
           if (record.best_position < currentBest.best_position) {
             const updateQuery = `
@@ -63,16 +64,15 @@ export class RisingStarsBestPositionsService {
                   last_updated_at = NOW()
               WHERE fiction_id = ? AND genre = ?
             `;
-            
+
             await this.dbClient.execute(updateQuery, [
               record.best_position,
               record.first_achieved_at,
               record.fiction_id,
               record.genre
             ]);
-            
+
             updated++;
-            console.log(`✅ Updated: Fiction ${record.fiction_id} in ${record.genre} - New best: #${record.best_position}`);
           }
         } else {
           // Insert new record
@@ -81,14 +81,14 @@ export class RisingStarsBestPositionsService {
             (fiction_id, genre, best_position, first_achieved_at, last_updated_at, created_at)
             VALUES (?, ?, ?, ?, NOW(), NOW())
           `;
-          
+
           await this.dbClient.execute(insertQuery, [
             record.fiction_id,
             record.genre,
             record.best_position,
             record.first_achieved_at
           ]);
-          
+
           inserted++;
           console.log(`➕ Inserted: Fiction ${record.fiction_id} in ${record.genre} - Best: #${record.best_position}`);
         }
@@ -115,7 +115,7 @@ export class RisingStarsBestPositionsService {
         FROM risingStarsBestPositions
         WHERE fiction_id = ? AND genre = ?
       `;
-      
+
       const historical = await this.dbClient.query(historicalQuery, [fictionId, genre]);
       const historicalBest = historical.length > 0 ? historical[0].best_position : null;
 
@@ -125,7 +125,7 @@ export class RisingStarsBestPositionsService {
         FROM risingStars
         WHERE fiction_id = ? AND genre = ?
       `;
-      
+
       const current = await this.dbClient.query(currentQuery, [fictionId, genre]);
       const currentBest = current.length > 0 && current[0].best_position ? current[0].best_position : null;
 
@@ -158,7 +158,7 @@ export class RisingStarsBestPositionsService {
         FROM risingStarsBestPositions
         WHERE fiction_id = ?
       `;
-      
+
       const historical = await this.dbClient.query(historicalQuery, [fictionId]);
       historical.forEach((row: any) => {
         positions.set(row.genre, row.best_position);
@@ -171,7 +171,7 @@ export class RisingStarsBestPositionsService {
         WHERE fiction_id = ?
         GROUP BY genre
       `;
-      
+
       const current = await this.dbClient.query(currentQuery, [fictionId]);
       current.forEach((row: any) => {
         if (row.best_position !== null) {
@@ -195,7 +195,7 @@ export class RisingStarsBestPositionsService {
    */
   async cleanupOldRisingStarsData(dryRun: boolean = true): Promise<{ deleted: number; kept: number }> {
     console.log(`🧹 ${dryRun ? 'DRY RUN - ' : ''}Cleaning up old Rising Stars data...`);
-    
+
     try {
       // First, make sure best positions are up to date
       await this.updateAllBestPositions();
@@ -206,7 +206,7 @@ export class RisingStarsBestPositionsService {
         FROM risingStars
         ORDER BY scrape_date DESC
       `;
-      
+
       const dates = await this.dbClient.query(datesQuery);
       console.log(`📅 Found ${dates.length} unique dates in Rising Stars data`);
 
@@ -215,7 +215,7 @@ export class RisingStarsBestPositionsService {
 
       for (const dateRecord of dates) {
         const scrapeDate = dateRecord.scrape_date;
-        
+
         // For each date, find the scrape closest to noon Pacific (19:00-20:00 UTC)
         // We'll look for scrapes between 18:00 and 21:00 UTC to catch variations
         const noonScrapeQuery = `
@@ -227,9 +227,9 @@ export class RisingStarsBestPositionsService {
           ORDER BY ABS(HOUR(captured_at) - 19), ABS(MINUTE(captured_at) - 0)
           LIMIT 1
         `;
-        
+
         const noonScrape = await this.dbClient.query(noonScrapeQuery, [scrapeDate]);
-        
+
         if (noonScrape.length === 0) {
           console.log(`⚠️ No noon scrape found for ${scrapeDate}, keeping all scrapes for this day`);
           continue;
@@ -237,7 +237,7 @@ export class RisingStarsBestPositionsService {
 
         const keepTimestamp = noonScrape[0].captured_at;
         const keepCount = noonScrape[0].count;
-        
+
         // Count how many records we'll delete for this date
         const countQuery = `
           SELECT COUNT(*) as count
@@ -245,7 +245,7 @@ export class RisingStarsBestPositionsService {
           WHERE DATE(captured_at) = ?
             AND captured_at != ?
         `;
-        
+
         const countResult = await this.dbClient.query(countQuery, [scrapeDate, keepTimestamp]);
         const deleteCount = countResult[0].count;
 
@@ -256,13 +256,13 @@ export class RisingStarsBestPositionsService {
             WHERE DATE(captured_at) = ?
               AND captured_at != ?
           `;
-          
+
           await this.dbClient.execute(deleteQuery, [scrapeDate, keepTimestamp]);
         }
 
         totalDeleted += deleteCount;
         totalKept += keepCount;
-        
+
         console.log(`${dryRun ? '📊 Would delete' : '🗑️ Deleted'} ${deleteCount} records for ${scrapeDate}, keeping ${keepCount} records from ${keepTimestamp}`);
       }
 
