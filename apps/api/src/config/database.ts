@@ -758,6 +758,27 @@ async function runMigrations(client: Client): Promise<void> {
       sql: `
         ALTER TABLE fiction DROP COLUMN IF EXISTS sponsored
       `
+    },
+    {
+      name: '020_create_rising_stars_best_positions_table',
+      sql: `
+        CREATE TABLE IF NOT EXISTS risingStarsBestPositions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          fiction_id INT NOT NULL,
+          genre VARCHAR(100) NOT NULL,
+          best_position INT NOT NULL,
+          first_achieved_at DATETIME NOT NULL,
+          last_updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          
+          UNIQUE KEY unique_fiction_genre (fiction_id, genre),
+          FOREIGN KEY (fiction_id) REFERENCES fiction(id) ON DELETE CASCADE,
+          
+          INDEX idx_genre (genre),
+          INDEX idx_best_position (best_position),
+          INDEX idx_fiction_genre (fiction_id, genre)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
     }
   ];
 
