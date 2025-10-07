@@ -41,8 +41,8 @@ if ! aws sts get-caller-identity &> /dev/null; then
     exit 1
 fi
 
-# Get deployment stage
-STAGE=${1:-dev}
+# Get deployment stage (default to prod)
+STAGE=${1:-prod}
 print_status "Deploying to stage: $STAGE"
 
 # Check if .env file exists
@@ -64,11 +64,7 @@ npm run build
 
 # Deploy to AWS
 print_status "Deploying to AWS Lambda..."
-if [ "$STAGE" = "prod" ]; then
-    npm run deploy:prod
-else
-    npm run deploy:dev
-fi
+npm run deploy:prod
 
 print_status "Deployment completed successfully!"
 

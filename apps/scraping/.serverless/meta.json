@@ -1,0 +1,255 @@
+{
+  "/Users/nathan/Sites/RRCompanion/apps/scraping/serverless.yml": {
+    "versionFramework": "4.20.2",
+    "servicePath": "/Users/nathan/Sites/RRCompanion/apps/scraping/serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "rrcompanion-scraping",
+      "frameworkVersion": "4",
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs20.x",
+        "stage": "dev",
+        "region": "us-west-2",
+        "timeout": 900,
+        "memorySize": 2048,
+        "environment": {
+          "NODE_ENV": "dev",
+          "DATABASE_URL": "mysql://rrc_user:rrc123!!@inventaweb.c7r7edcimktc.us-west-1.rds.amazonaws.com:3306/RRCompanion"
+        },
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "rds:*"
+                ],
+                "Resource": "*"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "s3:GetObject",
+                  "s3:PutObject",
+                  "s3:DeleteObject"
+                ],
+                "Resource": "arn:aws:s3:::rrcompanion-scraping-dev/*"
+              }
+            ]
+          }
+        },
+        "versionFunctions": true
+      },
+      "functions": {
+        "scrapeRisingStarsMain": {
+          "handler": "src/handlers/risingStarsMain.handler",
+          "timeout": 900,
+          "memorySize": 2048,
+          "events": [
+            {
+              "schedule": {
+                "rate": [
+                  "rate(15 minutes)"
+                ],
+                "enabled": true
+              }
+            }
+          ],
+          "environment": {
+            "SCRAPING_TYPE": "rising-stars-main"
+          },
+          "name": "rrcompanion-scraping-dev-scrapeRisingStarsMain"
+        },
+        "scrapeRisingStarsAll": {
+          "handler": "src/handlers/risingStarsAll.handler",
+          "timeout": 900,
+          "memorySize": 2048,
+          "events": [
+            {
+              "schedule": {
+                "rate": [
+                  "rate(15 minutes)"
+                ],
+                "enabled": true
+              }
+            }
+          ],
+          "environment": {
+            "SCRAPING_TYPE": "rising-stars-all"
+          },
+          "name": "rrcompanion-scraping-dev-scrapeRisingStarsAll"
+        },
+        "scrapeFiction": {
+          "handler": "src/handlers/fiction.handler",
+          "timeout": 300,
+          "memorySize": 1024,
+          "environment": {
+            "SCRAPING_TYPE": "fiction"
+          },
+          "events": [],
+          "name": "rrcompanion-scraping-dev-scrapeFiction"
+        },
+        "scrapeFictionHistory": {
+          "handler": "src/handlers/fictionHistory.handler",
+          "timeout": 270,
+          "memorySize": 1536,
+          "events": [
+            {
+              "schedule": {
+                "rate": [
+                  "rate(5 minutes)"
+                ],
+                "enabled": true
+              }
+            }
+          ],
+          "environment": {
+            "SCRAPING_TYPE": "fiction-history"
+          },
+          "name": "rrcompanion-scraping-dev-scrapeFictionHistory"
+        },
+        "testFiction": {
+          "handler": "src/handlers/testFiction.handler",
+          "timeout": 300,
+          "memorySize": 1024,
+          "environment": {
+            "SCRAPING_TYPE": "test-fiction"
+          },
+          "events": [],
+          "name": "rrcompanion-scraping-dev-testFiction"
+        },
+        "debugHtml": {
+          "handler": "src/handlers/debugHtml.handler",
+          "timeout": 300,
+          "memorySize": 1024,
+          "environment": {
+            "SCRAPING_TYPE": "debug-html"
+          },
+          "events": [],
+          "name": "rrcompanion-scraping-dev-debugHtml"
+        }
+      },
+      "plugins": [
+        "serverless-offline"
+      ],
+      "build": {
+        "esbuild": true
+      },
+      "package": {
+        "exclude": [
+          "node_modules/**",
+          ".git/**",
+          ".env*",
+          "README.md",
+          "*.md"
+        ],
+        "artifactsS3KeyDirname": "serverless/rrcompanion-scraping/dev/code-artifacts"
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs20.x",
+      "stage": "dev",
+      "region": "us-west-2",
+      "timeout": 900,
+      "memorySize": 2048,
+      "environment": {
+        "NODE_ENV": "dev",
+        "DATABASE_URL": "mysql://rrc_user:rrc123!!@inventaweb.c7r7edcimktc.us-west-1.rds.amazonaws.com:3306/RRCompanion"
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "rds:*"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject"
+              ],
+              "Resource": "arn:aws:s3:::rrcompanion-scraping-dev/*"
+            }
+          ]
+        }
+      },
+      "versionFunctions": true
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "serviceRawFile": "service: rrcompanion-scraping\n\nframeworkVersion: \"4\"\n\nprovider:\n  name: aws\n  runtime: nodejs20.x\n  stage: ${opt:stage, 'dev'}\n  region: ${opt:region, 'us-west-2'}\n  timeout: 900 # Maximum Lambda timeout (15 minutes)\n  memorySize: 2048 # 2GB memory for better performance\n  environment:\n    NODE_ENV: ${self:provider.stage}\n    DATABASE_URL: ${env:DATABASE_URL}\n  iam:\n    role:\n      statements:\n        - Effect: Allow\n          Action:\n            - rds:*\n          Resource: \"*\"\n        - Effect: Allow\n          Action:\n            - s3:GetObject\n            - s3:PutObject\n            - s3:DeleteObject\n          Resource: \"arn:aws:s3:::rrcompanion-scraping-${self:provider.stage}/*\"\n\nfunctions:\n  # Rising Stars scraping - main page\n  scrapeRisingStarsMain:\n    handler: src/handlers/risingStarsMain.handler\n    timeout: 900\n    memorySize: 2048\n    events:\n      - schedule:\n          rate: rate(15 minutes)\n          enabled: true\n    environment:\n      SCRAPING_TYPE: \"rising-stars-main\"\n\n  # Rising Stars scraping - all genres\n  scrapeRisingStarsAll:\n    handler: src/handlers/risingStarsAll.handler\n    timeout: 900\n    memorySize: 2048\n    events:\n      - schedule:\n          rate: rate(15 minutes)\n          enabled: true\n    environment:\n      SCRAPING_TYPE: \"rising-stars-all\"\n\n  # Individual fiction scraping\n  scrapeFiction:\n    handler: src/handlers/fiction.handler\n    timeout: 300\n    memorySize: 1024\n    environment:\n      SCRAPING_TYPE: \"fiction\"\n\n  # Fiction history scraping\n  scrapeFictionHistory:\n    handler: src/handlers/fictionHistory.handler\n    timeout: 270\n    memorySize: 1536\n    events:\n      - schedule:\n          rate: rate(5 minutes)\n          enabled: true\n    environment:\n      SCRAPING_TYPE: \"fiction-history\"\n\n  # Test fiction scraping (for debugging/auditing)\n  testFiction:\n    handler: src/handlers/testFiction.handler\n    timeout: 300\n    memorySize: 1024\n    environment:\n      SCRAPING_TYPE: \"test-fiction\"\n\n  # Debug HTML structure (for debugging scraping issues)\n  debugHtml:\n    handler: src/handlers/debugHtml.handler\n    timeout: 300\n    memorySize: 1024\n    environment:\n      SCRAPING_TYPE: \"debug-html\"\n\nplugins:\n  - serverless-offline\n\nbuild:\n  esbuild: true\n\npackage:\n  exclude:\n    - node_modules/**\n    - .git/**\n    - .env*\n    - README.md\n    - \"*.md\"\n",
+    "command": [
+      "remove"
+    ],
+    "options": {
+      "stage": "dev"
+    },
+    "orgId": "15f2cf7b-b141-47be-a3b0-4f98cfb65d0c",
+    "orgName": "rrcompanion",
+    "userId": "XnXKbG3ZR4skTnTRgb",
+    "userName": "rrcompanion",
+    "serviceProviderAwsAccountId": "192863343258",
+    "serviceProviderAwsCfStackName": "rrcompanion-scraping-dev",
+    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-west-2:192863343258:stack/rrcompanion-scraping-dev/58bc4b80-93ee-11f0-b2f9-0a22aee99741",
+    "serviceProviderAwsCfStackCreated": "2025-09-17T17:47:15.218Z",
+    "serviceProviderAwsCfStackUpdated": "2025-10-07T19:57:10.637Z",
+    "serviceProviderAwsCfStackStatus": "UPDATE_COMPLETE",
+    "serviceProviderAwsCfStackOutputs": [
+      {
+        "OutputKey": "TestFictionLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-testFiction:10",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rrcompanion-scraping-dev-TestFictionLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ScrapeRisingStarsAllLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeRisingStarsAll:21",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rrcompanion-scraping-dev-ScrapeRisingStarsAllLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ScrapeRisingStarsMainLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeRisingStarsMain:21",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rrcompanion-scraping-dev-ScrapeRisingStarsMainLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ScrapeFictionHistoryLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeFictionHistory:21",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rrcompanion-scraping-dev-ScrapeFictionHistoryLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "DebugHtmlLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-debugHtml:9",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rrcompanion-scraping-dev-DebugHtmlLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ScrapeFictionLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-west-2:192863343258:function:rrcompanion-scraping-dev-scrapeFiction:21",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rrcompanion-scraping-dev-ScrapeFictionLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ServerlessDeploymentBucketName",
+        "OutputValue": "serverless-framework-deployments-us-west-2-106ab456-34db",
+        "ExportName": "sls-rrcompanion-scraping-dev-ServerlessDeploymentBucketName"
+      }
+    ]
+  }
+}

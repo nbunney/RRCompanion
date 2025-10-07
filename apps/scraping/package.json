@@ -5,8 +5,7 @@
   "main": "src/handlers/index.ts",
   "scripts": {
     "build": "tsc",
-    "deploy": "serverless deploy",
-    "deploy:dev": "serverless deploy --stage dev",
+    "deploy": "serverless deploy --stage prod",
     "deploy:prod": "serverless deploy --stage prod",
     "offline": "serverless offline",
     "invoke:local": "serverless invoke local",

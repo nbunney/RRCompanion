@@ -5,7 +5,7 @@ frameworkVersion: "4"
 provider:
   name: aws
   runtime: nodejs20.x
-  stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'prod'}
   region: ${opt:region, 'us-west-2'}
   timeout: 900 # Maximum Lambda timeout (15 minutes)
   memorySize: 2048 # 2GB memory for better performance
