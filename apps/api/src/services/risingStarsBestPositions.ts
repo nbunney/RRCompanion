@@ -192,6 +192,7 @@ export class RisingStarsBestPositionsService {
   /**
    * Clean up old Rising Stars data, keeping only noon scrapes for each day
    * Pacific Time noon is approximately 19:00-20:00 UTC depending on DST
+   * Excludes the most recent 3 days from cleanup to preserve all scrapes for recent data
    */
   async cleanupOldRisingStarsData(dryRun: boolean = true): Promise<{ deleted: number; kept: number }> {
     console.log(`🧹 ${dryRun ? 'DRY RUN - ' : ''}Cleaning up old Rising Stars data...`);
@@ -200,15 +201,16 @@ export class RisingStarsBestPositionsService {
       // First, make sure best positions are up to date
       await this.updateAllBestPositions();
 
-      // Find all unique dates in the risingStars table
+      // Find all unique dates in the risingStars table, excluding the most recent 3 days
       const datesQuery = `
         SELECT DISTINCT DATE(captured_at) as scrape_date
         FROM risingStars
+        WHERE DATE(captured_at) < DATE_SUB(CURDATE(), INTERVAL 3 DAY)
         ORDER BY scrape_date DESC
       `;
 
       const dates = await this.dbClient.query(datesQuery);
-      console.log(`📅 Found ${dates.length} unique dates in Rising Stars data`);
+      console.log(`📅 Found ${dates.length} unique dates in Rising Stars data (excluding last 3 days)`);
 
       let totalDeleted = 0;
       let totalKept = 0;

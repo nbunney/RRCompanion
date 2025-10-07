@@ -285,6 +285,45 @@ export class DatabaseService {
     return results[0]?.latest_scrape || null;
   }
 
+  // Update author data for a fiction
+  async updateFictionAuthor(fictionId: number, authorData: {
+    author_name?: string;
+    author_id?: string;
+    author_avatar?: string;
+  }): Promise<void> {
+    const fields = [];
+    const values = [];
+
+    if (authorData.author_name !== undefined) {
+      fields.push('author_name = ?');
+      values.push(authorData.author_name);
+    }
+    if (authorData.author_id !== undefined) {
+      fields.push('author_id = ?');
+      values.push(authorData.author_id);
+    }
+    if (authorData.author_avatar !== undefined) {
+      fields.push('author_avatar = ?');
+      values.push(authorData.author_avatar);
+    }
+
+    if (fields.length === 0) {
+      return; // Nothing to update
+    }
+
+    // Add updated_at timestamp
+    fields.push('updated_at = NOW()');
+    values.push(fictionId);
+
+    const query = `
+      UPDATE fiction 
+      SET ${fields.join(', ')}
+      WHERE id = ?
+    `;
+
+    await this.execute(query, values);
+  }
+
   // Update main fiction record with latest data
   async updateFictionRecord(fictionId: number, updateData: {
     image_url?: string;

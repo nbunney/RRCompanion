@@ -3,6 +3,48 @@ import { cacheService } from './cache.ts';
 import type { Fiction, CreateFictionRequest, UpdateFictionRequest } from '../types/index.ts';
 
 export class FictionService {
+  // Utility function to decode HTML entities
+  private static decodeHtmlEntities(text: string | null | undefined): string {
+    if (!text || typeof text !== 'string') return text || '';
+
+    // First, handle numeric entities (both decimal and hex)
+    text = text.replace(/&#x([0-9a-fA-F]+);/g, (_match, hex) => {
+      return String.fromCharCode(parseInt(hex, 16));
+    });
+
+    text = text.replace(/&#(\d+);/g, (_match, dec) => {
+      return String.fromCharCode(parseInt(dec, 10));
+    });
+
+    // Then handle named entities
+    const entities: { [key: string]: string } = {
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&quot;': '"',
+      '&#39;': "'",
+      '&apos;': "'",
+      '&nbsp;': ' ',
+      '&ndash;': '–',
+      '&mdash;': '—',
+      '&hellip;': '…',
+      '&copy;': '©',
+      '&reg;': '®',
+      '&trade;': '™',
+      '&lsquo;': '\u2018',
+      '&rsquo;': '\u2019',
+      '&ldquo;': '\u201C',
+      '&rdquo;': '\u201D',
+      '&bull;': '•',
+      '&middot;': '·',
+      '&deg;': '°'
+    };
+
+    return text.replace(/&[a-zA-Z0-9#]+;/g, (entity) => {
+      return entities[entity] || entity;
+    });
+  }
+
   // Utility function to clean strings for database insertion
   private static cleanStringForDB(str: string | null | undefined): string | null {
     if (!str || typeof str !== 'string') return null;
@@ -382,11 +424,11 @@ export class FictionService {
     return {
       id: row.id,
       royalroad_id: row.royalroad_id,
-      title: row.title,
-      author_name: row.author_name,
+      title: this.decodeHtmlEntities(row.title),
+      author_name: this.decodeHtmlEntities(row.author_name),
       author_id: row.author_id,
       author_avatar: row.author_avatar,
-      description: row.description,
+      description: this.decodeHtmlEntities(row.description),
       image_url: row.image_url,
       status: row.status,
       type: row.type,
