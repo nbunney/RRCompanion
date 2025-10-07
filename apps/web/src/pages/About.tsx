@@ -29,7 +29,7 @@ const About: React.FC = () => {
                 <p className="text-gray-700 leading-relaxed">
                   <a href="https://www.royalroad.com/profile/373252" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">NateDogg</a> is the founder of RRCompanion. He is a RoyalRoad reader and author, and he is the one who built the system.<br />
                   <br />
-                  His new fiction, <a href="https://www.royalroad.com/fiction/122933/prisoner-of-the-system/chapter/2497771" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Prisoner of the System</a>, is launching on August 28th.
+                  His new fiction, <a href="https://www.royalroad.com/fiction/122933/prisoner-of-the-system/chapter/2497771" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Prisoner of the System</a>, peaked at #19 on Rising Stars Main.
                 </p>
               </div>
             </div>
