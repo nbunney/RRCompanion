@@ -367,17 +367,26 @@ export class RisingStarsPositionService {
 
 
       if (filteredFictionIds.length > 0) {
-        // Simplified: Just get the fiction details without movement for now
-        const limitedFictionIds = filteredFictionIds.slice(0, 20) as number[];
+        // Get fiction details with their positions using optimized query
+        const limitedFictionIds = filteredFictionIds.slice(0, 10) as number[]; // Reduce from 20 to 10 to avoid timeout
         const fictionDetailsQuery = `
-          SELECT id, title, author_name, royalroad_id, image_url 
-          FROM fiction 
-          WHERE id IN (${limitedFictionIds.map(() => '?').join(',')})
-          ORDER BY id ASC
+          SELECT 
+            f.id,
+            f.title,
+            f.author_name,
+            f.royalroad_id,
+            f.image_url,
+            rs.position
+          FROM fiction f
+          LEFT JOIN risingStars rs ON f.id = rs.fiction_id 
+            AND rs.genre = 'main' 
+            AND rs.captured_at = ?
+          WHERE f.id IN (${limitedFictionIds.map(() => '?').join(',')})
+          ORDER BY f.id ASC
         `;
-        const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, limitedFictionIds);
+        const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, [scrapeTimestamp, ...limitedFictionIds]);
 
-        // Add non-Main fictions to the list (without movement for now to avoid timeout)
+        // Add non-Main fictions to the list with positions but no movement (to keep it fast)
         const nonMainFictions = fictionDetailsResult.map((row: any) => {
           return {
             fictionId: row.id,
@@ -385,6 +394,8 @@ export class RisingStarsPositionService {
             authorName: decodeHtmlEntities(row.author_name),
             royalroadId: row.royalroad_id,
             imageUrl: row.image_url,
+            position: row.position || undefined,
+            lastMove: 'new' as const,
             isUserFiction: false
           };
         });
@@ -397,6 +408,7 @@ export class RisingStarsPositionService {
     const seenFictionIds = new Set<number>();
     const uniqueFictions = fictionsAheadDetails.filter(f => {
       if (seenFictionIds.has(f.fictionId)) {
+        console.log(`🔍 Duplicate found: ${f.fictionId} - keeping ${f.isUserFiction ? 'USER version' : 'other version'}`);
         return f.isUserFiction; // Keep user's version if duplicate
       }
       seenFictionIds.add(f.fictionId);
@@ -409,7 +421,9 @@ export class RisingStarsPositionService {
       return posA - posB;
     });
 
-    console.log(`🔍 Position Calculator - Final list has ${uniqueFictions.length} fictions`);
+    console.log(`🔍 Position Calculator - Final list has ${uniqueFictions.length} unique fictions`);
+    console.log(`🔍 Position Calculator - Fiction IDs: ${uniqueFictions.map(f => `${f.fictionId}${f.isUserFiction ? '(YOU)' : ''}`).join(', ')}`);
+    console.log(`🔍 Position Calculator - Positions: ${uniqueFictions.map(f => `#${f.position || 'N/A'}`).join(', ')}`);
 
     return {
       estimatedPosition,

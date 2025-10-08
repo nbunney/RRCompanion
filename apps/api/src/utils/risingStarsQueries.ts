@@ -28,31 +28,35 @@ export async function getRSMainBottomWithMovement(
       f.author_name,
       f.royalroad_id,
       f.image_url,
-      prev.position as prev_position,
-      prev.captured_at as prev_captured_at
+      prev.prev_position,
+      prev.prev_captured_at
     FROM risingStars current
     JOIN fiction f ON current.fiction_id = f.id
     LEFT JOIN (
       SELECT 
-        rs.fiction_id,
-        rs.position,
-        rs.captured_at
-      FROM risingStars rs
-      WHERE rs.genre = 'main'
-        AND rs.captured_at < ?
-        AND rs.captured_at >= DATE_SUB(?, INTERVAL 7 DAY)
-      ORDER BY rs.captured_at DESC
+        fiction_id,
+        position as prev_position,
+        captured_at as prev_captured_at
+      FROM (
+        SELECT 
+          fiction_id,
+          position,
+          captured_at,
+          ROW_NUMBER() OVER (PARTITION BY fiction_id ORDER BY captured_at DESC) as rn
+        FROM risingStars
+        WHERE genre = 'main'
+          AND captured_at < ?
+      ) ranked
+      WHERE rn = 1
     ) prev ON current.fiction_id = prev.fiction_id 
-      AND prev.position != current.position
+      AND prev.prev_position != current.position
     WHERE current.captured_at = ?
       AND current.genre = 'main'
       AND current.position BETWEEN ? AND ?
-    GROUP BY current.fiction_id, current.position
     ORDER BY current.position ASC
   `;
 
   const result = await client.query(query, [
-    currentTimestamp,
     currentTimestamp,
     currentTimestamp,
     startPosition,
@@ -108,18 +112,17 @@ export async function getFictionMovement(
   const query = `
     SELECT 
       current.position as current_position,
-      prev.position as prev_position,
-      prev.captured_at as prev_captured_at
+      prev.prev_position,
+      prev.prev_captured_at
     FROM risingStars current
     LEFT JOIN (
       SELECT 
-        position,
-        captured_at
+        position as prev_position,
+        captured_at as prev_captured_at
       FROM risingStars
       WHERE fiction_id = ?
         AND genre = ?
         AND captured_at < ?
-        AND captured_at >= DATE_SUB(?, INTERVAL 7 DAY)
       ORDER BY captured_at DESC
       LIMIT 1
     ) prev ON 1=1
@@ -132,7 +135,6 @@ export async function getFictionMovement(
   const result = await client.query(query, [
     fictionId,
     genre,
-    currentTimestamp,
     currentTimestamp,
     fictionId,
     genre,
