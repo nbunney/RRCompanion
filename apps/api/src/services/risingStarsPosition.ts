@@ -165,11 +165,40 @@ export class RisingStarsPositionService {
         // Fast path: Fiction is in competitive zone cache
         console.log(`⚡ Cache hit! Fiction at position #${cachedPosition.calculated_position}`);
         
-        // Get context fictions (7 on either side)
+        // Check if cached position is on RS Main (1-50)
+        const isOnMain = cachedPosition.calculated_position >= 1 && cachedPosition.calculated_position <= 50;
+        
+        if (isOnMain) {
+          // Fiction is on RS Main according to cache
+          genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
+          
+          const result = {
+            fictionId: fiction.id,
+            title: decodeHtmlEntities(fiction.title),
+            authorName: decodeHtmlEntities(fiction.author_name),
+            royalroadId: fiction.royalroad_id,
+            imageUrl: fiction.image_url,
+            isOnMain: true,
+            mainPosition: cachedPosition.calculated_position,
+            estimatedPosition: cachedPosition.calculated_position,
+            fictionsAhead: cachedPosition.calculated_position - 1,
+            fictionsToClimb: 0,
+            lastUpdated: latestScrape,
+            genrePositions
+          };
+          
+          // Cache the result
+          cacheService.set(cacheKey, result, this.CACHE_TTL);
+          console.log(`✅ Rising Stars Position - Fiction on RS Main at #${cachedPosition.calculated_position} (from competitive zone cache)`);
+          
+          return result;
+        }
+        
+        // Fiction is not on main - get context fictions (7 on either side)
         const startPos = Math.max(1, cachedPosition.calculated_position - 7);
         const endPos = cachedPosition.calculated_position + 7;
         const contextFictions = await competitiveZoneCacheService.getFictionsInRange(startPos, endPos);
-
+        
         // Mark the user's fiction
         const fictionsAheadDetails = contextFictions.map((f: any) => ({
           fictionId: f.fiction_id,
@@ -183,15 +212,15 @@ export class RisingStarsPositionService {
           lastMoveDate: f.last_move_date || undefined,
           isUserFiction: f.fiction_id === fiction.id
         }));
-
+        
         genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
-
+        
         positionData = {
           estimatedPosition: cachedPosition.calculated_position,
           fictionsAhead: cachedPosition.calculated_position - 1,
           fictionsAheadDetails
         };
-
+        
         console.log(`✅ Used competitive zone cache: position #${cachedPosition.calculated_position}, showing ${fictionsAheadDetails.length} context fictions`);
       } else {
         // Slow path: Full calculation
