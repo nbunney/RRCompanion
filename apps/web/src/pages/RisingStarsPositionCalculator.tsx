@@ -19,15 +19,17 @@ interface RisingStarsPosition {
   fictionsToClimb: number;
   lastUpdated: string;
   genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
-  fictionsAheadDetails?: { 
-    fictionId: number; 
-    title: string; 
-    authorName: string; 
-    royalroadId: string; 
+  fictionsAheadDetails?: {
+    fictionId: number;
+    title: string;
+    authorName: string;
+    royalroadId: string;
     imageUrl?: string;
     lastMove?: 'up' | 'down' | 'same' | 'new';
     lastPosition?: number;
     lastMoveDate?: string;
+    position?: number;
+    isUserFiction?: boolean;
   }[];
 
 }
@@ -352,16 +354,22 @@ const RisingStarsPositionCalculator: React.FC = () => {
             </div>
           )}
 
-          {/* Fictions Ahead - Only show if within 10 spots of main and not already on main */}
-          {!position.isOnMain && position.fictionsToClimb <= 10 && position.fictionsAheadDetails && position.fictionsAheadDetails.length > 0 && (
+          {/* Fictions Ahead - Show context around user's position */}
+          {!position.isOnMain && position.fictionsAheadDetails && position.fictionsAheadDetails.length > 0 && (
             <div className="bg-white rounded-lg shadow-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Fictions Ahead of You</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Position Context</h3>
               <p className="text-sm text-gray-600 mb-4">
-                You're within {position.fictionsToClimb} spots of Rising Stars Main! Here are some of the fictions ahead of you (excluding those already on Main):
+                Showing Rising Stars Main positions 46-50, your fiction at #{position.estimatedPosition}, and fictions directly ahead of you:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {position.fictionsAheadDetails.slice(0, 20).map((fiction, index) => (
-                  <div key={fiction.fictionId} className="flex items-center space-x-3 p-3 bg-gray-50 rounded text-sm hover:bg-gray-100 transition-colors">
+                {position.fictionsAheadDetails.map((fiction) => (
+                  <div
+                    key={fiction.fictionId}
+                    className={`flex items-center space-x-3 p-3 rounded text-sm hover:bg-gray-100 transition-colors ${fiction.isUserFiction
+                      ? 'bg-blue-100 border-2 border-blue-400'
+                      : 'bg-gray-50'
+                      }`}
+                  >
                     {fiction.imageUrl && (
                       <a
                         href={`/fiction/${fiction.royalroadId}`}
@@ -382,8 +390,8 @@ const RisingStarsPositionCalculator: React.FC = () => {
                         href={`/fiction/${fiction.royalroadId}`}
                         className="hover:text-blue-600 transition-colors"
                       >
-                        <div className="font-medium text-gray-900 truncate" title={fiction.title}>
-                          {fiction.title}
+                        <div className={`font-medium truncate ${fiction.isUserFiction ? 'text-blue-900' : 'text-gray-900'}`} title={fiction.title}>
+                          {fiction.isUserFiction && '👉 '}{fiction.title}
                         </div>
                       </a>
                       <div className="text-xs text-gray-500">
@@ -398,23 +406,18 @@ const RisingStarsPositionCalculator: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <div className="ml-2 text-xs text-gray-400 flex-shrink-0">
-                      #{index + 1}
+                    <div className={`ml-2 text-xs flex-shrink-0 font-semibold ${fiction.isUserFiction ? 'text-blue-600' : 'text-gray-400'
+                      }`}>
+                      #{fiction.position || position.estimatedPosition}
                     </div>
                   </div>
                 ))}
               </div>
-              {position.fictionsAheadDetails.length > 20 && (
-                <p className="text-xs text-gray-500 mt-3 text-center">
-                  Showing first 20 of {position.fictionsAhead} fictions ahead
-                </p>
-              )}
 
               {/* Explanatory note */}
               <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                 <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> If you are at position 52 (for example) you should see 1 fiction listed here.
-                  When you are at position 51 then there will be no fictions that are not on RS main ahead of you.
+                  <strong>Context:</strong> This shows the last 5 positions on Rising Stars Main (46-50), your fiction's position, and the fictions directly competing with you to reach the Main list.
                 </p>
               </div>
             </div>

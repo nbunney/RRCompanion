@@ -1,47 +1,7 @@
 import { client } from '../config/database.ts';
 import { cacheService } from './cache.ts';
-
-// Helper function to decode HTML entities
-function decodeHtmlEntities(text: string | null | undefined): string {
-  if (!text || typeof text !== 'string') return text || '';
-
-  // First, handle numeric entities (both decimal and hex)
-  text = text.replace(/&#x([0-9a-fA-F]+);/g, (_match, hex) => {
-    return String.fromCharCode(parseInt(hex, 16));
-  });
-  
-  text = text.replace(/&#(\d+);/g, (_match, dec) => {
-    return String.fromCharCode(parseInt(dec, 10));
-  });
-
-  // Then handle named entities
-  const entities: { [key: string]: string } = {
-    '&amp;': '&',
-    '&lt;': '<',
-    '&gt;': '>',
-    '&quot;': '"',
-    '&#39;': "'",
-    '&apos;': "'",
-    '&nbsp;': ' ',
-    '&ndash;': '–',
-    '&mdash;': '—',
-    '&hellip;': '…',
-    '&copy;': '©',
-    '&reg;': '®',
-    '&trade;': '™',
-    '&lsquo;': '\u2018',
-    '&rsquo;': '\u2019',
-    '&ldquo;': '\u201C',
-    '&rdquo;': '\u201D',
-    '&bull;': '•',
-    '&middot;': '·',
-    '&deg;': '°'
-  };
-
-  return text.replace(/&[a-zA-Z0-9#]+;/g, (entity) => {
-    return entities[entity] || entity;
-  });
-}
+import { decodeHtmlEntities } from '../utils/htmlEntities.ts';
+import { calculateMovement } from '../utils/risingStarsMovement.ts';
 
 export interface RisingStarsMainEntry {
   position: number;
@@ -205,19 +165,13 @@ export class RisingStarsMainService {
         let lastMoveDate: string | undefined;
 
         if (previousData !== undefined) {
-          lastPosition = previousData.position;
-          lastMoveDate = previousData.date;
-
           // Debug logging
           console.log(`🔍 Fiction ${fiction.fiction_id}: current position ${fiction.position}, previous position ${previousData.position}, lastMoveDate: ${previousData.date}`);
 
-          if (fiction.position < previousData.position) {
-            lastMove = 'up'; // Better position (lower number)
-          } else if (fiction.position > previousData.position) {
-            lastMove = 'down'; // Worse position (higher number)
-          } else {
-            lastMove = 'same';
-          }
+          const movement = calculateMovement(fiction.position, previousData.position, previousData.date);
+          lastMove = movement.lastMove;
+          lastPosition = movement.lastPosition;
+          lastMoveDate = movement.lastMoveDate;
         }
 
         // Calculate days on list
