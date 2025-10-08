@@ -1,5 +1,6 @@
 import { FictionHistoryService } from './fictionHistory.ts';
 import { risingStarsBestPositionsService } from './risingStarsBestPositions.ts';
+import { competitiveZoneCacheService } from './competitiveZoneCache.ts';
 
 export class CronService {
   private fictionHistoryService: FictionHistoryService;
@@ -8,6 +9,7 @@ export class CronService {
   private lastAllFictionsRunDate: string | null = null;
   private lastAllFictionsRunHour: number | null = null;
   private lastBestPositionsUpdateDate: string | null = null;
+  private lastCompetitiveZoneRebuild: number = 0;
 
   constructor() {
     this.fictionHistoryService = new FictionHistoryService();
@@ -140,7 +142,32 @@ export class CronService {
     }
   }
 
+  // Check if it's time to rebuild competitive zone cache (every 5 minutes)
+  private shouldRebuildCompetitiveZone(): boolean {
+    const now = Date.now();
+    const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+    if (now - this.lastCompetitiveZoneRebuild >= fiveMinutes) {
+      this.lastCompetitiveZoneRebuild = now;
+      return true;
+    }
+
+    return false;
+  }
+
+  // Rebuild competitive zone cache
+  private async rebuildCompetitiveZone(): Promise<void> {
+    try {
+      console.log('🏗️  Rebuilding competitive zone cache...');
+      await competitiveZoneCacheService.rebuildCompetitiveZone();
+      
+      // Log cache stats
+      const stats = await competitiveZoneCacheService.getCacheStats();
+      console.log(`📊 Competitive zone cache stats: ${stats.totalEntries} fictions (positions #${stats.minPosition}-#${stats.maxPosition})`);
+    } catch (error) {
+      console.error('❌ Error rebuilding competitive zone cache:', error);
+    }
+  }
 
   // Check and run collection if needed
   private async checkAndRunCollection(): Promise<void> {
@@ -207,6 +234,11 @@ export class CronService {
     if (this.shouldUpdateBestPositions()) {
       await this.updateBestPositions();
     }
+
+    // Check if it's time to rebuild competitive zone cache (every 5 minutes)
+    if (this.shouldRebuildCompetitiveZone()) {
+      await this.rebuildCompetitiveZone();
+    }
   }
 
   // Start the cron service
@@ -223,5 +255,6 @@ export class CronService {
     console.log('🌐 Royal Road data collection runs every 6 hours');
     console.log('🔄 Top fictions data refreshes every 10 minutes');
     console.log('🏆 Rising Stars best positions update runs daily at 2:00am PST');
+    console.log('🏗️  Competitive zone cache rebuilds every 5 minutes');
   }
 } 

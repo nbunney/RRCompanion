@@ -4,6 +4,7 @@ import { risingStarsBestPositionsService } from './risingStarsBestPositions.ts';
 import { decodeHtmlEntities } from '../utils/htmlEntities.ts';
 import { getRSMainBottomWithMovement, getFictionMovement } from '../utils/risingStarsQueries.ts';
 import { RisingStarsMainService } from './risingStarsMain.ts';
+import { competitiveZoneCacheService } from './competitiveZoneCache.ts';
 
 export interface RisingStarsPosition {
   fictionId: number;
@@ -153,14 +154,56 @@ export class RisingStarsPositionService {
         return result;
       }
 
-      // Fiction is not on main page - calculate position
-      const positionData = await this.calculateEstimatedPosition(fiction.id, latestScrape, {
-        title: decodeHtmlEntities(fiction.title),
-        authorName: decodeHtmlEntities(fiction.author_name),
-        royalroadId: fiction.royalroad_id,
-        imageUrl: fiction.image_url
-      });
-      const genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
+      // Fiction is not on main page - check competitive zone cache first
+      console.log(`🔍 Checking competitive zone cache for fiction ${fiction.id}`);
+      const cachedPosition = await competitiveZoneCacheService.getFictionPosition(fiction.id);
+      
+      let positionData;
+      let genrePositions;
+      
+      if (cachedPosition) {
+        // Fast path: Fiction is in competitive zone cache
+        console.log(`⚡ Cache hit! Fiction at position #${cachedPosition.calculated_position}`);
+        
+        // Get context fictions (5 behind, 10 ahead)
+        const startPos = Math.max(46, cachedPosition.calculated_position - 5);
+        const endPos = cachedPosition.calculated_position + 10;
+        const contextFictions = await competitiveZoneCacheService.getFictionsInRange(startPos, endPos);
+        
+        // Mark the user's fiction
+        const fictionsAheadDetails = contextFictions.map((f: any) => ({
+          fictionId: f.fiction_id,
+          title: decodeHtmlEntities(f.title),
+          authorName: decodeHtmlEntities(f.author_name),
+          royalroadId: f.royalroad_id,
+          imageUrl: f.image_url,
+          position: f.calculated_position,
+          lastMove: f.last_move as 'up' | 'down' | 'same' | 'new',
+          lastPosition: f.last_position || undefined,
+          lastMoveDate: f.last_move_date || undefined,
+          isUserFiction: f.fiction_id === fiction.id
+        }));
+        
+        genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
+        
+        positionData = {
+          estimatedPosition: cachedPosition.calculated_position,
+          fictionsAhead: cachedPosition.calculated_position - 1,
+          fictionsAheadDetails
+        };
+        
+        console.log(`✅ Used competitive zone cache: position #${cachedPosition.calculated_position}, showing ${fictionsAheadDetails.length} context fictions`);
+      } else {
+        // Slow path: Full calculation
+        console.log(`🐌 Not in cache, doing full calculation`);
+        positionData = await this.calculateEstimatedPosition(fiction.id, latestScrape, {
+          title: decodeHtmlEntities(fiction.title),
+          authorName: decodeHtmlEntities(fiction.author_name),
+          royalroadId: fiction.royalroad_id,
+          imageUrl: fiction.image_url
+        });
+        genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
+      }
 
       const result = {
         fictionId: fiction.id,
@@ -323,7 +366,7 @@ export class RisingStarsPositionService {
     try {
       const risingStarsMainService = new RisingStarsMainService();
       const allRSMain = await risingStarsMainService.getRisingStarsMainList();
-      
+
       // Filter to get only positions 46-50
       const rsMainBottom5 = allRSMain
         .filter(entry => entry.position >= 46 && entry.position <= 50)
