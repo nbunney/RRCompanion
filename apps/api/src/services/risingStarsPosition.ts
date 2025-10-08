@@ -17,11 +17,11 @@ export interface RisingStarsPosition {
   fictionsToClimb: number;
   lastUpdated: string;
   genrePositions: { genre: string; position: number | null; bestPosition: number | null; isOnList: boolean; lastScraped: string | null }[];
-  fictionsAheadDetails?: { 
-    fictionId: number; 
-    title: string; 
-    authorName: string; 
-    royalroadId: string; 
+  fictionsAheadDetails?: {
+    fictionId: number;
+    title: string;
+    authorName: string;
+    royalroadId: string;
     imageUrl?: string;
     lastMove?: 'up' | 'down' | 'same' | 'new';
     lastPosition?: number;
@@ -189,10 +189,10 @@ export class RisingStarsPositionService {
   private async calculateEstimatedPosition(fictionId: number, scrapeTimestamp: string, userFictionData?: { title: string; authorName: string; royalroadId: string; imageUrl?: string }): Promise<{
     estimatedPosition: number;
     fictionsAhead: number;
-    fictionsAheadDetails: { 
-      fictionId: number; 
-      title: string; 
-      authorName: string; 
+    fictionsAheadDetails: {
+      fictionId: number;
+      title: string;
+      authorName: string;
       royalroadId: string;
       imageUrl?: string;
       lastMove?: 'up' | 'down' | 'same' | 'new';
@@ -298,10 +298,10 @@ export class RisingStarsPositionService {
     const estimatedPosition = totalFictionsAhead + 1;
 
     // Build combined list: RS Main positions 46-50 + user's fiction + fictions ahead not on Main
-    let fictionsAheadDetails: { 
-      fictionId: number; 
-      title: string; 
-      authorName: string; 
+    let fictionsAheadDetails: {
+      fictionId: number;
+      title: string;
+      authorName: string;
       royalroadId: string;
       imageUrl?: string;
       lastMove?: 'up' | 'down' | 'same' | 'new';
@@ -329,6 +329,7 @@ export class RisingStarsPositionService {
       ORDER BY rs.position ASC
     `;
     const rsMainBottom5 = await this.dbClient.query(rsMainBottom5Query, [scrapeTimestamp]);
+    console.log(`🔍 Position Calculator - Found ${rsMainBottom5.length} fictions in positions 46-50`);
 
     // Get movement data for RS Main bottom 5
     if (rsMainBottom5.length > 0) {
@@ -422,7 +423,7 @@ export class RisingStarsPositionService {
           ORDER BY id ASC
         `;
         const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, limitedFictionIds);
-        
+
         // Get current positions from Rising Stars Main (most recent scrape)
         const currentPositionsQuery = `
           SELECT fiction_id, position
@@ -441,7 +442,7 @@ export class RisingStarsPositionService {
         const nonMainFictions = fictionDetailsResult.map((row: any) => {
           const currentPosition = currentPositionMap.get(row.id) as number | undefined;
           const previousData = previousPositionMap.get(row.id);
-          
+
           // Calculate movement using shared function
           const movement = calculateMovement(currentPosition, previousData?.position, previousData?.date);
 
@@ -463,17 +464,38 @@ export class RisingStarsPositionService {
       }
     }
 
+    // Remove duplicates (keep user's fiction version if there are duplicates)
+    const seenFictionIds = new Set<number>();
+    const uniqueFictionsAheadDetails = fictionsAheadDetails.filter(fiction => {
+      if (seenFictionIds.has(fiction.fictionId)) {
+        // If we've seen this fiction and it's not the user's version, skip it
+        if (!fiction.isUserFiction) {
+          return false;
+        }
+        // If it IS the user's version, remove the non-user version and keep this one
+        const index = fictionsAheadDetails.findIndex(f => f.fictionId === fiction.fictionId && !f.isUserFiction);
+        if (index !== -1) {
+          seenFictionIds.delete(fiction.fictionId);
+        }
+      }
+      seenFictionIds.add(fiction.fictionId);
+      return true;
+    });
+
     // Sort the combined list by position
-    fictionsAheadDetails.sort((a, b) => {
+    uniqueFictionsAheadDetails.sort((a, b) => {
       const posA = a.position || estimatedPosition + 1;
       const posB = b.position || estimatedPosition + 1;
       return posA - posB;
     });
 
+    console.log(`🔍 Position Calculator - Final list has ${uniqueFictionsAheadDetails.length} fictions`);
+    console.log(`🔍 Position Calculator - Positions: ${uniqueFictionsAheadDetails.map(f => `#${f.position}${f.isUserFiction ? ' (YOU)' : ''}`).join(', ')}`);
+
     return {
       estimatedPosition,
       fictionsAhead: totalFictionsAhead,
-      fictionsAheadDetails
+      fictionsAheadDetails: uniqueFictionsAheadDetails
     };
   }
 
