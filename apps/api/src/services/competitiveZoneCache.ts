@@ -54,7 +54,7 @@ export class CompetitiveZoneCacheService {
 
       // Get RS Main fiction IDs to filter them out of calculated zone
       const rsMainFictionIds = new Set(rsMainList.map(entry => entry.fictionId));
-      
+
       // Filter out RS Main fictions from calculated zone (they're already in positions 1-50)
       const calculatedZoneOnly = competitiveZone.filter(entry => !rsMainFictionIds.has(entry.fiction_id));
       console.log(`🔍 Filtered out ${competitiveZone.length - calculatedZoneOnly.length} RS Main duplicates from calculated zone`);
@@ -306,9 +306,7 @@ export class CompetitiveZoneCacheService {
       result.push({ fiction_id, calculated_position: nextPosition++ });
     }
 
-    // Sort by position
-    result.sort((a, b) => a.calculated_position - b.calculated_position);
-
+    // No need to sort here - database will handle ordering when queried
     return result;
   }
 
