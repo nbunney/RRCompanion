@@ -20,61 +20,97 @@ export async function getRSMainBottomWithMovement(
   lastPosition?: number;
   lastMoveDate?: string;
 }>> {
-  const query = `
+  // Use the same query logic as Rising Stars Main (which works correctly)
+  // First get all the fictions at current positions
+  const currentQuery = `
     SELECT 
-      current.position,
-      current.fiction_id,
+      rs.position,
+      rs.fiction_id,
       f.title,
       f.author_name,
       f.royalroad_id,
-      f.image_url,
-      prev.prev_position,
-      prev.prev_captured_at
-    FROM risingStars current
-    JOIN fiction f ON current.fiction_id = f.id
-    LEFT JOIN (
-      SELECT 
-        fiction_id,
-        position as prev_position,
-        captured_at as prev_captured_at
-      FROM (
-        SELECT 
-          fiction_id,
-          position,
-          captured_at,
-          ROW_NUMBER() OVER (PARTITION BY fiction_id ORDER BY captured_at DESC) as rn
-        FROM risingStars
-        WHERE genre = 'main'
-          AND captured_at < ?
-      ) ranked
-      WHERE rn = 1
-    ) prev ON current.fiction_id = prev.fiction_id 
-      AND prev.prev_position != current.position
-    WHERE current.captured_at = ?
-      AND current.genre = 'main'
-      AND current.position BETWEEN ? AND ?
-    ORDER BY current.position ASC
+      f.image_url
+    FROM risingStars rs
+    JOIN fiction f ON rs.fiction_id = f.id
+    WHERE rs.captured_at = ?
+      AND rs.genre = 'main'
+      AND rs.position BETWEEN ? AND ?
+    ORDER BY rs.position ASC
   `;
 
-  const result = await client.query(query, [
-    currentTimestamp,
+  const currentResult = await client.query(currentQuery, [
     currentTimestamp,
     startPosition,
     endPosition
   ]);
 
+  if (currentResult.length === 0) {
+    return [];
+  }
+
+  // Get fiction IDs for previous position lookup
+  const fictionIds = currentResult.map((row: any) => row.fiction_id);
+  const placeholders = fictionIds.map(() => '?').join(',');
+
+  // Get previous positions - same query as RS Main uses
+  const previousPositionQuery = `
+    SELECT 
+      rs.fiction_id,
+      rs.position,
+      rs.captured_at
+    FROM risingStars rs
+    INNER JOIN (
+      SELECT fiction_id, MAX(captured_at) as max_captured
+      FROM risingStars
+      WHERE fiction_id IN (${placeholders})
+        AND genre = 'main'
+        AND captured_at < ?
+      GROUP BY fiction_id, position
+    ) latest ON rs.fiction_id = latest.fiction_id 
+      AND rs.captured_at = latest.max_captured
+    WHERE rs.genre = 'main'
+    ORDER BY rs.fiction_id, rs.captured_at DESC
+  `;
+
+  const previousPositionResult = await client.query(
+    previousPositionQuery,
+    [...fictionIds, currentTimestamp]
+  );
+
+  // Create map of current positions
+  const currentPositionMap = new Map<number, number>();
+  currentResult.forEach((row: any) => {
+    currentPositionMap.set(row.fiction_id, row.position);
+  });
+
+  // Create map of previous positions (first different position found)
+  const previousPositions = new Map<number, { position: number; date: string }>();
+  previousPositionResult.forEach((row: any) => {
+    const currentPosition = currentPositionMap.get(row.fiction_id);
+    if (currentPosition !== undefined && row.position !== currentPosition && !previousPositions.has(row.fiction_id)) {
+      previousPositions.set(row.fiction_id, {
+        position: row.position,
+        date: new Date(row.captured_at).toISOString()
+      });
+    }
+  });
+
+  const result = currentResult;
+
+  // Map results with movement data (same logic as RS Main)
   return result.map((row: any) => {
+    const previousData = previousPositions.get(row.fiction_id);
     let lastMove: 'up' | 'down' | 'same' | 'new' = 'new';
     let lastPosition: number | undefined;
     let lastMoveDate: string | undefined;
 
-    if (row.prev_position) {
-      lastPosition = row.prev_position;
-      lastMoveDate = new Date(row.prev_captured_at).toISOString();
+    if (previousData !== undefined) {
+      lastPosition = previousData.position;
+      lastMoveDate = previousData.date;
       
-      if (row.position < row.prev_position) {
+      if (row.position < previousData.position) {
         lastMove = 'up';
-      } else if (row.position > row.prev_position) {
+      } else if (row.position > previousData.position) {
         lastMove = 'down';
       } else {
         lastMove = 'same';
@@ -109,64 +145,74 @@ export async function getFictionMovement(
   lastPosition?: number;
   lastMoveDate?: string;
 }> {
-  const query = `
+  // Use the same query logic as Rising Stars Main (which works correctly)
+  const currentQuery = `
+    SELECT position
+    FROM risingStars
+    WHERE fiction_id = ?
+      AND genre = ?
+      AND captured_at = ?
+    LIMIT 1
+  `;
+
+  const currentResult = await client.query(currentQuery, [fictionId, genre, currentTimestamp]);
+
+  if (currentResult.length === 0) {
+    return { lastMove: 'new' };
+  }
+
+  const currentPosition = currentResult[0].position;
+
+  // Get previous positions - same query as RS Main uses
+  const previousPositionQuery = `
     SELECT 
-      current.position as current_position,
-      prev.prev_position,
-      prev.prev_captured_at
-    FROM risingStars current
-    LEFT JOIN (
-      SELECT 
-        position as prev_position,
-        captured_at as prev_captured_at
+      rs.fiction_id,
+      rs.position,
+      rs.captured_at
+    FROM risingStars rs
+    INNER JOIN (
+      SELECT fiction_id, MAX(captured_at) as max_captured
       FROM risingStars
       WHERE fiction_id = ?
         AND genre = ?
         AND captured_at < ?
-      ORDER BY captured_at DESC
-      LIMIT 1
-    ) prev ON 1=1
-    WHERE current.fiction_id = ?
-      AND current.genre = ?
-      AND current.captured_at = ?
+      GROUP BY fiction_id, position
+    ) latest ON rs.fiction_id = latest.fiction_id 
+      AND rs.captured_at = latest.max_captured
+    WHERE rs.genre = ?
+    ORDER BY rs.fiction_id, rs.captured_at DESC
     LIMIT 1
   `;
 
-  const result = await client.query(query, [
-    fictionId,
-    genre,
-    currentTimestamp,
-    fictionId,
-    genre,
-    currentTimestamp
-  ]);
+  const previousPositionResult = await client.query(
+    previousPositionQuery,
+    [fictionId, genre, currentTimestamp, genre]
+  );
 
-  if (result.length === 0) {
-    return { lastMove: 'new' };
-  }
-
-  const row = result[0];
   let lastMove: 'up' | 'down' | 'same' | 'new' = 'new';
   let lastPosition: number | undefined;
   let lastMoveDate: string | undefined;
 
-  if (row.prev_position) {
-    lastPosition = row.prev_position;
-    lastMoveDate = new Date(row.prev_captured_at).toISOString();
+  if (previousPositionResult.length > 0) {
+    const previousData = previousPositionResult[0];
     
-    if (row.current_position < row.prev_position) {
-      lastMove = 'up';
-    } else if (row.current_position > row.prev_position) {
-      lastMove = 'down';
-    } else {
-      lastMove = 'same';
+    // Only use this if it's a DIFFERENT position
+    if (previousData.position !== currentPosition) {
+      lastPosition = previousData.position;
+      lastMoveDate = new Date(previousData.captured_at).toISOString();
+      
+      if (currentPosition < previousData.position) {
+        lastMove = 'up';
+      } else if (currentPosition > previousData.position) {
+        lastMove = 'down';
+      } else {
+        lastMove = 'same';
+      }
     }
-  } else if (row.current_position) {
-    lastMove = 'same';
   }
 
   return {
-    currentPosition: row.current_position,
+    currentPosition,
     lastMove,
     lastPosition,
     lastMoveDate
