@@ -157,19 +157,19 @@ export class RisingStarsPositionService {
       // Fiction is not on main page - check competitive zone cache first
       console.log(`🔍 Checking competitive zone cache for fiction ${fiction.id}`);
       const cachedPosition = await competitiveZoneCacheService.getFictionPosition(fiction.id);
-      
+
       let positionData;
       let genrePositions;
-      
+
       if (cachedPosition) {
         // Fast path: Fiction is in competitive zone cache
         console.log(`⚡ Cache hit! Fiction at position #${cachedPosition.calculated_position}`);
         
-        // Get context fictions (5 behind, 10 ahead)
-        const startPos = Math.max(46, cachedPosition.calculated_position - 5);
-        const endPos = cachedPosition.calculated_position + 10;
+        // Get context fictions (7 on either side)
+        const startPos = Math.max(1, cachedPosition.calculated_position - 7);
+        const endPos = cachedPosition.calculated_position + 7;
         const contextFictions = await competitiveZoneCacheService.getFictionsInRange(startPos, endPos);
-        
+
         // Mark the user's fiction
         const fictionsAheadDetails = contextFictions.map((f: any) => ({
           fictionId: f.fiction_id,
@@ -183,15 +183,15 @@ export class RisingStarsPositionService {
           lastMoveDate: f.last_move_date || undefined,
           isUserFiction: f.fiction_id === fiction.id
         }));
-        
+
         genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
-        
+
         positionData = {
           estimatedPosition: cachedPosition.calculated_position,
           fictionsAhead: cachedPosition.calculated_position - 1,
           fictionsAheadDetails
         };
-        
+
         console.log(`✅ Used competitive zone cache: position #${cachedPosition.calculated_position}, showing ${fictionsAheadDetails.length} context fictions`);
       } else {
         // Slow path: Full calculation

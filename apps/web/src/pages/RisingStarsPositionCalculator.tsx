@@ -359,7 +359,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
             <div className="bg-white rounded-lg shadow-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Position Context</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Showing Rising Stars Main positions 46-50, your fiction at #{position.estimatedPosition}, and fictions directly ahead of you:
+                Showing 7 fictions on either side of your position (#{position.estimatedPosition}):
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {position.fictionsAheadDetails.map((fiction) => (
@@ -417,7 +417,7 @@ const RisingStarsPositionCalculator: React.FC = () => {
               {/* Explanatory note */}
               <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                 <p className="text-sm text-blue-800">
-                  <strong>Context:</strong> This shows the last 5 positions on Rising Stars Main (46-50), your fiction's position, and the fictions directly competing with you to reach the Main list.
+                  <strong>Context:</strong> This shows 7 fictions on either side of your position, helping you see your immediate competition and path to Rising Stars Main.
                 </p>
               </div>
             </div>
