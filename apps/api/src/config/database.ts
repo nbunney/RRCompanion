@@ -844,6 +844,9 @@ async function runConditionalMigration(client: Client, migration: Migration): Pr
     case '016_ensure_userFiction_favorite_column':
       await ensureUserFictionFavoriteColumn(client);
       break;
+    case '017_optimize_rising_stars_indexes':
+      await optimizeRisingStarsIndexes(client);
+      break;
     default:
       throw new Error(`Unknown conditional migration: ${migration.name}`);
   }
@@ -923,4 +926,32 @@ async function ensureUserFictionFavoriteColumn(client: Client): Promise<void> {
   } catch (error) {
     console.log('ℹ️ Could not add is_favorite column to userFiction table:', error);
   }
+}
+
+async function optimizeRisingStarsIndexes(client: Client): Promise<void> {
+  console.log('🔧 Optimizing Rising Stars indexes...');
+  
+  // Try to add each index individually, ignoring errors if they already exist
+  try {
+    await client.execute(`ALTER TABLE risingStars ADD INDEX idx_fiction_genre_captured (fiction_id, genre, captured_at)`);
+    console.log('✅ Added index: idx_fiction_genre_captured');
+  } catch (error) {
+    console.log('ℹ️ Index idx_fiction_genre_captured already exists');
+  }
+
+  try {
+    await client.execute(`ALTER TABLE risingStars ADD INDEX idx_genre_captured (genre, captured_at)`);
+    console.log('✅ Added index: idx_genre_captured');
+  } catch (error) {
+    console.log('ℹ️ Index idx_genre_captured already exists');
+  }
+
+  try {
+    await client.execute(`ALTER TABLE risingStars ADD INDEX idx_captured_position (captured_at, position)`);
+    console.log('✅ Added index: idx_captured_position');
+  } catch (error) {
+    console.log('ℹ️ Index idx_captured_position already exists');
+  }
+
+  console.log('✅ Rising Stars index optimization complete');
 }
