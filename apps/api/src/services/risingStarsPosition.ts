@@ -313,16 +313,39 @@ export class RisingStarsPositionService {
 
     console.log(`🔍 Position Calculator - Using optimized queries`);
 
-    // Step 1: Get RS Main positions 46-50 with movement data (single optimized query)
+    // Step 1: Get RS Main positions 46-50 with movement data (cached for 2 minutes)
     try {
-      console.log(`🔍 Calling getRSMainBottomWithMovement(46, 50, ${scrapeTimestamp})`);
-      const rsMainBottom5 = await getRSMainBottomWithMovement(46, 50, scrapeTimestamp);
-      console.log(`✅ Got ${rsMainBottom5.length} fictions from RS Main positions 46-50`);
-      if (rsMainBottom5.length === 0) {
-        console.warn('⚠️  RS Main bottom 5 query returned 0 results - positions 46-50 may not exist in current scrape');
+      // Check cache for RS Main bottom 5 (shared across all position calculations)
+      const rsMainBottom5CacheKey = `rs-main-bottom-5-${scrapeTimestamp}`;
+      let rsMainBottom5 = cacheService.getWithCleanup<Array<{
+        fictionId: number;
+        title: string;
+        authorName: string;
+        royalroadId: string;
+        imageUrl?: string;
+        position: number;
+        lastMove: 'up' | 'down' | 'same' | 'new';
+        lastPosition?: number;
+        lastMoveDate?: string;
+      }>>(rsMainBottom5CacheKey);
+
+      if (rsMainBottom5) {
+        console.log(`📦 RS Main bottom 5 - Cache hit (${rsMainBottom5.length} fictions)`);
       } else {
-        console.log(`📋 RS Main bottom 5 positions: ${rsMainBottom5.map(f => `#${f.position}`).join(', ')}`);
+        console.log(`🔍 Calling getRSMainBottomWithMovement(46, 50, ${scrapeTimestamp})`);
+        rsMainBottom5 = await getRSMainBottomWithMovement(46, 50, scrapeTimestamp);
+        console.log(`✅ Got ${rsMainBottom5.length} fictions from RS Main positions 46-50`);
+        
+        if (rsMainBottom5.length === 0) {
+          console.warn('⚠️  RS Main bottom 5 query returned 0 results - positions 46-50 may not exist in current scrape');
+        } else {
+          console.log(`📋 RS Main bottom 5 positions: ${rsMainBottom5.map(f => `#${f.position}`).join(', ')}`);
+          // Cache for 2 minutes (120,000 ms) - shared across all position calculations
+          cacheService.set(rsMainBottom5CacheKey, rsMainBottom5, 2 * 60 * 1000);
+          console.log(`💾 Cached RS Main bottom 5 for 2 minutes`);
+        }
       }
+      
       fictionsAheadDetails.push(...rsMainBottom5.map(f => ({ ...f, isUserFiction: false })));
     } catch (error) {
       console.error('⚠️  Failed to get RS Main bottom 5:', error);
