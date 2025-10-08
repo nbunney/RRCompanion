@@ -2,7 +2,7 @@ import { client } from '../config/database.ts';
 import { cacheService } from './cache.ts';
 import { risingStarsBestPositionsService } from './risingStarsBestPositions.ts';
 import { decodeHtmlEntities } from '../utils/htmlEntities.ts';
-import { calculateMovement, getPreviousPositions } from '../utils/risingStarsMovement.ts';
+import { getRSMainBottomWithMovement, getFictionMovement } from '../utils/risingStarsQueries.ts';
 
 export interface RisingStarsPosition {
   fictionId: number;
@@ -297,8 +297,7 @@ export class RisingStarsPositionService {
     const totalFictionsAhead = fictionsAhead.size;
     const estimatedPosition = totalFictionsAhead + 1;
 
-    // Simplified: Skip the RS Main bottom 5 and movement indicators for now to avoid timeout
-    // Just return the basic list of fictions ahead
+    // Build combined list using optimized queries
     let fictionsAheadDetails: { 
       fictionId: number; 
       title: string; 
@@ -312,9 +311,43 @@ export class RisingStarsPositionService {
       isUserFiction?: boolean;
     }[] = [];
 
-    console.log(`🔍 Position Calculator - Simplified version (avoiding timeout)`);
+    console.log(`🔍 Position Calculator - Using optimized queries`);
 
-    // Get fiction details for fictions ahead that are NOT on Rising Stars Main
+    // Step 1: Get RS Main positions 46-50 with movement data (single optimized query)
+    try {
+      const rsMainBottom5 = await getRSMainBottomWithMovement(46, 50, scrapeTimestamp);
+      console.log(`✅ Got ${rsMainBottom5.length} fictions from RS Main positions 46-50`);
+      fictionsAheadDetails.push(...rsMainBottom5.map(f => ({ ...f, isUserFiction: false })));
+    } catch (error) {
+      console.error('⚠️  Failed to get RS Main bottom 5:', error);
+    }
+
+    // Step 2: Add user's fiction with movement data (single optimized query)
+    if (userFictionData) {
+      try {
+        const userMovement = await getFictionMovement(fictionId, 'main', scrapeTimestamp);
+        const userPosition = userMovement.currentPosition || estimatedPosition;
+        
+        console.log(`👤 User fiction at #${userPosition}, movement: ${userMovement.lastMove}`);
+        
+        fictionsAheadDetails.push({
+          fictionId,
+          title: userFictionData.title,
+          authorName: userFictionData.authorName,
+          royalroadId: userFictionData.royalroadId,
+          imageUrl: userFictionData.imageUrl,
+          position: userPosition,
+          lastMove: userMovement.lastMove,
+          lastPosition: userMovement.lastPosition,
+          lastMoveDate: userMovement.lastMoveDate,
+          isUserFiction: true
+        });
+      } catch (error) {
+        console.error('⚠️  Failed to get user fiction movement:', error);
+      }
+    }
+
+    // Step 3: Get fiction details for fictions ahead that are NOT on Rising Stars Main
     const fictionIdsArray = Array.from(fictionsAhead);
 
     if (fictionIdsArray.length > 0) {
@@ -360,12 +393,28 @@ export class RisingStarsPositionService {
       }
     }
 
-    console.log(`🔍 Position Calculator - Final list has ${fictionsAheadDetails.length} fictions`);
+    // Remove duplicates and sort by position
+    const seenFictionIds = new Set<number>();
+    const uniqueFictions = fictionsAheadDetails.filter(f => {
+      if (seenFictionIds.has(f.fictionId)) {
+        return f.isUserFiction; // Keep user's version if duplicate
+      }
+      seenFictionIds.add(f.fictionId);
+      return true;
+    });
+
+    uniqueFictions.sort((a, b) => {
+      const posA = a.position || estimatedPosition + 1;
+      const posB = b.position || estimatedPosition + 1;
+      return posA - posB;
+    });
+
+    console.log(`🔍 Position Calculator - Final list has ${uniqueFictions.length} fictions`);
 
     return {
       estimatedPosition,
       fictionsAhead: totalFictionsAhead,
-      fictionsAheadDetails
+      fictionsAheadDetails: uniqueFictions
     };
   }
 
