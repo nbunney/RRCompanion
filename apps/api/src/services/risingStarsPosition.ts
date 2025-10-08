@@ -297,11 +297,12 @@ export class RisingStarsPositionService {
     const totalFictionsAhead = fictionsAhead.size;
     const estimatedPosition = totalFictionsAhead + 1;
 
-    // Build combined list: RS Main positions 46-50 + user's fiction + fictions ahead not on Main
-    let fictionsAheadDetails: {
-      fictionId: number;
-      title: string;
-      authorName: string;
+    // Simplified: Skip the RS Main bottom 5 and movement indicators for now to avoid timeout
+    // Just return the basic list of fictions ahead
+    let fictionsAheadDetails: { 
+      fictionId: number; 
+      title: string; 
+      authorName: string; 
       royalroadId: string;
       imageUrl?: string;
       lastMove?: 'up' | 'down' | 'same' | 'new';
@@ -311,97 +312,9 @@ export class RisingStarsPositionService {
       isUserFiction?: boolean;
     }[] = [];
 
-    // Step 1: Get positions 46-50 from RS Main with movement data
-    const rsMainBottom5Query = `
-      SELECT 
-        rs.position,
-        rs.fiction_id,
-        f.title,
-        f.author_name,
-        f.royalroad_id,
-        f.image_url,
-        rs.captured_at
-      FROM risingStars rs
-      JOIN fiction f ON rs.fiction_id = f.id
-      WHERE rs.captured_at = ?
-        AND rs.genre = 'main'
-        AND rs.position BETWEEN 46 AND 50
-      ORDER BY rs.position ASC
-    `;
-    const rsMainBottom5 = await this.dbClient.query(rsMainBottom5Query, [scrapeTimestamp]);
-    console.log(`🔍 Position Calculator - Found ${rsMainBottom5.length} fictions in positions 46-50`);
+    console.log(`🔍 Position Calculator - Simplified version (avoiding timeout)`);
 
-    // Get movement data for RS Main bottom 5
-    if (rsMainBottom5.length > 0) {
-      const mainFictionIds = rsMainBottom5.map((row: any) => row.fiction_id);
-      const previousPositionMap = await getPreviousPositions(mainFictionIds, 'main', scrapeTimestamp);
-      console.log(`🔍 Position Calculator - Got previous positions for ${previousPositionMap.size} of ${mainFictionIds.length} RS Main fictions`);
-
-      // Add RS Main bottom 5 to the list
-      rsMainBottom5.forEach((row: any) => {
-        const previousData = previousPositionMap.get(row.fiction_id);
-        const movement = calculateMovement(row.position, previousData?.position, previousData?.date);
-        
-        console.log(`  📍 Position #${row.position}: ${row.title} - Movement: ${movement.lastMove}${movement.lastPosition ? ` from #${movement.lastPosition}` : ''}`);
-
-        fictionsAheadDetails.push({
-          fictionId: row.fiction_id,
-          title: decodeHtmlEntities(row.title),
-          authorName: decodeHtmlEntities(row.author_name),
-          royalroadId: row.royalroad_id,
-          imageUrl: row.image_url,
-          position: row.position,
-          lastMove: movement.lastMove,
-          lastPosition: movement.lastPosition,
-          lastMoveDate: movement.lastMoveDate,
-          isUserFiction: false
-        });
-      });
-    } else {
-      console.log('⚠️  No fictions found in RS Main positions 46-50!');
-    }
-
-    // Step 2: Add the user's fiction with its movement data
-    if (userFictionData) {
-      // Get user fiction's position in main genre
-      const userFictionPositionQuery = `
-        SELECT position
-        FROM risingStars
-        WHERE fiction_id = ?
-          AND genre = 'main'
-          AND captured_at = ?
-      `;
-      const userFictionPositionResult = await this.dbClient.query(userFictionPositionQuery, [fictionId, scrapeTimestamp]);
-      const userCurrentPosition = userFictionPositionResult.length > 0 ? userFictionPositionResult[0].position : estimatedPosition;
-
-      // Get previous position using shared function
-      const userPreviousPositions = await getPreviousPositions([fictionId], 'main', scrapeTimestamp);
-      const userPreviousData = userPreviousPositions.get(fictionId);
-
-      // Calculate movement using shared function
-      const userMovement = calculateMovement(
-        userFictionPositionResult.length > 0 ? userCurrentPosition : undefined,
-        userPreviousData?.position,
-        userPreviousData?.date
-      );
-      
-      console.log(`👤 User's fiction at position #${userCurrentPosition} - Movement: ${userMovement.lastMove}${userMovement.lastPosition ? ` from #${userMovement.lastPosition}` : ''}`);
-
-      fictionsAheadDetails.push({
-        fictionId,
-        title: userFictionData.title,
-        authorName: userFictionData.authorName,
-        royalroadId: userFictionData.royalroadId,
-        imageUrl: userFictionData.imageUrl,
-        position: userCurrentPosition,
-        lastMove: userMovement.lastMove,
-        lastPosition: userMovement.lastPosition,
-        lastMoveDate: userMovement.lastMoveDate,
-        isUserFiction: true
-      });
-    }
-
-    // Step 3: Get fiction details for fictions ahead that are NOT on Rising Stars Main
+    // Get fiction details for fictions ahead that are NOT on Rising Stars Main
     const fictionIdsArray = Array.from(fictionsAhead);
 
     if (fictionIdsArray.length > 0) {
@@ -421,7 +334,7 @@ export class RisingStarsPositionService {
 
 
       if (filteredFictionIds.length > 0) {
-        // Get details for filtered fictions (limit to 20 for display purposes)
+        // Simplified: Just get the fiction details without movement for now
         const limitedFictionIds = filteredFictionIds.slice(0, 20) as number[];
         const fictionDetailsQuery = `
           SELECT id, title, author_name, royalroad_id, image_url 
@@ -431,38 +344,14 @@ export class RisingStarsPositionService {
         `;
         const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, limitedFictionIds);
 
-        // Get current positions from Rising Stars Main (most recent scrape)
-        const currentPositionsQuery = `
-          SELECT fiction_id, position
-          FROM risingStars
-          WHERE fiction_id IN (${limitedFictionIds.map(() => '?').join(',')})
-            AND genre = 'main'
-            AND captured_at = ?
-        `;
-        const currentPositionsResult = await this.dbClient.query(currentPositionsQuery, [...limitedFictionIds, scrapeTimestamp]);
-        const currentPositionMap = new Map<number, number>(currentPositionsResult.map((row: any) => [row.fiction_id, row.position]));
-
-        // Get previous positions using shared function
-        const previousPositionMap = await getPreviousPositions(limitedFictionIds, 'main', scrapeTimestamp);
-
-        // Add non-Main fictions to the list
+        // Add non-Main fictions to the list (without movement for now to avoid timeout)
         const nonMainFictions = fictionDetailsResult.map((row: any) => {
-          const currentPosition = currentPositionMap.get(row.id) as number | undefined;
-          const previousData = previousPositionMap.get(row.id);
-
-          // Calculate movement using shared function
-          const movement = calculateMovement(currentPosition, previousData?.position, previousData?.date);
-
           return {
             fictionId: row.id,
             title: decodeHtmlEntities(row.title),
             authorName: decodeHtmlEntities(row.author_name),
             royalroadId: row.royalroad_id,
             imageUrl: row.image_url,
-            position: currentPosition,
-            lastMove: movement.lastMove,
-            lastPosition: movement.lastPosition,
-            lastMoveDate: movement.lastMoveDate,
             isUserFiction: false
           };
         });
@@ -471,38 +360,12 @@ export class RisingStarsPositionService {
       }
     }
 
-    // Remove duplicates (keep user's fiction version if there are duplicates)
-    const seenFictionIds = new Set<number>();
-    const uniqueFictionsAheadDetails = fictionsAheadDetails.filter(fiction => {
-      if (seenFictionIds.has(fiction.fictionId)) {
-        // If we've seen this fiction and it's not the user's version, skip it
-        if (!fiction.isUserFiction) {
-          return false;
-        }
-        // If it IS the user's version, remove the non-user version and keep this one
-        const index = fictionsAheadDetails.findIndex(f => f.fictionId === fiction.fictionId && !f.isUserFiction);
-        if (index !== -1) {
-          seenFictionIds.delete(fiction.fictionId);
-        }
-      }
-      seenFictionIds.add(fiction.fictionId);
-      return true;
-    });
-
-    // Sort the combined list by position
-    uniqueFictionsAheadDetails.sort((a, b) => {
-      const posA = a.position || estimatedPosition + 1;
-      const posB = b.position || estimatedPosition + 1;
-      return posA - posB;
-    });
-
-    console.log(`🔍 Position Calculator - Final list has ${uniqueFictionsAheadDetails.length} fictions`);
-    console.log(`🔍 Position Calculator - Positions: ${uniqueFictionsAheadDetails.map(f => `#${f.position}${f.isUserFiction ? ' (YOU)' : ''}`).join(', ')}`);
+    console.log(`🔍 Position Calculator - Final list has ${fictionsAheadDetails.length} fictions`);
 
     return {
       estimatedPosition,
       fictionsAhead: totalFictionsAhead,
-      fictionsAheadDetails: uniqueFictionsAheadDetails
+      fictionsAheadDetails
     };
   }
 
