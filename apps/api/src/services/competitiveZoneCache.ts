@@ -290,15 +290,15 @@ export class CompetitiveZoneCacheService {
     // This includes fictions on RS Main from the algorithm + passed in rsMainFictionIds
     const allMainFictions = new Set([...mainPositionsMap.keys(), ...Array.from(rsMainFictionIds)]);
     const nonMainFictions = fictionIdsArray.filter(id => !allMainFictions.has(id));
-    
+
     console.log(`🔍 Total competitive zone: ${fictionIdsArray.length} fictions (${allMainFictions.size} on RS Main, ${nonMainFictions.length} calculated)`);
-    
+
     if (nonMainFictions.length === 0) {
       return result;
     }
-    
+
     console.log(`🔍 Calculating positions for ${nonMainFictions.length} non-RS-Main fictions using competitive zone set...`);
-    
+
     // Get ALL genre positions for these fictions in one batch query
     const allGenrePositionsQuery = `
       SELECT rs.fiction_id, rs.genre, rs.position, rs.captured_at
@@ -312,9 +312,9 @@ export class CompetitiveZoneCacheService {
         AND rs.genre = latest.genre
         AND rs.captured_at = latest.max_captured
     `;
-    
+
     const allGenrePositions = await this.dbClient.query(allGenrePositionsQuery, nonMainFictions);
-    
+
     // Build map of fiction -> genres -> position
     const fictionGenresMap = new Map<number, Map<string, { position: number; captured_at: any }>>();
     for (const row of allGenrePositions) {
@@ -326,34 +326,34 @@ export class CompetitiveZoneCacheService {
         captured_at: row.captured_at
       });
     }
-    
+
     // For each non-Main fiction, count how many OTHER non-Main fictions are ahead of it
     // Build proper pairwise comparisons: "Is Fiction A ahead of Fiction B?"
-    
+
     console.log(`🔍 Building competitive ordering for ${nonMainFictions.length} non-Main fictions...`);
-    
+
     // For each fiction, count how many OTHER non-Main fictions beat it
     const fictionScores = new Map<number, number>();
-    
+
     for (const fictionA of nonMainFictions) {
       const genresA = fictionGenresMap.get(fictionA);
       if (!genresA) {
         fictionScores.set(fictionA, 999999); // No genre data = worst
         continue;
       }
-      
+
       let beatByCount = 0;
-      
+
       // Compare against every OTHER non-Main fiction
       for (const fictionB of nonMainFictions) {
         if (fictionA === fictionB) continue;
-        
+
         const genresB = fictionGenresMap.get(fictionB);
         if (!genresB) continue;
-        
+
         // Check if they share any genre
         let bBeatsA = false;
-        
+
         for (const [genreA, dataA] of genresA) {
           const dataB = genresB.get(genreA);
           if (dataB) {
@@ -364,42 +364,42 @@ export class CompetitiveZoneCacheService {
             }
           }
         }
-        
+
         if (bBeatsA) {
           beatByCount++;
         }
       }
-      
+
       fictionScores.set(fictionA, beatByCount);
     }
-    
+
     // Sort by how many fictions beat them (fewer = better)
     const sortedNonMain = [...nonMainFictions].sort((a, b) => {
       const scoreA = fictionScores.get(a) || 999999;
       const scoreB = fictionScores.get(b) || 999999;
-      
+
       if (scoreA !== scoreB) {
         return scoreA - scoreB; // Fewer fictions beating you = better position
       }
-      
+
       // Tiebreaker: best genre position
       const genresA = fictionGenresMap.get(a);
       const genresB = fictionGenresMap.get(b);
-      
+
       const bestA = genresA ? Math.min(...Array.from(genresA.values()).map(d => d.position)) : 999;
       const bestB = genresB ? Math.min(...Array.from(genresB.values()).map(d => d.position)) : 999;
-      
+
       if (bestA !== bestB) {
         return bestA - bestB;
       }
-      
+
       return a - b; // Final tiebreaker: fiction ID
     });
-    
+
     // Assign sequential positions 51, 52, 53... based on competitive order
     sortedNonMain.forEach((fiction_id, index) => {
-      result.push({ 
-        fiction_id, 
+      result.push({
+        fiction_id,
         calculated_position: 51 + index
       });
     });

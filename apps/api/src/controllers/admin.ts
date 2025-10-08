@@ -305,7 +305,7 @@ export async function cleanupRisingStarsData(ctx: Context): Promise<void> {
     const url = new URL(ctx.request.url);
     const dryRunParam = url.searchParams.get('dryRun');
     const updateBestParam = url.searchParams.get('updateBestPositions');
-    
+
     const dryRun = dryRunParam !== 'false'; // Only run for real if explicitly set to false
     const updateBestPositions = updateBestParam === 'true'; // Only update if explicitly requested
 
