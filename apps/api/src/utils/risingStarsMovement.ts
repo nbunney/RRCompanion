@@ -25,7 +25,7 @@ export function calculateMovement(
   if (typeof currentPosition === 'number' && previousPosition !== undefined) {
     lastPosition = previousPosition;
     lastMoveDate = previousDate;
-    
+
     if (currentPosition < previousPosition) {
       lastMove = 'up'; // Better position (lower number)
     } else if (currentPosition > previousPosition) {
@@ -77,7 +77,7 @@ export async function getPreviousPositions(
   `;
 
   const result = await client.query(
-    previousPositionsQuery, 
+    previousPositionsQuery,
     [...fictionIds, genre, beforeTimestamp, genre]
   );
 
@@ -109,13 +109,13 @@ export async function calculateMovementForFictions(
   fictions.forEach(fiction => {
     const currentPosition = currentPositionMap?.get(fiction.fictionId) ?? fiction.currentPosition;
     const previousData = previousPositions.get(fiction.fictionId);
-    
+
     const movement = calculateMovement(
       currentPosition,
       previousData?.position,
       previousData?.date
     );
-    
+
     movementMap.set(fiction.fictionId, movement);
   });
 

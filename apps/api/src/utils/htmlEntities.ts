@@ -9,7 +9,7 @@ export function decodeHtmlEntities(text: string | null | undefined): string {
   text = text.replace(/&#x([0-9a-fA-F]+);/g, (_match, hex) => {
     return String.fromCharCode(parseInt(hex, 16));
   });
-  
+
   text = text.replace(/&#(\d+);/g, (_match, dec) => {
     return String.fromCharCode(parseInt(dec, 10));
   });
