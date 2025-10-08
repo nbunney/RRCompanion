@@ -38,9 +38,10 @@ export class CompetitiveZoneCacheService {
 
       console.log(`🎯 Using reference fiction: ${referenceFiction.title} (Mystery #${referenceFiction.position})`);
 
-      // Step 3: Calculate all fictions ahead of the reference fiction
-      const competitiveZone = await this.calculateCompetitiveZone(referenceFiction.fiction_id);
-      console.log(`📊 Calculated competitive zone: ${competitiveZone.length} fictions`);
+      // Step 3: Calculate all fictions ahead of the reference fiction (excluding RS Main)
+      const rsMainFictionIds = new Set(rsMainList.map(entry => entry.fictionId));
+      const competitiveZone = await this.calculateCompetitiveZone(referenceFiction.fiction_id, rsMainFictionIds);
+      console.log(`📊 Calculated competitive zone: ${competitiveZone.length} non-Main fictions`);
 
       // Step 4: Add RS Main fictions (positions 1-50) to competitive zone
       console.log(`📋 Adding RS Main fictions to competitive zone...`);
@@ -52,15 +53,8 @@ export class CompetitiveZoneCacheService {
         last_move_date: entry.lastMoveDate as string | undefined
       }));
 
-      // Get RS Main fiction IDs to filter them out of calculated zone
-      const rsMainFictionIds = new Set(rsMainList.map(entry => entry.fictionId));
-
-      // Filter out RS Main fictions from calculated zone (they're already in positions 1-50)
-      const calculatedZoneOnly = competitiveZone.filter(entry => !rsMainFictionIds.has(entry.fiction_id));
-      console.log(`🔍 Filtered out ${competitiveZone.length - calculatedZoneOnly.length} RS Main duplicates from calculated zone`);
-
       // Add movement fields to calculated zone entries (as undefined)
-      const competitiveZoneWithFields = calculatedZoneOnly.map(entry => ({
+      const competitiveZoneWithFields = competitiveZone.map(entry => ({
         ...entry,
         last_move: undefined as 'up' | 'down' | 'same' | 'new' | undefined,
         last_position: undefined as number | undefined,
@@ -69,7 +63,7 @@ export class CompetitiveZoneCacheService {
 
       // Combine RS Main with calculated competitive zone (no duplicates)
       const fullCompetitiveZone = [...rsMainWithMovement, ...competitiveZoneWithFields];
-      console.log(`📊 Full competitive zone: ${fullCompetitiveZone.length} fictions (RS Main: ${rsMainWithMovement.length}, Calculated: ${calculatedZoneOnly.length})`);
+      console.log(`📊 Full competitive zone: ${fullCompetitiveZone.length} fictions (RS Main: ${rsMainWithMovement.length}, Calculated: ${competitiveZone.length})`);
 
       // Step 5: Get current cache to compare for movement
       const currentCache = await this.getCurrentCache();
@@ -177,8 +171,9 @@ export class CompetitiveZoneCacheService {
   /**
    * Calculate all fictions in the competitive zone using the reference fiction
    * This uses the same algorithm as the position calculator
+   * Excludes RS Main fictions (they get positions 1-50 separately)
    */
-  private async calculateCompetitiveZone(referenceFictionId: number): Promise<Array<{
+  private async calculateCompetitiveZone(referenceFictionId: number, rsMainFictionIds: Set<number>): Promise<Array<{
     fiction_id: number;
     calculated_position: number;
   }>> {
@@ -280,7 +275,7 @@ export class CompetitiveZoneCacheService {
     const fictionIdsArray = Array.from(fictionsAhead) as number[];
     const result: Array<{ fiction_id: number; calculated_position: number }> = [];
 
-    // Fictions in RS Main get their actual positions
+    // Identify which fictions are on RS Main (we'll skip them in calculated positions)
     const mainPositionsQuery = `
       SELECT fiction_id, position
       FROM risingStars
@@ -291,17 +286,12 @@ export class CompetitiveZoneCacheService {
     const mainPositionsResult = await this.dbClient.query(mainPositionsQuery, [latestScrape, ...fictionIdsArray]);
     const mainPositionsMap = new Map(mainPositionsResult.map((row: any) => [row.fiction_id, row.position]));
 
-    // Add RS Main fictions with their actual positions
-    for (const fiction_id of fictionIdsArray) {
-      const position = mainPositionsMap.get(fiction_id) as number | undefined;
-      if (position) {
-        result.push({ fiction_id, calculated_position: position });
-      }
-    }
-
-    // For fictions NOT in RS Main, calculate positions using the total set
-    // The position = (number of fictions from total set ahead of this fiction) + 1
-    const nonMainFictions = fictionIdsArray.filter(id => !mainPositionsMap.has(id));
+    // Filter to only non-Main fictions FIRST (before any position assignment)
+    // This includes fictions on RS Main from the algorithm + passed in rsMainFictionIds
+    const allMainFictions = new Set([...mainPositionsMap.keys(), ...Array.from(rsMainFictionIds)]);
+    const nonMainFictions = fictionIdsArray.filter(id => !allMainFictions.has(id));
+    
+    console.log(`🔍 Total competitive zone: ${fictionIdsArray.length} fictions (${allMainFictions.size} on RS Main, ${nonMainFictions.length} calculated)`);
     
     if (nonMainFictions.length === 0) {
       return result;
