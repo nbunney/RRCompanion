@@ -30,7 +30,7 @@ export class CompetitiveZoneCacheService {
       // Step 2: Find a reference fiction from a less popular genre
       // We'll use Mystery #50 as it typically gives us a good competitive zone
       const referenceFiction = await this.findReferenceFiction('mystery', 50);
-      
+
       if (!referenceFiction) {
         console.warn('⚠️  Could not find reference fiction for competitive zone');
         return;
@@ -42,26 +42,54 @@ export class CompetitiveZoneCacheService {
       const competitiveZone = await this.calculateCompetitiveZone(referenceFiction.fiction_id);
       console.log(`📊 Calculated competitive zone: ${competitiveZone.length} fictions`);
 
-      // Step 4: Get current cache to compare for movement
+      // Step 4: Add RS Main fictions (positions 1-50) to competitive zone
+      console.log(`📋 Adding RS Main fictions to competitive zone...`);
+      const rsMainWithMovement = rsMainList.map(entry => ({
+        fiction_id: entry.fictionId,
+        calculated_position: entry.position,
+        last_move: entry.lastMove as 'up' | 'down' | 'same' | 'new' | undefined,
+        last_position: entry.lastPosition as number | undefined,
+        last_move_date: entry.lastMoveDate as string | undefined
+      }));
+
+      // Add movement fields to calculated zone entries (as undefined)
+      const competitiveZoneWithFields = competitiveZone.map(entry => ({
+        ...entry,
+        last_move: undefined as 'up' | 'down' | 'same' | 'new' | undefined,
+        last_position: undefined as number | undefined,
+        last_move_date: undefined as string | undefined
+      }));
+
+      // Combine RS Main with calculated competitive zone
+      const fullCompetitiveZone = [...rsMainWithMovement, ...competitiveZoneWithFields];
+      console.log(`📊 Full competitive zone: ${fullCompetitiveZone.length} fictions (RS Main: ${rsMainWithMovement.length}, Calculated: ${competitiveZone.length})`);
+
+      // Step 5: Get current cache to compare for movement
       const currentCache = await this.getCurrentCache();
       const currentCacheMap = new Map(
         currentCache.map(entry => [entry.fiction_id, entry])
       );
 
-      // Step 5: Update cache with intelligent movement tracking
+      // Step 6: Update cache with intelligent movement tracking
       let updatedCount = 0;
       let movedCount = 0;
       let preservedCount = 0;
 
-      for (const fiction of competitiveZone) {
+      for (const fiction of fullCompetitiveZone) {
         const existing = currentCacheMap.get(fiction.fiction_id);
-        
-        let lastMove: 'up' | 'down' | 'same' | 'new' = 'new';
+
+        let lastMove: 'up' | 'down' | 'same' | 'new';
         let lastPosition: number | undefined;
         let lastMoveDate: string | undefined;
 
-        if (existing) {
-          // Fiction was in previous cache - check if position changed
+        // Check if this fiction already has movement data (from RS Main)
+        if (fiction.last_move !== undefined) {
+          // RS Main fiction - use existing movement data
+          lastMove = fiction.last_move;
+          lastPosition = fiction.last_position;
+          lastMoveDate = fiction.last_move_date;
+        } else if (existing) {
+          // Calculated fiction - check if position changed from previous cache
           if (fiction.calculated_position < existing.calculated_position) {
             // Moved up
             lastMove = 'up';
@@ -81,6 +109,11 @@ export class CompetitiveZoneCacheService {
             lastMoveDate = existing.last_move_date || undefined;
             preservedCount++;
           }
+        } else {
+          // New fiction not in cache
+          lastMove = 'new';
+          lastPosition = undefined;
+          lastMoveDate = undefined;
         }
 
         // Upsert to database
@@ -95,8 +128,8 @@ export class CompetitiveZoneCacheService {
         updatedCount++;
       }
 
-      // Step 6: Remove fictions that are no longer in the competitive zone
-      const currentFictionIds = competitiveZone.map(f => f.fiction_id);
+      // Step 7: Remove fictions that are no longer in the competitive zone
+      const currentFictionIds = fullCompetitiveZone.map(f => f.fiction_id);
       await this.removeStaleEntries(currentFictionIds);
 
       const elapsed = Date.now() - startTime;
@@ -104,7 +137,7 @@ export class CompetitiveZoneCacheService {
       console.log(`   - ${updatedCount} fictions updated`);
       console.log(`   - ${movedCount} fictions moved positions`);
       console.log(`   - ${preservedCount} fictions preserved movement data`);
-      console.log(`   - Position range: #${Math.min(...competitiveZone.map(f => f.calculated_position))} to #${Math.max(...competitiveZone.map(f => f.calculated_position))}`);
+      console.log(`   - Position range: #${Math.min(...fullCompetitiveZone.map(f => f.calculated_position))} to #${Math.max(...fullCompetitiveZone.map(f => f.calculated_position))}`);
 
     } catch (error) {
       console.error('❌ Error rebuilding competitive zone cache:', error);
@@ -151,8 +184,8 @@ export class CompetitiveZoneCacheService {
       throw new Error('No recent Rising Stars data available');
     }
 
-    const latestScrape = latestScrapeRaw instanceof Date 
-      ? latestScrapeRaw.toISOString() 
+    const latestScrape = latestScrapeRaw instanceof Date
+      ? latestScrapeRaw.toISOString()
       : latestScrapeRaw;
 
     // Get all genres
