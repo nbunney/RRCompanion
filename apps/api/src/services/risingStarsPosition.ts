@@ -93,11 +93,16 @@ export class RisingStarsPositionService {
         FROM risingStars 
       `;
       const latestScrapeResult = await this.dbClient.query(latestScrapeQuery);
-      const latestScrape = latestScrapeResult[0]?.latest_scrape;
+      const latestScrapeRaw = latestScrapeResult[0]?.latest_scrape;
 
-      if (!latestScrape) {
+      if (!latestScrapeRaw) {
         throw new Error('No recent Rising Stars data available');
       }
+
+      // Convert to string if it's a Date object (for consistent querying)
+      const latestScrape = latestScrapeRaw instanceof Date 
+        ? latestScrapeRaw.toISOString() 
+        : latestScrapeRaw;
 
       // Check if fiction has ever appeared in any Rising Stars genre list
       const genreCheckQuery = `
