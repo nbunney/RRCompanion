@@ -291,7 +291,7 @@ export class CompetitiveZoneCacheService {
     const mainPositionsResult = await this.dbClient.query(mainPositionsQuery, [latestScrape, ...fictionIdsArray]);
     const mainPositionsMap = new Map(mainPositionsResult.map((row: any) => [row.fiction_id, row.position]));
 
-    // Assign positions
+    // Add RS Main fictions with their actual positions
     for (const fiction_id of fictionIdsArray) {
       const position = mainPositionsMap.get(fiction_id) as number | undefined;
       if (position) {
@@ -299,14 +299,122 @@ export class CompetitiveZoneCacheService {
       }
     }
 
-    // Fictions NOT in RS Main get sequential positions starting from 51
+    // For fictions NOT in RS Main, calculate positions using the total set
+    // The position = (number of fictions from total set ahead of this fiction) + 1
     const nonMainFictions = fictionIdsArray.filter(id => !mainPositionsMap.has(id));
-    let nextPosition = 51;
-    for (const fiction_id of nonMainFictions) {
-      result.push({ fiction_id, calculated_position: nextPosition++ });
+    
+    if (nonMainFictions.length === 0) {
+      return result;
     }
+    
+    console.log(`🔍 Calculating positions for ${nonMainFictions.length} non-RS-Main fictions using competitive zone set...`);
+    
+    // Get ALL genre positions for these fictions in one batch query
+    const allGenrePositionsQuery = `
+      SELECT rs.fiction_id, rs.genre, rs.position, rs.captured_at
+      FROM risingStars rs
+      INNER JOIN (
+        SELECT fiction_id, genre, MAX(captured_at) as max_captured
+        FROM risingStars
+        WHERE fiction_id IN (${nonMainFictions.map(() => '?').join(',')})
+        GROUP BY fiction_id, genre
+      ) latest ON rs.fiction_id = latest.fiction_id 
+        AND rs.genre = latest.genre
+        AND rs.captured_at = latest.max_captured
+    `;
+    
+    const allGenrePositions = await this.dbClient.query(allGenrePositionsQuery, nonMainFictions);
+    
+    // Build map of fiction -> genres -> position
+    const fictionGenresMap = new Map<number, Map<string, { position: number; captured_at: any }>>();
+    for (const row of allGenrePositions) {
+      if (!fictionGenresMap.has(row.fiction_id)) {
+        fictionGenresMap.set(row.fiction_id, new Map());
+      }
+      fictionGenresMap.get(row.fiction_id)!.set(row.genre, {
+        position: row.position,
+        captured_at: row.captured_at
+      });
+    }
+    
+    // For each non-Main fiction, count how many OTHER non-Main fictions are ahead of it
+    // Build proper pairwise comparisons: "Is Fiction A ahead of Fiction B?"
+    
+    console.log(`🔍 Building competitive ordering for ${nonMainFictions.length} non-Main fictions...`);
+    
+    // For each fiction, count how many OTHER non-Main fictions beat it
+    const fictionScores = new Map<number, number>();
+    
+    for (const fictionA of nonMainFictions) {
+      const genresA = fictionGenresMap.get(fictionA);
+      if (!genresA) {
+        fictionScores.set(fictionA, 999999); // No genre data = worst
+        continue;
+      }
+      
+      let beatByCount = 0;
+      
+      // Compare against every OTHER non-Main fiction
+      for (const fictionB of nonMainFictions) {
+        if (fictionA === fictionB) continue;
+        
+        const genresB = fictionGenresMap.get(fictionB);
+        if (!genresB) continue;
+        
+        // Check if they share any genre
+        let bBeatsA = false;
+        
+        for (const [genreA, dataA] of genresA) {
+          const dataB = genresB.get(genreA);
+          if (dataB) {
+            // They share this genre - who has better position?
+            if (dataB.position < dataA.position) {
+              bBeatsA = true;
+              break; // B beats A in at least one shared genre
+            }
+          }
+        }
+        
+        if (bBeatsA) {
+          beatByCount++;
+        }
+      }
+      
+      fictionScores.set(fictionA, beatByCount);
+    }
+    
+    // Sort by how many fictions beat them (fewer = better)
+    const sortedNonMain = [...nonMainFictions].sort((a, b) => {
+      const scoreA = fictionScores.get(a) || 999999;
+      const scoreB = fictionScores.get(b) || 999999;
+      
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB; // Fewer fictions beating you = better position
+      }
+      
+      // Tiebreaker: best genre position
+      const genresA = fictionGenresMap.get(a);
+      const genresB = fictionGenresMap.get(b);
+      
+      const bestA = genresA ? Math.min(...Array.from(genresA.values()).map(d => d.position)) : 999;
+      const bestB = genresB ? Math.min(...Array.from(genresB.values()).map(d => d.position)) : 999;
+      
+      if (bestA !== bestB) {
+        return bestA - bestB;
+      }
+      
+      return a - b; // Final tiebreaker: fiction ID
+    });
+    
+    // Assign sequential positions 51, 52, 53... based on competitive order
+    sortedNonMain.forEach((fiction_id, index) => {
+      result.push({ 
+        fiction_id, 
+        calculated_position: 51 + index
+      });
+    });
 
-    // No need to sort here - database will handle ordering when queried
+    console.log(`✅ Calculated positions for all ${nonMainFictions.length} non-RS-Main fictions using pairwise comparisons`);
     return result;
   }
 

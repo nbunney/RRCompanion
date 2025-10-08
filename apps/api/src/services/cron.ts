@@ -1,6 +1,7 @@
 import { FictionHistoryService } from './fictionHistory.ts';
 import { risingStarsBestPositionsService } from './risingStarsBestPositions.ts';
 import { competitiveZoneCacheService } from './competitiveZoneCache.ts';
+import { client } from '../config/database.ts';
 
 export class CronService {
   private fictionHistoryService: FictionHistoryService;
@@ -10,6 +11,7 @@ export class CronService {
   private lastAllFictionsRunHour: number | null = null;
   private lastBestPositionsUpdateDate: string | null = null;
   private lastCompetitiveZoneRebuild: number = 0;
+  private lastRisingStarsPurgeDate: string | null = null;
 
   constructor() {
     this.fictionHistoryService = new FictionHistoryService();
@@ -169,6 +171,69 @@ export class CronService {
     }
   }
 
+  // Check if it's time to purge old Rising Stars data (daily at 3am PST)
+  private shouldPurgeOldRisingStars(): boolean {
+    const now = new Date();
+
+    // Convert to PST (UTC-8)
+    const pstTime = new Date(now.getTime() - (8 * 60 * 60 * 1000));
+
+    const hour = pstTime.getHours();
+    const minute = pstTime.getMinutes();
+    const today = pstTime.toISOString().split('T')[0];
+
+    // Run at 3:00am PST daily
+    if (hour === 3 && minute === 0 && this.lastRisingStarsPurgeDate !== today) {
+      this.lastRisingStarsPurgeDate = today;
+      return true;
+    }
+
+    return false;
+  }
+
+  // Purge old Rising Stars data (keep only last 3 days)
+  private async purgeOldRisingStars(): Promise<void> {
+    try {
+      console.log('🧹 Running nightly Rising Stars data purge (3am PST)...');
+      
+      // Simple purge: delete all data older than 3 days
+      const purgeQuery = `
+        DELETE FROM risingStars
+        WHERE DATE(captured_at) < DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+        LIMIT 50000
+      `;
+      
+      let totalDeleted = 0;
+      let iterations = 0;
+      const maxIterations = 100; // Safety limit
+      
+      while (iterations < maxIterations) {
+        const result = await client.execute(purgeQuery);
+        iterations++;
+        
+        // Check if there's more to delete
+        const remainingQuery = `
+          SELECT COUNT(*) as count 
+          FROM risingStars 
+          WHERE DATE(captured_at) < DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+          LIMIT 1
+        `;
+        const remaining = await client.query(remainingQuery);
+        
+        if (remaining[0].count === 0) {
+          console.log(`✅ Rising Stars purge complete (${iterations} batches, ~${iterations * 50000} records deleted)`);
+          break;
+        }
+        
+        // Small delay between batches
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+    } catch (error) {
+      console.error('❌ Error purging old Rising Stars data:', error);
+    }
+  }
+
   // Check and run collection if needed
   private async checkAndRunCollection(): Promise<void> {
     // Debug: Log every minute to confirm cron is running
@@ -239,6 +304,11 @@ export class CronService {
     if (this.shouldRebuildCompetitiveZone()) {
       await this.rebuildCompetitiveZone();
     }
+
+    // Check if it's time to purge old Rising Stars data (daily at 3am PST)
+    if (this.shouldPurgeOldRisingStars()) {
+      await this.purgeOldRisingStars();
+    }
   }
 
   // Start the cron service
@@ -256,5 +326,6 @@ export class CronService {
     console.log('🔄 Top fictions data refreshes every 10 minutes');
     console.log('🏆 Rising Stars best positions update runs daily at 2:00am PST');
     console.log('🏗️  Competitive zone cache rebuilds every 5 minutes');
+    console.log('🧹 Rising Stars data purge runs daily at 3:00am PST (keeps last 3 days)');
   }
 } 
