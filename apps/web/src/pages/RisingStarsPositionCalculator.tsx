@@ -263,34 +263,52 @@ const RisingStarsPositionCalculator: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              {/* Position Display */}
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-3xl font-bold text-blue-600 mb-2">
-                  #{position.isOnMain ? position.mainPosition : position.estimatedPosition}
+            {position.isOnMain ? (
+              /* Single Large Green Box for RS Main */
+              <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-400 rounded-xl p-8 mb-6 text-center">
+                <div className="text-6xl font-bold text-green-600 mb-4">
+                  #{position.mainPosition}
                 </div>
-                <div className="text-sm text-gray-600">
-                  {position.isOnMain ? 'Rising Stars Main Position' : 'Estimated Position'}
+                <div className="text-2xl font-semibold text-green-700 mb-3">
+                  🎉 On Rising Stars Main! 🎉
                 </div>
+                <p className="text-lg text-green-800">
+                  Congratulations! Your fiction is featured on Royal Road's Rising Stars Main page.
+                </p>
               </div>
+            ) : (
+              /* Two Box Layout for Non-Main Fictions */
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  {/* Position Display */}
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-3xl font-bold text-blue-600 mb-2">
+                      #{position.estimatedPosition}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Estimated Position
+                    </div>
+                  </div>
 
-              {/* Status Display */}
-              <div className={`text-center p-4 rounded-lg ${position.isOnMain ? 'bg-green-50' : (position.fictionsToClimb === 0 ? 'bg-green-50' : 'bg-red-50')}`}>
-                <div className={`text-3xl font-bold mb-2 ${position.isOnMain ? 'text-green-600' : getPositionColor(position.fictionsToClimb)}`}>
-                  {position.isOnMain ? '🎉' : position.fictionsToClimb}
+                  {/* Status Display */}
+                  <div className={`text-center p-4 rounded-lg ${position.fictionsToClimb === 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                    <div className={`text-3xl font-bold mb-2 ${getPositionColor(position.fictionsToClimb)}`}>
+                      {position.fictionsToClimb}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      To Reach Main
+                    </div>
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  {position.isOnMain ? 'Already on Main!' : 'To Reach Main'}
-                </div>
-              </div>
-            </div>
 
-            {/* Status Message */}
-            <div className="bg-gray-50 rounded-lg p-6 mb-6">
-              <p className="text-lg font-medium text-gray-800">
-                {getPositionMessage(position)}
-              </p>
-            </div>
+                {/* Status Message */}
+                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                  <p className="text-lg font-medium text-gray-800">
+                    {getPositionMessage(position)}
+                  </p>
+                </div>
+              </>
+            )}
 
             {/* Additional Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
