@@ -779,6 +779,16 @@ async function runMigrations(client: Client): Promise<void> {
           INDEX idx_fiction_genre (fiction_id, genre)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `
+    },
+    {
+      name: '017_optimize_rising_stars_indexes',
+      sql: `
+        -- Add composite indexes to dramatically speed up Rising Stars queries
+        ALTER TABLE risingStars ADD INDEX idx_fiction_genre_captured (fiction_id, genre, captured_at);
+        ALTER TABLE risingStars ADD INDEX idx_genre_captured (genre, captured_at);
+        ALTER TABLE risingStars ADD INDEX idx_captured_position (captured_at, position);
+      `,
+      conditional: true // Don't fail if indexes already exist
     }
   ];
 
