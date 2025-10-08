@@ -19,7 +19,16 @@ interface RisingStarsPosition {
   fictionsToClimb: number;
   lastUpdated: string;
   genrePositions: { genre: string; position: number | null; isOnList: boolean; lastScraped: string | null }[];
-  fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string; imageUrl?: string }[];
+  fictionsAheadDetails?: { 
+    fictionId: number; 
+    title: string; 
+    authorName: string; 
+    royalroadId: string; 
+    imageUrl?: string;
+    lastMove?: 'up' | 'down' | 'same' | 'new';
+    lastPosition?: number;
+    lastMoveDate?: string;
+  }[];
 
 }
 
@@ -109,6 +118,36 @@ const RisingStarsPositionCalculator: React.FC = () => {
     }
 
     return `📈 Your fiction is estimated at position #${position.estimatedPosition}. You need to climb ${position.fictionsToClimb} positions to reach Rising Stars Main.`;
+  };
+
+  const getMovementIcon = (lastMove?: string) => {
+    switch (lastMove) {
+      case 'up':
+        return <span className="text-green-600 font-bold text-xs">↑</span>;
+      case 'down':
+        return <span className="text-red-600 font-bold text-xs">↓</span>;
+      case 'same':
+        return <span className="text-gray-500 text-xs">—</span>;
+      case 'new':
+        return <span className="text-blue-600 font-bold text-xs">NEW</span>;
+      default:
+        return null;
+    }
+  };
+
+  const getMovementText = (lastMove?: string, lastPosition?: number) => {
+    switch (lastMove) {
+      case 'up':
+        return lastPosition ? `from #${lastPosition}` : '';
+      case 'down':
+        return lastPosition ? `from #${lastPosition}` : '';
+      case 'same':
+        return 'No change';
+      case 'new':
+        return 'New';
+      default:
+        return '';
+    }
   };
 
   if (loading) {
@@ -350,6 +389,14 @@ const RisingStarsPositionCalculator: React.FC = () => {
                       <div className="text-xs text-gray-500">
                         by {fiction.authorName}
                       </div>
+                      {fiction.lastMove && fiction.lastMove !== 'new' && (
+                        <div className="flex items-center space-x-1 mt-1">
+                          {getMovementIcon(fiction.lastMove)}
+                          <span className="text-xs text-gray-600">
+                            {getMovementText(fiction.lastMove, fiction.lastPosition)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="ml-2 text-xs text-gray-400 flex-shrink-0">
                       #{index + 1}

@@ -12,7 +12,7 @@ function decodeHtmlEntities(text: string | null | undefined): string {
   text = text.replace(/&#x([0-9a-fA-F]+);/g, (_match, hex) => {
     return String.fromCharCode(parseInt(hex, 16));
   });
-  
+
   text = text.replace(/&#(\d+);/g, (_match, dec) => {
     return String.fromCharCode(parseInt(dec, 10));
   });
@@ -59,7 +59,16 @@ export interface RisingStarsPosition {
   fictionsToClimb: number;
   lastUpdated: string;
   genrePositions: { genre: string; position: number | null; bestPosition: number | null; isOnList: boolean; lastScraped: string | null }[];
-  fictionsAheadDetails?: { fictionId: number; title: string; authorName: string; royalroadId: string; imageUrl?: string }[];
+  fictionsAheadDetails?: { 
+    fictionId: number; 
+    title: string; 
+    authorName: string; 
+    royalroadId: string; 
+    imageUrl?: string;
+    lastMove?: 'up' | 'down' | 'same' | 'new';
+    lastPosition?: number;
+    lastMoveDate?: string;
+  }[];
 }
 
 export class RisingStarsPositionService {
@@ -215,7 +224,16 @@ export class RisingStarsPositionService {
   private async calculateEstimatedPosition(fictionId: number, scrapeTimestamp: string): Promise<{
     estimatedPosition: number;
     fictionsAhead: number;
-    fictionsAheadDetails: { fictionId: number; title: string; authorName: string; royalroadId: string }[];
+    fictionsAheadDetails: { 
+      fictionId: number; 
+      title: string; 
+      authorName: string; 
+      royalroadId: string;
+      imageUrl?: string;
+      lastMove?: 'up' | 'down' | 'same' | 'new';
+      lastPosition?: number;
+      lastMoveDate?: string;
+    }[];
   }> {
     // Get all genres (from any timestamp)
     const genresQuery = `
@@ -315,7 +333,16 @@ export class RisingStarsPositionService {
     // Get fiction details for fictions ahead that are NOT on Rising Stars Main
     // Look at ALL fictions ahead, then filter out the ones on Main
     const fictionIdsArray = Array.from(fictionsAhead);
-    let fictionsAheadDetails: { fictionId: number; title: string; authorName: string; royalroadId: string }[] = [];
+    let fictionsAheadDetails: { 
+      fictionId: number; 
+      title: string; 
+      authorName: string; 
+      royalroadId: string;
+      imageUrl?: string;
+      lastMove?: 'up' | 'down' | 'same' | 'new';
+      lastPosition?: number;
+      lastMoveDate?: string;
+    }[] = [];
 
 
     if (fictionIdsArray.length > 0) {
@@ -345,13 +372,85 @@ export class RisingStarsPositionService {
           LIMIT 20
         `;
         const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, filteredFictionIds);
-        fictionsAheadDetails = fictionDetailsResult.map((row: any) => ({
-          fictionId: row.id,
-          title: decodeHtmlEntities(row.title),
-          authorName: decodeHtmlEntities(row.author_name),
-          royalroadId: row.royalroad_id,
-          imageUrl: row.image_url
-        }));
+        
+        // Get current positions from Rising Stars Main (most recent scrape)
+        const currentPositionsQuery = `
+          SELECT fiction_id, position
+          FROM risingStars
+          WHERE fiction_id IN (${filteredFictionIds.map(() => '?').join(',')})
+            AND genre = 'main'
+            AND captured_at = ?
+        `;
+        const currentPositionsResult = await this.dbClient.query(currentPositionsQuery, [...filteredFictionIds, scrapeTimestamp]);
+        const currentPositionMap = new Map<number, number>(currentPositionsResult.map((row: any) => [row.fiction_id, row.position]));
+
+        // Get previous positions for movement calculation
+        const previousPositionsQuery = `
+          SELECT 
+            rs.fiction_id,
+            rs.position,
+            rs.captured_at
+          FROM risingStars rs
+          INNER JOIN (
+            SELECT fiction_id, MAX(captured_at) as max_captured
+            FROM risingStars
+            WHERE fiction_id IN (${filteredFictionIds.map(() => '?').join(',')})
+              AND genre = 'main'
+              AND captured_at < ?
+            GROUP BY fiction_id, position
+          ) latest ON rs.fiction_id = latest.fiction_id 
+            AND rs.captured_at = latest.max_captured
+          WHERE rs.genre = 'main'
+          ORDER BY rs.fiction_id, rs.captured_at DESC
+        `;
+        const previousPositionsResult = await this.dbClient.query(previousPositionsQuery, [...filteredFictionIds, scrapeTimestamp]);
+
+        // Create map of previous positions (only the first different position for each fiction)
+        const previousPositionMap = new Map<number, { position: number; date: string }>();
+        previousPositionsResult.forEach((row: any) => {
+          const currentPosition = currentPositionMap.get(row.fiction_id);
+          if (currentPosition !== undefined && row.position !== currentPosition && !previousPositionMap.has(row.fiction_id)) {
+            previousPositionMap.set(row.fiction_id, {
+              position: row.position,
+              date: new Date(row.captured_at).toISOString()
+            });
+          }
+        });
+
+        fictionsAheadDetails = fictionDetailsResult.map((row: any) => {
+          const currentPosition = currentPositionMap.get(row.id) as number | undefined;
+          const previousData = previousPositionMap.get(row.id);
+          
+          let lastMove: 'up' | 'down' | 'same' | 'new' = 'new';
+          let lastPosition: number | undefined;
+          let lastMoveDate: string | undefined;
+
+          if (typeof currentPosition === 'number' && previousData) {
+            lastPosition = previousData.position;
+            lastMoveDate = previousData.date;
+            
+            if (currentPosition < previousData.position) {
+              lastMove = 'up'; // Better position (lower number)
+            } else if (currentPosition > previousData.position) {
+              lastMove = 'down'; // Worse position (higher number)
+            } else {
+              lastMove = 'same';
+            }
+          } else if (typeof currentPosition === 'number') {
+            lastMove = 'same'; // Has position but no previous data
+          }
+
+          return {
+            fictionId: row.id,
+            title: decodeHtmlEntities(row.title),
+            authorName: decodeHtmlEntities(row.author_name),
+            royalroadId: row.royalroad_id,
+            imageUrl: row.image_url,
+            lastMove,
+            lastPosition,
+            lastMoveDate
+          };
+        });
 
       }
     }
@@ -554,7 +653,13 @@ export class RisingStarsPositionService {
       const allBestPositions = await risingStarsBestPositionsService.getAllBestPositions(fictionId);
 
       // Get positions for each relevant genre
-      const genrePositions = [];
+      const genrePositions: { 
+        genre: string; 
+        position: number | null; 
+        bestPosition: number | null; 
+        isOnList: boolean; 
+        lastScraped: string | null 
+      }[] = [];
 
       for (const genre of relevantGenres) {
         // Get current position from risingStars table
