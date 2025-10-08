@@ -52,17 +52,24 @@ export class CompetitiveZoneCacheService {
         last_move_date: entry.lastMoveDate as string | undefined
       }));
 
+      // Get RS Main fiction IDs to filter them out of calculated zone
+      const rsMainFictionIds = new Set(rsMainList.map(entry => entry.fictionId));
+      
+      // Filter out RS Main fictions from calculated zone (they're already in positions 1-50)
+      const calculatedZoneOnly = competitiveZone.filter(entry => !rsMainFictionIds.has(entry.fiction_id));
+      console.log(`🔍 Filtered out ${competitiveZone.length - calculatedZoneOnly.length} RS Main duplicates from calculated zone`);
+
       // Add movement fields to calculated zone entries (as undefined)
-      const competitiveZoneWithFields = competitiveZone.map(entry => ({
+      const competitiveZoneWithFields = calculatedZoneOnly.map(entry => ({
         ...entry,
         last_move: undefined as 'up' | 'down' | 'same' | 'new' | undefined,
         last_position: undefined as number | undefined,
         last_move_date: undefined as string | undefined
       }));
 
-      // Combine RS Main with calculated competitive zone
+      // Combine RS Main with calculated competitive zone (no duplicates)
       const fullCompetitiveZone = [...rsMainWithMovement, ...competitiveZoneWithFields];
-      console.log(`📊 Full competitive zone: ${fullCompetitiveZone.length} fictions (RS Main: ${rsMainWithMovement.length}, Calculated: ${competitiveZone.length})`);
+      console.log(`📊 Full competitive zone: ${fullCompetitiveZone.length} fictions (RS Main: ${rsMainWithMovement.length}, Calculated: ${calculatedZoneOnly.length})`);
 
       // Step 5: Get current cache to compare for movement
       const currentCache = await this.getCurrentCache();
@@ -332,12 +339,20 @@ export class CompetitiveZoneCacheService {
         updated_at = CURRENT_TIMESTAMP
     `;
 
+    // Convert ISO string to MySQL DATETIME format if needed
+    let lastMoveDate = null;
+    if (entry.last_move_date) {
+      const date = new Date(entry.last_move_date);
+      // Format: YYYY-MM-DD HH:MM:SS
+      lastMoveDate = date.toISOString().slice(0, 19).replace('T', ' ');
+    }
+
     await this.dbClient.execute(query, [
       entry.fiction_id,
       entry.calculated_position,
       entry.last_move,
       entry.last_position || null,
-      entry.last_move_date || null
+      lastMoveDate
     ]);
   }
 
