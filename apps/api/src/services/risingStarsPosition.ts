@@ -335,7 +335,7 @@ export class RisingStarsPositionService {
         console.log(`🔍 Calling getRSMainBottomWithMovement(46, 50, ${scrapeTimestamp})`);
         rsMainBottom5 = await getRSMainBottomWithMovement(46, 50, scrapeTimestamp);
         console.log(`✅ Got ${rsMainBottom5.length} fictions from RS Main positions 46-50`);
-        
+
         if (rsMainBottom5.length === 0) {
           console.warn('⚠️  RS Main bottom 5 query returned 0 results - positions 46-50 may not exist in current scrape');
         } else {
@@ -345,8 +345,11 @@ export class RisingStarsPositionService {
           console.log(`💾 Cached RS Main bottom 5 for 2 minutes`);
         }
       }
-      
-      fictionsAheadDetails.push(...rsMainBottom5.map(f => ({ ...f, isUserFiction: false })));
+
+      // Only add if we have results
+      if (rsMainBottom5 && rsMainBottom5.length > 0) {
+        fictionsAheadDetails.push(...rsMainBottom5.map(f => ({ ...f, isUserFiction: false })));
+      }
     } catch (error) {
       console.error('⚠️  Failed to get RS Main bottom 5:', error);
       console.error('⚠️  Error details:', error instanceof Error ? error.message : String(error));
