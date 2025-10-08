@@ -298,10 +298,10 @@ export class RisingStarsPositionService {
     const estimatedPosition = totalFictionsAhead + 1;
 
     // Build combined list using optimized queries
-    let fictionsAheadDetails: { 
-      fictionId: number; 
-      title: string; 
-      authorName: string; 
+    let fictionsAheadDetails: {
+      fictionId: number;
+      title: string;
+      authorName: string;
       royalroadId: string;
       imageUrl?: string;
       lastMove?: 'up' | 'down' | 'same' | 'new';
@@ -315,11 +315,18 @@ export class RisingStarsPositionService {
 
     // Step 1: Get RS Main positions 46-50 with movement data (single optimized query)
     try {
+      console.log(`🔍 Calling getRSMainBottomWithMovement(46, 50, ${scrapeTimestamp})`);
       const rsMainBottom5 = await getRSMainBottomWithMovement(46, 50, scrapeTimestamp);
       console.log(`✅ Got ${rsMainBottom5.length} fictions from RS Main positions 46-50`);
+      if (rsMainBottom5.length === 0) {
+        console.warn('⚠️  RS Main bottom 5 query returned 0 results - positions 46-50 may not exist in current scrape');
+      } else {
+        console.log(`📋 RS Main bottom 5 positions: ${rsMainBottom5.map(f => `#${f.position}`).join(', ')}`);
+      }
       fictionsAheadDetails.push(...rsMainBottom5.map(f => ({ ...f, isUserFiction: false })));
     } catch (error) {
       console.error('⚠️  Failed to get RS Main bottom 5:', error);
+      console.error('⚠️  Error details:', error instanceof Error ? error.message : String(error));
     }
 
     // Step 2: Add user's fiction with movement data (single optimized query)
@@ -327,9 +334,9 @@ export class RisingStarsPositionService {
       try {
         const userMovement = await getFictionMovement(fictionId, 'main', scrapeTimestamp);
         const userPosition = userMovement.currentPosition || estimatedPosition;
-        
+
         console.log(`👤 User fiction at #${userPosition}, movement: ${userMovement.lastMove}`);
-        
+
         fictionsAheadDetails.push({
           fictionId,
           title: userFictionData.title,

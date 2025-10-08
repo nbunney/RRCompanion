@@ -20,6 +20,8 @@ export async function getRSMainBottomWithMovement(
   lastPosition?: number;
   lastMoveDate?: string;
 }>> {
+  console.log(`🔍 getRSMainBottomWithMovement: positions ${startPosition}-${endPosition}, timestamp: ${currentTimestamp}`);
+  
   // Use the same query logic as Rising Stars Main (which works correctly)
   // First get all the fictions at current positions
   const currentQuery = `
@@ -44,7 +46,10 @@ export async function getRSMainBottomWithMovement(
     endPosition
   ]);
 
+  console.log(`🔍 getRSMainBottomWithMovement: currentResult length = ${currentResult.length}`);
+  
   if (currentResult.length === 0) {
+    console.warn(`⚠️  No fictions found for positions ${startPosition}-${endPosition} at timestamp ${currentTimestamp}`);
     return [];
   }
 
@@ -107,7 +112,7 @@ export async function getRSMainBottomWithMovement(
     if (previousData !== undefined) {
       lastPosition = previousData.position;
       lastMoveDate = previousData.date;
-      
+
       if (row.position < previousData.position) {
         lastMove = 'up';
       } else if (row.position > previousData.position) {
@@ -195,12 +200,12 @@ export async function getFictionMovement(
 
   if (previousPositionResult.length > 0) {
     const previousData = previousPositionResult[0];
-    
+
     // Only use this if it's a DIFFERENT position
     if (previousData.position !== currentPosition) {
       lastPosition = previousData.position;
       lastMoveDate = new Date(previousData.captured_at).toISOString();
-      
+
       if (currentPosition < previousData.position) {
         lastMove = 'up';
       } else if (currentPosition > previousData.position) {
