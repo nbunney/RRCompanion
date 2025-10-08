@@ -20,7 +20,7 @@ const RisingStarsPositionLanding: React.FC = () => {
   const [fictionId, setFictionId] = useState('');
   const [royalroadUrl, setRoyalroadUrl] = useState('');
   const [inputMethod, setInputMethod] = useState<'id' | 'url' | 'favorite'>('url');
-  const [favorites, setFavorites] = useState<UserFiction[]>([]);
+  const [userFictions, setUserFictions] = useState<UserFiction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -28,26 +28,26 @@ const RisingStarsPositionLanding: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      fetchFavorites();
+      fetchUserFictions();
     }
   }, [user]);
 
   useEffect(() => {
-    // If user has favorites, default to favorites method
-    if (user && favorites.length > 0 && inputMethod === 'url') {
+    // If user has fictions, default to selected fictions method
+    if (user && userFictions.length > 0 && inputMethod === 'url') {
       setInputMethod('favorite');
     }
-  }, [user, favorites]); // Remove inputMethod from dependencies to prevent infinite loop
+  }, [user, userFictions]); // Remove inputMethod from dependencies to prevent infinite loop
 
-  const fetchFavorites = async () => {
+  const fetchUserFictions = async () => {
     try {
-      const response = await api.get('/userFictions/favorites');
+      const response = await api.get('/userFictions/all');
 
       if (response.data.success) {
-        setFavorites(response.data.data.userFictions);
+        setUserFictions(response.data.data);
       }
     } catch (err) {
-      console.error('Error fetching favorites:', err);
+      console.error('Error fetching user fictions:', err);
     }
   };
 
@@ -145,7 +145,7 @@ const RisingStarsPositionLanding: React.FC = () => {
           {/* Input Method Selection */}
           <div className="mb-8">
             <div className="flex flex-wrap gap-4 justify-center mb-6">
-              {user && favorites.length > 0 && (
+              {user && userFictions.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setInputMethod('favorite')}
@@ -154,7 +154,7 @@ const RisingStarsPositionLanding: React.FC = () => {
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                 >
-                  ⭐ Choose from Favorites
+                  📚 Choose from Selected
                 </button>
               )}
               <button
@@ -225,22 +225,22 @@ const RisingStarsPositionLanding: React.FC = () => {
             {inputMethod === 'favorite' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select from Your Favorites
+                  Select from Your Fictions
                 </label>
                 <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-300 rounded-lg p-4">
-                  {favorites.map((favorite) => (
+                  {userFictions.map((userFiction) => (
                     <button
-                      key={favorite.id}
+                      key={userFiction.id}
                       type="button"
-                      onClick={() => handleFavoriteSelect(favorite)}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors ${fictionId === favorite.fiction.royalroad_id
+                      onClick={() => handleFavoriteSelect(userFiction)}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors ${fictionId === userFiction.fiction.royalroad_id
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                     >
-                      <div className="font-medium text-gray-900">{favorite.fiction.title}</div>
-                      <div className="text-sm text-gray-600">by {favorite.fiction.author_name}</div>
-                      <div className="text-xs text-gray-500">ID: {favorite.fiction.royalroad_id}</div>
+                      <div className="font-medium text-gray-900">{userFiction.fiction.title}</div>
+                      <div className="text-sm text-gray-600">by {userFiction.fiction.author_name}</div>
+                      <div className="text-xs text-gray-500">ID: {userFiction.fiction.royalroad_id}</div>
                     </button>
                   ))}
                 </div>
