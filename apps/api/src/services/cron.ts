@@ -162,7 +162,7 @@ export class CronService {
     try {
       console.log('🏗️  Rebuilding competitive zone cache...');
       await competitiveZoneCacheService.rebuildCompetitiveZone();
-      
+
       // Log cache stats
       const stats = await competitiveZoneCacheService.getCacheStats();
       console.log(`📊 Competitive zone cache stats: ${stats.totalEntries} fictions (positions #${stats.minPosition}-#${stats.maxPosition})`);
@@ -195,22 +195,22 @@ export class CronService {
   private async purgeOldRisingStars(): Promise<void> {
     try {
       console.log('🧹 Running nightly Rising Stars data purge (3am PST)...');
-      
+
       // Simple purge: delete all data older than 3 days
       const purgeQuery = `
         DELETE FROM risingStars
         WHERE DATE(captured_at) < DATE_SUB(CURDATE(), INTERVAL 3 DAY)
         LIMIT 50000
       `;
-      
+
       let totalDeleted = 0;
       let iterations = 0;
       const maxIterations = 100; // Safety limit
-      
+
       while (iterations < maxIterations) {
         const result = await client.execute(purgeQuery);
         iterations++;
-        
+
         // Check if there's more to delete
         const remainingQuery = `
           SELECT COUNT(*) as count 
@@ -219,16 +219,16 @@ export class CronService {
           LIMIT 1
         `;
         const remaining = await client.query(remainingQuery);
-        
+
         if (remaining[0].count === 0) {
           console.log(`✅ Rising Stars purge complete (${iterations} batches, ~${iterations * 50000} records deleted)`);
           break;
         }
-        
+
         // Small delay between batches
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      
+
     } catch (error) {
       console.error('❌ Error purging old Rising Stars data:', error);
     }
