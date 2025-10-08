@@ -335,11 +335,14 @@ export class RisingStarsPositionService {
     if (rsMainBottom5.length > 0) {
       const mainFictionIds = rsMainBottom5.map((row: any) => row.fiction_id);
       const previousPositionMap = await getPreviousPositions(mainFictionIds, 'main', scrapeTimestamp);
+      console.log(`🔍 Position Calculator - Got previous positions for ${previousPositionMap.size} of ${mainFictionIds.length} RS Main fictions`);
 
       // Add RS Main bottom 5 to the list
       rsMainBottom5.forEach((row: any) => {
         const previousData = previousPositionMap.get(row.fiction_id);
         const movement = calculateMovement(row.position, previousData?.position, previousData?.date);
+        
+        console.log(`  📍 Position #${row.position}: ${row.title} - Movement: ${movement.lastMove}${movement.lastPosition ? ` from #${movement.lastPosition}` : ''}`);
 
         fictionsAheadDetails.push({
           fictionId: row.fiction_id,
@@ -354,6 +357,8 @@ export class RisingStarsPositionService {
           isUserFiction: false
         });
       });
+    } else {
+      console.log('⚠️  No fictions found in RS Main positions 46-50!');
     }
 
     // Step 2: Add the user's fiction with its movement data
@@ -379,6 +384,8 @@ export class RisingStarsPositionService {
         userPreviousData?.position,
         userPreviousData?.date
       );
+      
+      console.log(`👤 User's fiction at position #${userCurrentPosition} - Movement: ${userMovement.lastMove}${userMovement.lastPosition ? ` from #${userMovement.lastPosition}` : ''}`);
 
       fictionsAheadDetails.push({
         fictionId,
