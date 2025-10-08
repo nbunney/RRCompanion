@@ -21,7 +21,7 @@ export async function getRSMainBottomWithMovement(
   lastMoveDate?: string;
 }>> {
   console.log(`🔍 getRSMainBottomWithMovement: positions ${startPosition}-${endPosition}, timestamp: ${currentTimestamp}`);
-  
+
   // Use the same query logic as Rising Stars Main (which works correctly)
   // First get all the fictions at current positions
   const currentQuery = `
@@ -47,7 +47,7 @@ export async function getRSMainBottomWithMovement(
   ]);
 
   console.log(`🔍 getRSMainBottomWithMovement: currentResult length = ${currentResult.length}`);
-  
+
   if (currentResult.length === 0) {
     console.warn(`⚠️  No fictions found for positions ${startPosition}-${endPosition} at timestamp ${currentTimestamp}`);
     return [];

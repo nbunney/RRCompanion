@@ -15,3 +15,4 @@ ALTER TABLE risingStars ADD INDEX idx_captured_position (captured_at, position);
 -- Before: Full table scans on every query
 -- After: Index lookups in milliseconds
 
+

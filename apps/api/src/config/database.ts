@@ -930,7 +930,7 @@ async function ensureUserFictionFavoriteColumn(client: Client): Promise<void> {
 
 async function optimizeRisingStarsIndexes(client: Client): Promise<void> {
   console.log('🔧 Optimizing Rising Stars indexes...');
-  
+
   // Try to add each index individually, ignoring errors if they already exist
   try {
     await client.execute(`ALTER TABLE risingStars ADD INDEX idx_fiction_genre_captured (fiction_id, genre, captured_at)`);
