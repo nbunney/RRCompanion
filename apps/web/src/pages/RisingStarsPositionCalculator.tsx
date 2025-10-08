@@ -354,8 +354,8 @@ const RisingStarsPositionCalculator: React.FC = () => {
             </div>
           )}
 
-          {/* Fictions Ahead - Show context around user's position */}
-          {!position.isOnMain && position.fictionsAheadDetails && position.fictionsAheadDetails.length > 0 && (
+          {/* Position Context - Show context around user's position */}
+          {position.fictionsAheadDetails && position.fictionsAheadDetails.length > 0 && (
             <div className="bg-white rounded-lg shadow-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Position Context</h3>
               <p className="text-sm text-gray-600 mb-4">
