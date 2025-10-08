@@ -386,15 +386,17 @@ export class RisingStarsPositionService {
         `;
         const fictionDetailsResult = await this.dbClient.query(fictionDetailsQuery, [scrapeTimestamp, ...limitedFictionIds]);
 
-        // Add non-Main fictions to the list with positions but no movement (to keep it fast)
+        // Add non-Main fictions with calculated positions starting from 51
+        let nextPosition = 51; // Start from position 51 (just after RS Main's #50)
         const nonMainFictions = fictionDetailsResult.map((row: any) => {
+          const assignedPosition = nextPosition++;
           return {
             fictionId: row.id,
             title: decodeHtmlEntities(row.title),
             authorName: decodeHtmlEntities(row.author_name),
             royalroadId: row.royalroad_id,
             imageUrl: row.image_url,
-            position: row.position || undefined,
+            position: assignedPosition, // Assign sequential position starting from 51
             lastMove: 'new' as const,
             isUserFiction: false
           };
@@ -404,7 +406,7 @@ export class RisingStarsPositionService {
       }
     }
 
-    // Remove duplicates and sort by position
+    // Remove duplicates (keep user's version if duplicate)
     const seenFictionIds = new Set<number>();
     const uniqueFictions = fictionsAheadDetails.filter(f => {
       if (seenFictionIds.has(f.fictionId)) {
@@ -415,15 +417,16 @@ export class RisingStarsPositionService {
       return true;
     });
 
+    // Sort by position
     uniqueFictions.sort((a, b) => {
-      const posA = a.position || estimatedPosition + 1;
-      const posB = b.position || estimatedPosition + 1;
+      const posA = a.position || estimatedPosition;
+      const posB = b.position || estimatedPosition;
       return posA - posB;
     });
 
     console.log(`🔍 Position Calculator - Final list has ${uniqueFictions.length} unique fictions`);
     console.log(`🔍 Position Calculator - Fiction IDs: ${uniqueFictions.map(f => `${f.fictionId}${f.isUserFiction ? '(YOU)' : ''}`).join(', ')}`);
-    console.log(`🔍 Position Calculator - Positions: ${uniqueFictions.map(f => `#${f.position || 'N/A'}`).join(', ')}`);
+    console.log(`🔍 Position Calculator - Positions: ${uniqueFictions.map(f => `#${f.position}`).join(', ')}`);
 
     return {
       estimatedPosition,
