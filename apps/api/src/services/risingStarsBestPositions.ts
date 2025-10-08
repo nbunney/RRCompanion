@@ -194,12 +194,17 @@ export class RisingStarsBestPositionsService {
    * Pacific Time noon is approximately 19:00-20:00 UTC depending on DST
    * Excludes the most recent 3 days from cleanup to preserve all scrapes for recent data
    */
-  async cleanupOldRisingStarsData(dryRun: boolean = true): Promise<{ deleted: number; kept: number }> {
+  async cleanupOldRisingStarsData(dryRun: boolean = true, updateBestPositions: boolean = false): Promise<{ deleted: number; kept: number }> {
     console.log(`🧹 ${dryRun ? 'DRY RUN - ' : ''}Cleaning up old Rising Stars data...`);
 
     try {
-      // First, make sure best positions are up to date
-      await this.updateAllBestPositions();
+      // Optionally update best positions first (can be slow with lots of data)
+      if (updateBestPositions) {
+        console.log('🏆 Updating best positions before cleanup...');
+        await this.updateAllBestPositions();
+      } else {
+        console.log('⏭️  Skipping best positions update (run separately if needed)');
+      }
 
       // Find all unique dates in the risingStars table, excluding the most recent 3 days
       const datesQuery = `

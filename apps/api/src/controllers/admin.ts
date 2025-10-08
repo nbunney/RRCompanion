@@ -301,14 +301,17 @@ export async function updateRisingStarsBestPositions(ctx: Context): Promise<void
  */
 export async function cleanupRisingStarsData(ctx: Context): Promise<void> {
   try {
-    // Get query parameter for dry run (defaults to true for safety)
+    // Get query parameters
     const url = new URL(ctx.request.url);
     const dryRunParam = url.searchParams.get('dryRun');
+    const updateBestParam = url.searchParams.get('updateBestPositions');
+    
     const dryRun = dryRunParam !== 'false'; // Only run for real if explicitly set to false
+    const updateBestPositions = updateBestParam === 'true'; // Only update if explicitly requested
 
-    console.log(`🧹 Admin triggered: ${dryRun ? 'DRY RUN - ' : ''}Cleaning up Rising Stars data`);
+    console.log(`🧹 Admin triggered: ${dryRun ? 'DRY RUN - ' : ''}Cleaning up Rising Stars data (updateBestPositions: ${updateBestPositions})`);
 
-    const result = await risingStarsBestPositionsService.cleanupOldRisingStarsData(dryRun);
+    const result = await risingStarsBestPositionsService.cleanupOldRisingStarsData(dryRun, updateBestPositions);
 
     ctx.response.status = 200;
     ctx.response.body = {
