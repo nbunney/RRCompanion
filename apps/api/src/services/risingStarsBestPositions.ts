@@ -5,6 +5,7 @@ export interface RisingStarBestPosition {
   fiction_id: number;
   genre: string;
   best_position: number;
+  first_day_on_list: string | null;
   first_achieved_at: string;
   last_updated_at: string;
   created_at: string;
@@ -30,7 +31,8 @@ export class RisingStarsBestPositionsService {
           fiction_id,
           genre,
           MIN(position) as best_position,
-          MIN(captured_at) as first_achieved_at
+          MIN(captured_at) as first_achieved_at,
+          DATE(MIN(captured_at)) as first_day_on_list
         FROM risingStars
         GROUP BY fiction_id, genre
         HAVING MIN(position) IS NOT NULL
@@ -78,14 +80,15 @@ export class RisingStarsBestPositionsService {
           // Insert new record
           const insertQuery = `
             INSERT INTO risingStarsBestPositions 
-            (fiction_id, genre, best_position, first_achieved_at, last_updated_at, created_at)
-            VALUES (?, ?, ?, ?, NOW(), NOW())
+            (fiction_id, genre, best_position, first_day_on_list, first_achieved_at, last_updated_at, created_at)
+            VALUES (?, ?, ?, ?, ?, NOW(), NOW())
           `;
 
           await this.dbClient.execute(insertQuery, [
             record.fiction_id,
             record.genre,
             record.best_position,
+            record.first_day_on_list,
             record.first_achieved_at
           ]);
 

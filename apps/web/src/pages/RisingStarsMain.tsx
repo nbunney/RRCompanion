@@ -195,7 +195,7 @@ const RisingStarsMain: React.FC = () => {
             </div>
 
             {/* Column Headers */}
-            <div className="px-6 py-3 bg-gray-100 border-b border-gray-200">
+            <div className="sticky top-0 z-10 px-6 py-3 bg-gray-100 border-b border-gray-200">
               <div className="flex items-center space-x-4">
                 <div className="w-12 text-center">
                   <div className="text-sm font-semibold text-gray-700">Position</div>
@@ -204,9 +204,6 @@ const RisingStarsMain: React.FC = () => {
                   <div className="text-sm font-semibold text-gray-700">Fiction</div>
                 </div>
                 <div className="flex-1"></div>
-                <div className="w-20 text-center">
-                  <div className="text-sm font-semibold text-gray-700">Days</div>
-                </div>
                 <div className="w-20 text-center">
                   <div className="text-sm font-semibold text-gray-700">Highest</div>
                 </div>
@@ -271,13 +268,6 @@ const RisingStarsMain: React.FC = () => {
                       <p className="text-sm text-gray-600">by {entry.authorName}</p>
                     </div>
 
-                    {/* Days on List */}
-                    <div className="w-20 text-center">
-                      <div className="text-lg font-semibold text-gray-900">
-                        {entry.daysOnList}
-                      </div>
-                    </div>
-
                     {/* Highest Position */}
                     <div className="w-20 text-center">
                       <div className="text-lg font-semibold text-gray-900">
@@ -320,7 +310,7 @@ const RisingStarsMain: React.FC = () => {
             <div className="text-sm text-gray-600 space-y-2">
               <p>• Data is updated every 15 minutes at 1 minute past each quarter hour</p>
               <p>• Movement arrows show changes from the previous day</p>
-              <p>• "Days on List" counts consecutive days on Rising Stars Main</p>
+              <p>• "Highest" shows the best position a fiction has achieved on Rising Stars Main</p>
               <p>• Click on any fiction to visit its Royal Road page</p>
             </div>
           </div>

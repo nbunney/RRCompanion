@@ -811,6 +811,23 @@ async function runMigrations(client: Client): Promise<void> {
           INDEX idx_updated_at (updated_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `
+    },
+    {
+      name: '022_add_first_day_on_list',
+      sql: `
+        ALTER TABLE risingStarsBestPositions 
+        ADD COLUMN first_day_on_list DATE NULL AFTER best_position,
+        ADD INDEX idx_first_day_on_list (first_day_on_list);
+        
+        UPDATE risingStarsBestPositions rbp
+        SET first_day_on_list = (
+          SELECT DATE(MIN(captured_at))
+          FROM risingStars rs
+          WHERE rs.fiction_id = rbp.fiction_id
+            AND rs.genre = rbp.genre
+        );
+      `,
+      conditional: true
     }
   ];
 
@@ -868,6 +885,9 @@ async function runConditionalMigration(client: Client, migration: Migration): Pr
       break;
     case '017_optimize_rising_stars_indexes':
       await optimizeRisingStarsIndexes(client);
+      break;
+    case '022_add_first_day_on_list':
+      await addFirstDayOnList(client);
       break;
     default:
       throw new Error(`Unknown conditional migration: ${migration.name}`);
@@ -976,4 +996,43 @@ async function optimizeRisingStarsIndexes(client: Client): Promise<void> {
   }
 
   console.log('✅ Rising Stars index optimization complete');
+}
+
+async function addFirstDayOnList(client: Client): Promise<void> {
+  console.log('🔧 Adding first_day_on_list column to risingStarsBestPositions...');
+
+  try {
+    // Check if the column already exists
+    const columns = await client.query(`SHOW COLUMNS FROM risingStarsBestPositions LIKE 'first_day_on_list'`);
+
+    if (columns.length === 0) {
+      console.log('🔄 Adding first_day_on_list column...');
+
+      // Add the column
+      await client.execute(`
+        ALTER TABLE risingStarsBestPositions 
+        ADD COLUMN first_day_on_list DATE NULL AFTER best_position,
+        ADD INDEX idx_first_day_on_list (first_day_on_list)
+      `);
+      console.log('✅ Added first_day_on_list column');
+
+      // Populate the column with existing data
+      console.log('🔄 Populating first_day_on_list with existing data...');
+      await client.execute(`
+        UPDATE risingStarsBestPositions rbp
+        SET first_day_on_list = (
+          SELECT DATE(MIN(captured_at))
+          FROM risingStars rs
+          WHERE rs.fiction_id = rbp.fiction_id
+            AND rs.genre = rbp.genre
+        )
+      `);
+      console.log('✅ Populated first_day_on_list column');
+    } else {
+      console.log('ℹ️ first_day_on_list column already exists');
+    }
+  } catch (error) {
+    console.error('❌ Error adding first_day_on_list column:', error);
+    throw error;
+  }
 }
