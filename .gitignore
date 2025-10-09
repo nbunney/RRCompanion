@@ -97,4 +97,7 @@ temp/
 # Database
 *.db
 *.sqlite
-*.sqlite3 
+*.sqlite3
+
+# Serverless Framework
+.serverless/ 
