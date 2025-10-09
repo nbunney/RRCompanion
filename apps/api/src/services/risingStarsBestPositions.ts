@@ -248,6 +248,11 @@ export class RisingStarsBestPositionsService {
         const keepTimestamp = noonScrape[0].captured_at;
         const keepCount = noonScrape[0].count;
 
+        // Convert timestamp to proper MySQL format for comparison
+        const keepTimestampFormatted = keepTimestamp instanceof Date 
+          ? keepTimestamp.toISOString().slice(0, 19).replace('T', ' ')
+          : keepTimestamp;
+
         // Count how many records we'll delete for this date
         const countQuery = `
           SELECT COUNT(*) as count
@@ -256,7 +261,7 @@ export class RisingStarsBestPositionsService {
             AND captured_at != ?
         `;
 
-        const countResult = await this.dbClient.query(countQuery, [scrapeDate, keepTimestamp]);
+        const countResult = await this.dbClient.query(countQuery, [scrapeDate, keepTimestampFormatted]);
         const deleteCount = countResult[0].count;
 
         if (!dryRun && deleteCount > 0) {
@@ -267,13 +272,28 @@ export class RisingStarsBestPositionsService {
               AND captured_at != ?
           `;
 
-          await this.dbClient.execute(deleteQuery, [scrapeDate, keepTimestamp]);
+          await this.dbClient.execute(deleteQuery, [scrapeDate, keepTimestampFormatted]);
+
+          // Verify records were kept
+          const verifyQuery = `
+            SELECT COUNT(*) as remaining
+            FROM risingStars
+            WHERE DATE(captured_at) = ?
+          `;
+          const verifyResult = await this.dbClient.query(verifyQuery, [scrapeDate]);
+          const remainingCount = verifyResult[0].remaining;
+
+          if (remainingCount === 0) {
+            console.error(`⚠️ WARNING: All records deleted for ${scrapeDate}! This should not happen.`);
+          } else {
+            console.log(`✅ Verified ${remainingCount} records remaining for ${scrapeDate}`);
+          }
         }
 
         totalDeleted += deleteCount;
         totalKept += keepCount;
 
-        console.log(`${dryRun ? '📊 Would delete' : '🗑️ Deleted'} ${deleteCount} records for ${scrapeDate}, keeping ${keepCount} records from ${keepTimestamp}`);
+        console.log(`${dryRun ? '📊 Would delete' : '🗑️ Deleted'} ${deleteCount} records for ${scrapeDate}, keeping ${keepCount} records from ${keepTimestampFormatted}`);
       }
 
       console.log(`${dryRun ? '📊 DRY RUN COMPLETE' : '✅ CLEANUP COMPLETE'}: Would delete ${totalDeleted} records, keeping ${totalKept}`);
