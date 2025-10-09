@@ -132,6 +132,26 @@ export class RisingStarsPositionService {
         // Fiction is already on main page
         const genrePositions = await this.getFictionGenrePositions(fiction.id, latestScrape);
 
+        // Get context fictions (7 on either side)
+        const currentPosition = mainCheckResult[0].position;
+        const startPos = Math.max(1, currentPosition - 7);
+        const endPos = currentPosition + 7;
+        const contextFictions = await competitiveZoneCacheService.getFictionsInRange(startPos, endPos);
+
+        // Mark the user's fiction
+        const fictionsAheadDetails = contextFictions.map((f: any) => ({
+          fictionId: f.fiction_id,
+          title: decodeHtmlEntities(f.title),
+          authorName: decodeHtmlEntities(f.author_name),
+          royalroadId: f.royalroad_id,
+          imageUrl: f.image_url,
+          position: f.calculated_position,
+          lastMove: f.last_move as 'up' | 'down' | 'same' | 'new',
+          lastPosition: f.last_position || undefined,
+          lastMoveDate: f.last_move_date || undefined,
+          isUserFiction: f.fiction_id === fiction.id
+        }));
+
         const result = {
           fictionId: fiction.id,
           title: decodeHtmlEntities(fiction.title),
@@ -144,12 +164,13 @@ export class RisingStarsPositionService {
           fictionsAhead: mainCheckResult[0].position - 1,
           fictionsToClimb: 0,
           lastUpdated: latestScrape,
-          genrePositions
+          genrePositions,
+          fictionsAheadDetails
         };
 
         // Cache the result
         cacheService.set(cacheKey, result, this.CACHE_TTL);
-        console.log(`✅ Rising Stars Position - Data fetched and cached for fiction ${royalroadId} (on main page)`);
+        console.log(`✅ Rising Stars Position - Data fetched and cached for fiction ${royalroadId} (on main page) with ${fictionsAheadDetails.length} context fictions`);
 
         return result;
       }
