@@ -175,10 +175,10 @@ export class RoyalRoadScrapingService {
           console.log(`🔍 Scraping Rising Stars for genre: ${genre}`);
 
           // Handle 'main' specially - use the main page URL without genre parameter
-          const url = genre === 'main' 
-            ? '/fictions/rising-stars' 
+          const url = genre === 'main'
+            ? '/fictions/rising-stars'
             : `/fictions/rising-stars?genre=${genre}`;
-          
+
           const response = await this.httpClient.get(url);
           const $ = cheerio.load(response.data);
 
