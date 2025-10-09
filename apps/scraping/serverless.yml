@@ -28,6 +28,7 @@ provider:
 
 functions:
   # Rising Stars scraping - main page
+  # DEPRECATED: 'main' is now included in scrapeRisingStarsAll
   scrapeRisingStarsMain:
     handler: src/handlers/risingStarsMain.handler
     timeout: 900
@@ -35,11 +36,11 @@ functions:
     events:
       - schedule:
           rate: rate(15 minutes)
-          enabled: true
+          enabled: false  # Disabled - now handled by scrapeRisingStarsAll
     environment:
       SCRAPING_TYPE: "rising-stars-main"
 
-  # Rising Stars scraping - all genres
+  # Rising Stars scraping - all genres (including 'main')
   scrapeRisingStarsAll:
     handler: src/handlers/risingStarsAll.handler
     timeout: 900

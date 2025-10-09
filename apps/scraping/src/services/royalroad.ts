@@ -144,7 +144,10 @@ export class RoyalRoadScrapingService {
       console.log('🔍 Scraping Rising Stars for all genres...');
 
       // All genres and tags that need to be scraped
+      // IMPORTANT: 'main' must be first to ensure consistent timestamps
       const genres = [
+        // Main Rising Stars page (no genre filter)
+        'main',
         // Main Royal Road genres
         'action', 'adventure', 'comedy', 'contemporary', 'drama', 'fantasy',
         'historical', 'horror', 'mystery', 'psychological', 'romance',
@@ -171,8 +174,12 @@ export class RoyalRoadScrapingService {
         try {
           console.log(`🔍 Scraping Rising Stars for genre: ${genre}`);
 
-          // Updated URL format to use query parameter
-          const response = await this.httpClient.get(`/fictions/rising-stars?genre=${genre}`);
+          // Handle 'main' specially - use the main page URL without genre parameter
+          const url = genre === 'main' 
+            ? '/fictions/rising-stars' 
+            : `/fictions/rising-stars?genre=${genre}`;
+          
+          const response = await this.httpClient.get(url);
           const $ = cheerio.load(response.data);
 
           $('.fiction-list-item').each((index, element) => {

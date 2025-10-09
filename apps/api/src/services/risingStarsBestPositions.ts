@@ -196,6 +196,10 @@ export class RisingStarsBestPositionsService {
    * Clean up old Rising Stars data, keeping only noon scrapes for each day
    * Pacific Time noon is approximately 19:00-20:00 UTC depending on DST
    * Excludes the most recent 3 days from cleanup to preserve all scrapes for recent data
+   * 
+   * NOTE: All genres (including 'main') should be scraped together with a single timestamp
+   * to ensure this cleanup works properly. If multiple scrapes occur on the same day,
+   * only the noon scrape will be kept.
    */
   async cleanupOldRisingStarsData(dryRun: boolean = true, updateBestPositions: boolean = false): Promise<{ deleted: number; kept: number }> {
     console.log(`🧹 ${dryRun ? 'DRY RUN - ' : ''}Cleaning up old Rising Stars data...`);
@@ -249,7 +253,7 @@ export class RisingStarsBestPositionsService {
         const keepCount = noonScrape[0].count;
 
         // Convert timestamp to proper MySQL format for comparison
-        const keepTimestampFormatted = keepTimestamp instanceof Date 
+        const keepTimestampFormatted = keepTimestamp instanceof Date
           ? keepTimestamp.toISOString().slice(0, 19).replace('T', ' ')
           : keepTimestamp;
 
